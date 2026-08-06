@@ -6,6 +6,37 @@ code. Newest entries go at the top.
 
 ---
 
+## normal-vs-skew — two more knobs on the bell curve
+**The idea in one line:** skewness and kurtosis are the next two "shape"
+numbers after mean and variance, and turning them reshapes a normal curve
+into something lopsided or spiky-with-fat-tails.
+
+The mean tells you where a distribution is centered and the variance tells
+you how wide it is, but two distributions can share both of those and still
+look completely different. **Skewness** measures lopsidedness — positive skew
+means a longer right tail (a few big values dragging out to the right, like
+income), negative skew means a longer left tail. **Kurtosis** (specifically
+*excess* kurtosis, measured relative to the normal's baseline) measures how
+"peaked-and-fat-tailed" versus "flat-and-thin-tailed" a distribution is: a
+positive value means more of the probability sits in a sharp central peak
+*and* in rare extreme outliers, at the expense of the shoulders — real-world
+returns and error distributions are almost always like this ("fat tails"
+mean the rare disaster is more likely than a plain normal curve would suggest).
+
+The picture builds both from a normal curve using a closed-form correction
+(the Gram-Charlier series): skew scales an odd cubic-shaped term and kurtosis
+scales an even quartic-shaped term, and at skew=kurt=0 the curve is exactly
+the standard normal — no approximation, no sampling.
+
+**Where it bites in real life:** financial returns and risk models (fat
+tails mean "once in a century" events happen far more than a normal-curve
+model predicts — a lesson learned expensively in 2008), A/B test metrics that
+aren't actually normal (skew breaks assumptions behind some significance
+tests), and any dashboard that reports only a mean and stddev for data that
+is secretly lopsided or spiky.
+
+---
+
 ## variance-vs-stddev — why we square, then square-root back
 **The idea in one line:** raw deviations from the mean always cancel to zero,
 so we square them to measure spread — then square-root the result to get back
