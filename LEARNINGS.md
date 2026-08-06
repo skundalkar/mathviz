@@ -6,6 +6,37 @@ code. Newest entries go at the top.
 
 ---
 
+## variance-vs-stddev — why we square, then square-root back
+**The idea in one line:** raw deviations from the mean always cancel to zero,
+so we square them to measure spread — then square-root the result to get back
+to the data's own units.
+
+Take any dataset's deviations from its mean and add them up: by definition the
+positives and negatives cancel exactly, giving zero every time. That makes a
+raw average deviation useless as a spread measure. Squaring each deviation
+fixes the cancellation (every term becomes positive) and, as a side effect,
+punishes far-out points much harder than close ones — a point twice as far
+from the mean contributes four times the squared deviation. The average of
+those squared deviations is the **variance**. Its only flaw: squaring the data
+also squares the units (dollars become dollars², seconds become seconds²), so
+variance isn't directly comparable to the data. Taking its square root — the
+**standard deviation** — undoes that and lands back in the original units.
+
+The picture makes both effects visible: scaling every point away from the
+mean by a factor *k* scales variance by *k²* but stddev only by *k* (drag
+spread and watch the bars shoot up much faster than the eye expects), and
+pushing one point out further as an "outlier" inflates variance disproportionately
+— the whole reason variance/stddev are sensitive to outliers while the median
+and IQR are not.
+
+**Where it bites in real life:** why one wild outlier can wreck a
+variance-based estimate (use median/IQR for robustness instead), why RMSE
+(root-mean-squared-error) is reported in the target's own units instead of
+raw MSE, and why standard deviation — not variance — is the number quoted
+alongside a mean.
+
+---
+
 ## mean-median-mode — three averages, one skew
 **The idea in one line:** for a symmetric distribution, mean, median, and mode
 all coincide; skew the distribution and they peel apart in a fixed order.

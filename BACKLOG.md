@@ -13,9 +13,9 @@ Format: `- [ ] <id> — <one-line description of the concept to visualize>`
 - [x] precision-recall — the threshold trade-off between precision and recall
 - [x] correlation — scatter clouds from r = -1 to +1, and why r≠causation
 - [x] mean-median-mode — how a skewed sample pulls the three apart
+- [x] variance-vs-stddev — why we square, then square-root back
 
 ## Up next (statistics & ML intuition)
-- [ ] variance-vs-stddev — why we square, then square-root back
 - [ ] normal-vs-skew — skewness and kurtosis reshaping a distribution
 - [ ] central-limit-theorem — sample means going normal as n grows
 - [ ] confidence-interval — what "95% confident" actually covers
