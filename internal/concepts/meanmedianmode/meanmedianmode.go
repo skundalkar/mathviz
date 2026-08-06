@@ -7,6 +7,7 @@
 package meanmedianmode
 
 import (
+	"fmt"
 	"math"
 
 	"mathviz/internal/concept"
@@ -58,5 +59,40 @@ func Mode(mu, sigma float64) float64 {
 }
 
 func render(p map[string]float64) string {
-	return viz.New(680, 340, 0, 1, 0, 1).String()
+	mu, sigma := p["mu"], p["sigma"]
+	if sigma <= 0 {
+		sigma = 0.05
+	}
+
+	mean, median, mode := Mean(mu, sigma), Median(mu, sigma), Mode(mu, sigma)
+
+	xmax := math.Exp(mu+3.2*sigma) * 1.1
+	peak := LogNormalPDF(mode, mu, sigma)
+	c := viz.New(680, 340, 0, xmax, 0, peak*1.15)
+	c.Axes()
+
+	step := xmax / 8
+	for x := step; x <= xmax; x += step {
+		c.Tick(x, fmt.Sprintf("%.1f", x))
+	}
+
+	curve := viz.Sample(0.001, xmax, 300, func(x float64) float64 {
+		return LogNormalPDF(x, mu, sigma)
+	})
+	c.Path(curve, viz.Accent, 2.5)
+
+	c.VLine(mode, viz.Good, true)
+	c.VLine(median, viz.Warm, true)
+	c.VLine(mean, viz.Bad, false)
+
+	c.Text(c.X(mode), c.PadT+12, "mode", 12, viz.Good, "middle")
+	c.Text(c.X(median), c.PadT+28, "median", 12, viz.Warm, "middle")
+	c.Text(c.X(mean), c.PadT+44, "mean", 12, viz.Bad, "middle")
+
+	c.Text(20, 24, fmt.Sprintf("mode = %.2f    median = %.2f    mean = %.2f", mode, median, mean),
+		14, viz.Ink, "start")
+	c.Text(20, 44, "right-skewed: the long tail drags the mean past the median, past the mode",
+		12, viz.Muted, "start")
+
+	return c.String()
 }
