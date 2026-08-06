@@ -7,6 +7,7 @@
 package variancestddev
 
 import (
+	"fmt"
 	"math"
 
 	"mathviz/internal/concept"
@@ -88,5 +89,77 @@ func init() {
 }
 
 func render(p map[string]float64) string {
-	return viz.New(680, 360, 0, 1, 0, 1).String()
+	spread, outlier := p["spread"], p["outlier"]
+	if spread <= 0 {
+		spread = 0.1
+	}
+	xs := Sample(spread, outlier)
+	mean := Mean(xs)
+	variance := Variance(xs)
+	stddev := StdDev(xs)
+
+	lo, hi := xs[0], xs[0]
+	for _, x := range xs {
+		if x < lo {
+			lo = x
+		}
+		if x > hi {
+			hi = x
+		}
+	}
+	pad := (hi-lo)*0.15 + 1
+	lo -= pad
+	hi += pad
+
+	sq := make([]float64, len(xs))
+	maxSq := 0.0
+	for i, x := range xs {
+		d := x - mean
+		sq[i] = d * d
+		if sq[i] > maxSq {
+			maxSq = sq[i]
+		}
+	}
+	if maxSq == 0 {
+		maxSq = 1
+	}
+
+	c := viz.New(680, 360, lo, hi, 0, maxSq*1.3)
+	c.Axes()
+	step := 2.0
+	start := math.Ceil(lo/step) * step
+	for x := start; x <= hi; x += step {
+		c.Tick(x, fmt.Sprintf("%g", x))
+	}
+
+	// Squared-deviation bars: taller bar = point further from the mean. Bars
+	// never go negative, unlike the raw signed deviations they replace.
+	for i, x := range xs {
+		px := c.X(x)
+		top := c.Y(sq[i])
+		bottom := c.Y(0)
+		color := viz.Good
+		if x < mean {
+			color = viz.Bad
+		}
+		c.Rect(px-4, top, 8, bottom-top, color, 0.55)
+	}
+
+	c.VLine(mean, viz.Ink, false)
+
+	// The data points themselves, as a row of markers above the tallest bar.
+	markerY := maxSq * 1.16
+	for _, x := range xs {
+		px, py := c.X(x), c.Y(markerY)
+		c.Rect(px-3, py-3, 6, 6, viz.Ink, 0.85)
+	}
+
+	c.Text(c.X(mean), c.PadT+12, "mean", 12, viz.Ink, "middle")
+	c.Text(20, 24, fmt.Sprintf("mean = %.2f", mean), 14, viz.Ink, "start")
+	c.Text(20, 44, fmt.Sprintf("variance = %.2f (squared units — bar heights above)", variance),
+		13, viz.Muted, "start")
+	c.Text(20, 62, fmt.Sprintf("stddev = √variance = %.2f (back to the data's own units)", stddev),
+		13, viz.Muted, "start")
+
+	return c.String()
 }
