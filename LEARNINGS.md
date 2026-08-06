@@ -6,6 +6,33 @@ code. Newest entries go at the top.
 
 ---
 
+## correlation — how tightly the dots hug a line
+**The idea in one line:** r measures how tightly a scatter of points hugs a
+straight line, from -1 (perfect downhill) through 0 (no linear pattern) to +1
+(perfect uphill).
+
+Both axes are standardized (mean 0, variance 1), so the trend line r implies
+always passes through the origin with slope r — that's why the orange guide
+line visibly steepens as you drag r toward ±1 and flattens toward 0. At the
+extremes (r = ±1) there's no noise left at all: every point falls exactly on
+the line. In between, the cloud is a mix of "along the line" and independent
+noise, weighted by r and √(1-r²) respectively.
+
+The picture also shows the sample r alongside the target r — with a small `n`
+they can drift apart noticeably, the same "sample vs. population" lesson as
+standard deviation's ±1σ band: a statistic estimated from a sample is not the
+same thing as the true population value. **Correlation is not causation** is
+the other half of the lesson: r only says two variables move together, it says
+nothing about mechanism — a third variable, reverse causation, or pure
+coincidence can all produce a strong r.
+
+**Where it bites in real life:** spurious correlations (ice cream sales and
+drowning both track summer heat), feature selection in ML (a feature can
+correlate with the label without being causal), and any headline that reports
+a correlation as if it were a proven cause.
+
+---
+
 ## precision-recall — the threshold trade-off
 **The idea in one line:** Precision and recall measure two different failure
 modes, and the classification threshold trades one for the other.

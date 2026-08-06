@@ -11,11 +11,11 @@ Format: `- [ ] <id> — <one-line description of the concept to visualize>`
 - [x] standard-deviation — σ as the width of the ±1σ band that always holds ~68%
 - [x] logarithms — log_b(x) as "b to what power is x", and ×b → +1
 - [x] precision-recall — the threshold trade-off between precision and recall
+- [x] correlation — scatter clouds from r = -1 to +1, and why r≠causation
 
 ## Up next (statistics & ML intuition)
 - [ ] mean-median-mode — how a skewed sample pulls the three apart
 - [ ] variance-vs-stddev — why we square, then square-root back
-- [ ] correlation — scatter clouds from r = -1 to +1, and why r≠causation
 - [ ] normal-vs-skew — skewness and kurtosis reshaping a distribution
 - [ ] central-limit-theorem — sample means going normal as n grows
 - [ ] confidence-interval — what "95% confident" actually covers
