@@ -7,6 +7,7 @@ import (
 	_ "mathviz/internal/concepts/correlation"
 	_ "mathviz/internal/concepts/logscale"
 	_ "mathviz/internal/concepts/meanmedianmode"
+	_ "mathviz/internal/concepts/normalskew"
 	_ "mathviz/internal/concepts/precisionrecall"
 	_ "mathviz/internal/concepts/stddev"
 	_ "mathviz/internal/concepts/variancestddev"
