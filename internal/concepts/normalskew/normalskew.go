@@ -6,6 +6,7 @@
 package normalskew
 
 import (
+	"fmt"
 	"math"
 
 	"mathviz/internal/concept"
@@ -68,5 +69,41 @@ func GramCharlierPDF(x, skew, kurt float64) float64 {
 }
 
 func render(p map[string]float64) string {
-	return viz.New(680, 340, -5, 5, 0, 1).String()
+	skew, kurt := p["skew"], p["kurt"]
+
+	const xmin, xmax = -5.0, 5.0
+	curve := viz.Sample(xmin, xmax, 300, func(x float64) float64 {
+		return GramCharlierPDF(x, skew, kurt)
+	})
+	refCurve := viz.Sample(xmin, xmax, 300, StdNormalPDF)
+
+	peak := 0.0
+	for _, pt := range curve {
+		if pt[1] > peak {
+			peak = pt[1]
+		}
+	}
+	if peak <= 0 {
+		peak = StdNormalPDF(0)
+	}
+
+	c := viz.New(680, 340, xmin, xmax, 0, peak*1.2)
+	c.Axes()
+	for x := -4.0; x <= 4.0; x += 2 {
+		c.Tick(x, fmt.Sprintf("%g", x))
+	}
+
+	// Reference standard normal, thin and muted, for visual contrast.
+	c.Path(refCurve, viz.Muted, 1.5)
+	c.Path(curve, viz.Accent, 2.5)
+
+	c.Text(20, 24, fmt.Sprintf("skewness = %.1f    excess kurtosis = %.1f", skew, kurt),
+		14, viz.Ink, "start")
+	c.Text(20, 44, "skew > 0: right tail heavier   skew < 0: left tail heavier",
+		12, viz.Muted, "start")
+	c.Text(20, 62, "kurt > 0: sharper peak, fatter tails   kurt < 0: flatter, thinner tails",
+		12, viz.Muted, "start")
+	c.Text(c.W-18, c.PadT+14, "— standard normal", 12, viz.Muted, "end")
+
+	return c.String()
 }
