@@ -7,6 +7,8 @@
 package meanmedianmode
 
 import (
+	"math"
+
 	"mathviz/internal/concept"
 	"mathviz/internal/viz"
 )
@@ -27,6 +29,32 @@ func init() {
 		},
 		Render: render,
 	})
+}
+
+// LogNormalPDF is the probability density of a log-normal distribution with
+// log-space parameters mu, sigma. Pure math, unit-tested below.
+func LogNormalPDF(x, mu, sigma float64) float64 {
+	if x <= 0 || sigma <= 0 {
+		return 0
+	}
+	z := (math.Log(x) - mu) / sigma
+	return math.Exp(-0.5*z*z) / (x * sigma * math.Sqrt(2*math.Pi))
+}
+
+// Mean is the closed-form mean of a log-normal(mu, sigma) distribution.
+func Mean(mu, sigma float64) float64 {
+	return math.Exp(mu + sigma*sigma/2)
+}
+
+// Median is the closed-form median of a log-normal(mu, sigma) distribution.
+func Median(mu, sigma float64) float64 {
+	return math.Exp(mu)
+}
+
+// Mode is the closed-form mode (location of peak density) of a
+// log-normal(mu, sigma) distribution.
+func Mode(mu, sigma float64) float64 {
+	return math.Exp(mu - sigma*sigma)
 }
 
 func render(p map[string]float64) string {
