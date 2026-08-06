@@ -6,6 +6,34 @@ code. Newest entries go at the top.
 
 ---
 
+## mean-median-mode — three averages, one skew
+**The idea in one line:** for a symmetric distribution, mean, median, and mode
+all coincide; skew the distribution and they peel apart in a fixed order.
+
+The picture uses a log-normal curve because all three statistics have exact
+closed forms in terms of its two parameters (μ, σ): median = e^μ, mean =
+e^(μ+σ²/2), mode = e^(μ-σ²). No sampling needed — the lesson is exact. Drag σ
+up from near-zero and watch the three vertical lines split apart from a single
+point into **mode < median < mean**, always in that order for a right-skewed
+curve. The mode marks the peak (most likely single value), the median splits
+the area in half, and the mean is pulled hardest because it's an average of
+*every* value including the ones way out in the long tail — a few big values
+drag it further than they drag the median.
+
+This is also why "average" is an ambiguous word: for skewed real-world
+quantities (income, home prices, response times, city populations) the mean is
+almost always higher than the median, sometimes dramatically. A "mean income"
+headline can be pulled way up by a handful of very high earners, while the
+median (what a typical person actually makes) barely moves — which is why
+income statistics are usually reported as medians.
+
+**Where it bites in real life:** household income and wealth reporting, home
+prices, response-time/latency dashboards (mean is dragged by rare slow
+requests — p50 vs. mean tells a different story), city/company size
+distributions, and any "average" claim about data you suspect is skewed.
+
+---
+
 ## correlation — how tightly the dots hug a line
 **The idea in one line:** r measures how tightly a scatter of points hugs a
 straight line, from -1 (perfect downhill) through 0 (no linear pattern) to +1
