@@ -13,7 +13,14 @@ You are the MathViz build loop. Do ONE concept this run, then stop.
 **Setup**
 1. Clone `<REPO_URL>` and `cd` into it. (`git` auth is available in this
    environment.) Ensure Go 1.24+ is installed.
-2. Read `BACKLOG.md`. Pick the FIRST unchecked `- [ ]` item. That is your
+2. Set your git identity to the repo owner's before making any commits:
+   `git config user.name "Snehal Kundalkar"` and
+   `git config user.email "snehal.kundalkar@gmail.com"`. Never let commits
+   fall back to a session-default identity (e.g. `Claude <noreply@...>`) —
+   that doesn't count toward the owner's GitHub contribution graph. If you
+   want to flag a commit as AI-generated, add a `Co-Authored-By: Claude
+   <noreply@anthropic.com>` trailer instead of using it as the author.
+3. Read `BACKLOG.md`. Pick the FIRST unchecked `- [ ]` item. That is your
    concept: note its `<id>` and description. If there are no unchecked items,
    push nothing and report "backlog empty" — done.
 
