@@ -6,6 +6,7 @@
 package correlation
 
 import (
+	"fmt"
 	"math"
 
 	"mathviz/internal/concept"
@@ -104,6 +105,46 @@ func PearsonR(xs, ys []float64) float64 {
 }
 
 func render(p map[string]float64) string {
-	_ = p
-	return viz.New(680, 400, -1, 1, -1, 1).String()
+	r, n := p["r"], int(p["n"])
+	if r > 1 {
+		r = 1
+	}
+	if r < -1 {
+		r = -1
+	}
+	if n < 2 {
+		n = 2
+	}
+
+	xs, ys := GeneratePoints(r, n)
+	sampleR := PearsonR(xs, ys)
+
+	const lim = 3.6
+	c := viz.New(680, 400, -lim, lim, -lim, lim)
+	c.Axes()
+	for x := -3.0; x <= 3.0; x++ {
+		c.Tick(x, fmt.Sprintf("%g", x))
+	}
+
+	// Reference lines through the origin (both axes are standardized).
+	c.Path([][2]float64{{-lim, 0}, {lim, 0}}, viz.Muted, 1)
+	c.Path([][2]float64{{0, -lim}, {0, lim}}, viz.Muted, 1)
+
+	// The scatter cloud itself: one small square per point.
+	for i := range xs {
+		px, py := c.X(xs[i]), c.Y(ys[i])
+		c.Rect(px-2.5, py-2.5, 5, 5, viz.Accent, 0.55)
+	}
+
+	// The trend line r implies: slope r through the origin, since x and y are
+	// both standardized to mean 0, variance 1.
+	c.Path([][2]float64{{-lim, -lim * r}, {lim, lim * r}}, viz.Warm, 2.5)
+
+	c.Text(20, 24, fmt.Sprintf("target r = %.2f    sample r ≈ %.2f    n = %d", r, sampleR, n),
+		14, viz.Ink, "start")
+	c.Text(20, 44, "r = -1 downhill line   r = 0 no linear pattern   r = +1 uphill line",
+		12, viz.Muted, "start")
+	c.Text(20, 62, "a strong r means the points move together — it never proves one causes the other",
+		12, viz.Muted, "start")
+	return c.String()
 }
