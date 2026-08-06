@@ -9,4 +9,5 @@ import (
 	_ "mathviz/internal/concepts/meanmedianmode"
 	_ "mathviz/internal/concepts/precisionrecall"
 	_ "mathviz/internal/concepts/stddev"
+	_ "mathviz/internal/concepts/variancestddev"
 )
