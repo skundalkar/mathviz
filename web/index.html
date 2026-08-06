@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MathViz — learn concepts by turning the knobs</title>
+<style>
+  :root {
+    --ink: #1f2933; --muted: #7b8794; --accent: #2f6fed;
+    --line: #e4e9f0; --panel: #f7f9fc; --bg: #ffffff;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+    color: var(--ink); background: var(--bg); display: flex; min-height: 100vh;
+  }
+  aside {
+    width: 250px; border-right: 1px solid var(--line); padding: 20px 16px;
+    background: var(--panel); flex-shrink: 0;
+  }
+  aside h1 { font-size: 18px; margin: 0 0 4px; }
+  #concept-count { font-size: 12px; color: var(--muted); margin-bottom: 16px; }
+  .concept-link {
+    display: block; width: 100%; text-align: left; padding: 9px 11px; margin-bottom: 6px;
+    border: 1px solid var(--line); border-radius: 8px; background: white; cursor: pointer;
+    font-size: 14px; color: var(--ink);
+  }
+  .concept-link:hover { border-color: var(--accent); color: var(--accent); }
+  main { flex: 1; padding: 28px 34px; max-width: 820px; }
+  #concept-title { margin: 0 0 8px; font-size: 24px; }
+  #concept-blurb { color: #46525f; line-height: 1.6; margin: 0 0 22px; font-size: 15px; }
+  #stage { border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: white; }
+  #stage svg { display: block; width: 100%; height: auto; }
+  #controls { margin-top: 20px; display: grid; gap: 14px; }
+  .control-row { display: grid; grid-template-columns: 200px 1fr; align-items: center; gap: 14px; }
+  .control-label { font-size: 13px; color: var(--ink); }
+  .control-value { font-weight: 600; color: var(--accent); }
+  input[type=range] { width: 100%; accent-color: var(--accent); }
+  #loading { color: var(--muted); font-size: 14px; }
+  footer { margin-top: 28px; font-size: 12px; color: var(--muted); }
+</style>
+</head>
+<body>
+  <aside>
+    <h1>MathViz</h1>
+    <div id="concept-count">loading…</div>
+    <nav id="concept-list"></nav>
+  </aside>
+  <main>
+    <h2 id="concept-title">Loading…</h2>
+    <p id="concept-blurb"><span id="loading">Compiling WebAssembly… this takes a second on first load.</span></p>
+    <div id="stage"></div>
+    <div id="controls"></div>
+    <footer>Turn the knobs. Each lesson is a pure Go function that renders live SVG — no server, all in your browser.</footer>
+  </main>
+
+  <script src="wasm_exec.js"></script>
+  <script>
+    // Go 1.24 WASM bootstrap.
+    const go = new Go();
+    WebAssembly.instantiateStreaming(fetch("main.wasm"), go.importObject)
+      .then((result) => { go.run(result.instance); })
+      .catch((err) => {
+        document.getElementById("loading").textContent =
+          "Failed to load WebAssembly: " + err + " (serve over http, not file://).";
+      });
+  </script>
+</body>
+</html>
