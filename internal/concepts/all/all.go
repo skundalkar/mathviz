@@ -4,6 +4,7 @@
 package all
 
 import (
+	_ "mathviz/internal/concepts/correlation"
 	_ "mathviz/internal/concepts/logscale"
 	_ "mathviz/internal/concepts/precisionrecall"
 	_ "mathviz/internal/concepts/stddev"
