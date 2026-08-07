@@ -9,8 +9,22 @@
 package confint
 
 import (
+	"math"
+
 	"mathviz/internal/concept"
 	"mathviz/internal/viz"
+)
+
+// NumSamples is how many hypothetical repeated experiments the picture
+// draws — a fixed stand-in for "if you did this many times".
+const NumSamples = 20
+
+// PopulationSigma is the (known) population standard deviation used to build
+// the sampling distribution. TrueMean is where the population is centered;
+// the whole point of the picture is that a real experimenter never sees it.
+const (
+	PopulationSigma = 1.0
+	TrueMean        = 0.0
 )
 
 func init() {
@@ -30,6 +44,73 @@ func init() {
 		},
 		Render: render,
 	})
+}
+
+// StdNormalQuantile is the inverse standard-normal CDF: the z such that
+// P(Z <= z) = p, for 0 < p < 1. This is what turns an evenly spaced grid of
+// probabilities into an evenly spaced set of "hypothetical" draws from a
+// normal sampling distribution, with no randomness needed.
+func StdNormalQuantile(p float64) float64 {
+	if p <= 0 || p >= 1 {
+		return math.NaN()
+	}
+	return math.Sqrt2 * math.Erfinv(2*p-1)
+}
+
+// CriticalZ returns the z-value such that a standard normal variable falls
+// within [-z, z] with probability `confidence` (0 < confidence < 1) — the
+// familiar 1.96 for confidence=0.95.
+func CriticalZ(confidence float64) float64 {
+	return StdNormalQuantile(0.5 + confidence/2)
+}
+
+// StandardError is the standard deviation of the sample mean for samples of
+// size n drawn from a population with standard deviation sigma: σ/√n.
+func StandardError(sigma float64, n int) float64 {
+	if n < 1 {
+		return 0
+	}
+	return sigma / math.Sqrt(float64(n))
+}
+
+// SampleMeans returns NumSamples deterministic stand-ins for "sample means
+// from repeated experiments": the sampling distribution N(TrueMean, se²)
+// evaluated at NumSamples evenly spaced quantiles ((i-0.5)/NumSamples). This
+// is exact and reproducible, unlike drawing NumSamples random samples would
+// be, while still spreading out the way real repeated sampling would.
+func SampleMeans(n int) []float64 {
+	se := StandardError(PopulationSigma, n)
+	means := make([]float64, NumSamples)
+	for i := 1; i <= NumSamples; i++ {
+		q := (float64(i) - 0.5) / float64(NumSamples)
+		means[i-1] = TrueMean + se*StdNormalQuantile(q)
+	}
+	return means
+}
+
+// Interval returns the confidence interval [lo, hi] built around a sample
+// mean with critical value z and standard error se: mean ± z·se.
+func Interval(mean, z, se float64) (lo, hi float64) {
+	return mean - z*se, mean + z*se
+}
+
+// CoverageCount reports how many of the NumSamples deterministic intervals
+// (at the given confidence level) contain TrueMean. Because SampleMeans is
+// n-invariant relative to se (scaling se scales both the mean's offset and
+// the interval half-width by the same factor), CoverageCount does not depend
+// on n — only on how the evenly-spaced quantile grid lines up with the
+// confidence band, which is exactly the frequentist guarantee in miniature.
+func CoverageCount(confidence float64, n int) int {
+	se := StandardError(PopulationSigma, n)
+	z := CriticalZ(confidence)
+	count := 0
+	for _, m := range SampleMeans(n) {
+		lo, hi := Interval(m, z, se)
+		if lo <= TrueMean && TrueMean <= hi {
+			count++
+		}
+	}
+	return count
 }
 
 func render(p map[string]float64) string {
