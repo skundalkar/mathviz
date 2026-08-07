@@ -6,6 +6,41 @@ code. Newest entries go at the top.
 
 ---
 
+## confidence-interval — what "95% confident" actually covers
+**The idea in one line:** a confidence level doesn't describe one interval —
+it describes how often intervals built this way would capture the true value
+if you repeated the experiment many times.
+
+It's tempting to read "95% confidence interval" as "there's a 95% chance the
+true mean is in this interval," but once an interval is built, the true mean
+either is or isn't in it — there's no more randomness left to assign a
+probability to. What the 95% actually describes is the *procedure*: draw a
+sample, compute its mean, build an interval of mean ± z·(σ/√n). Do that many
+times and about 95% of the resulting intervals will contain the true mean,
+purely because 95% of sample means land close enough to the true mean for
+their interval to reach it.
+
+The picture makes this concrete without leaning on randomness at all: 20
+"hypothetical experiments" are placed at evenly spaced quantiles of the
+sampling distribution (an exact, reproducible stand-in for repeated random
+sampling), and each gets its own confidence interval — green if it captures
+the true mean (dashed line), red if it misses. Raise the confidence knob and
+every interval widens, turning red rows green; raise the sample size and
+every interval narrows around the same mean, because standard error shrinks
+as 1/√n. Coverage — how many rows are green — depends only on the confidence
+level, never on n: n changes how *tight* the net is, not how *often* it's cast
+wide enough to catch the fish.
+
+**Where it bites in real life:** "the poll's margin of error is ±3 points at
+95% confidence" means 95% of polls run this way would bracket the true
+value — not that this specific poll has a 95% chance of being right. It's
+also why a *narrower* interval from a bigger sample is a real improvement
+(tighter net) while cherry-picking a higher confidence level just to get a
+cleaner-looking one-off result is not (it only pays off in the long run,
+across many repeats).
+
+---
+
 ## central-limit-theorem — averages go normal, no matter where they started
 **The idea in one line:** the distribution of a sample *mean* converges to a
 normal curve as the sample size n grows, even when the population you're
