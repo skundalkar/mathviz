@@ -9,6 +9,8 @@
 package pvalue
 
 import (
+	"math"
+
 	"mathviz/internal/concept"
 	"mathviz/internal/viz"
 )
@@ -31,6 +33,35 @@ func init() {
 		},
 		Render: render,
 	})
+}
+
+// StdNormalPDF is the density of the null distribution: a standard normal
+// N(0,1), representing what a test statistic looks like under "no effect".
+func StdNormalPDF(x float64) float64 {
+	return math.Exp(-0.5*x*x) / math.Sqrt(2*math.Pi)
+}
+
+// PValue is the two-sided p-value for an observed statistic zObs under the
+// standard normal null distribution: the probability of seeing something at
+// least as extreme (in either direction) purely by chance.
+//
+//	p = P(|Z| >= |zObs|) = erfc(|zObs| / √2)
+func PValue(zObs float64) float64 {
+	return math.Erfc(math.Abs(zObs) / math.Sqrt2)
+}
+
+// CriticalZ returns the two-sided critical value z* such that a standard
+// normal falls outside [-z*, z*] with probability exactly alpha — the
+// boundary an observed statistic must cross for the result to count as
+// "statistically significant" at that significance level.
+func CriticalZ(alpha float64) float64 {
+	return math.Sqrt2 * math.Erfinv(1-alpha)
+}
+
+// Significant reports whether a p-value is small enough to reject the null
+// hypothesis at significance level alpha.
+func Significant(pValue, alpha float64) bool {
+	return pValue < alpha
 }
 
 func render(p map[string]float64) string {
