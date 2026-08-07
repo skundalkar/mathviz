@@ -9,6 +9,7 @@
 package pvalue
 
 import (
+	"fmt"
 	"math"
 
 	"mathviz/internal/concept"
@@ -65,5 +66,53 @@ func Significant(pValue, alpha float64) bool {
 }
 
 func render(p map[string]float64) string {
-	return viz.New(680, 340, -4, 4, 0, 1).String()
+	z := p["z"]
+	alpha := p["alpha"]
+	if alpha <= 0 {
+		alpha = 0.01
+	}
+	if alpha >= 1 {
+		alpha = 0.99
+	}
+
+	pval := PValue(z)
+	zCrit := CriticalZ(alpha)
+	sig := Significant(pval, alpha)
+	az := math.Abs(z)
+
+	const xmin, xmax = -4.0, 4.0
+	curve := viz.Sample(xmin, xmax, 300, StdNormalPDF)
+	peak := StdNormalPDF(0)
+
+	c := viz.New(680, 340, xmin, xmax, 0, peak*1.2)
+	c.Axes()
+	for x := -4.0; x <= 4.0; x += 1 {
+		c.Tick(x, fmt.Sprintf("%g", x))
+	}
+
+	// Shade the p-value: everything at least as extreme as the observed |z|,
+	// in both tails.
+	c.Area(curve, xmin, -az, viz.Warm, 0.35)
+	c.Area(curve, az, xmax, viz.Warm, 0.35)
+	c.Path(curve, viz.Ink, 2)
+
+	// Critical boundary implied by alpha, dashed — cross it and the shaded
+	// area (the p-value) has dropped below alpha.
+	c.VLine(zCrit, viz.Muted, true)
+	c.VLine(-zCrit, viz.Muted, true)
+
+	// Observed statistic, solid.
+	c.VLine(z, viz.Accent, false)
+
+	verdict, cmp, vColor := "fail to reject H₀", "≥", viz.Muted
+	if sig {
+		verdict, cmp, vColor = "reject H₀", "<", viz.Good
+	}
+
+	c.Text(20, 24, fmt.Sprintf("z = %.2f    p = %.3f    α = %.2f", z, pval, alpha), 14, viz.Ink, "start")
+	c.Text(20, 44, fmt.Sprintf("p %s α → %s", cmp, verdict), 13, vColor, "start")
+	c.Text(20, 62, "dashed: critical boundary from α   solid vertical: observed z",
+		12, viz.Muted, "start")
+
+	return c.String()
 }
