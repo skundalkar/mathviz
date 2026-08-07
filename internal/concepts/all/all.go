@@ -5,6 +5,7 @@ package all
 
 import (
 	_ "mathviz/internal/concepts/clt"
+	_ "mathviz/internal/concepts/confint"
 	_ "mathviz/internal/concepts/correlation"
 	_ "mathviz/internal/concepts/logscale"
 	_ "mathviz/internal/concepts/meanmedianmode"
