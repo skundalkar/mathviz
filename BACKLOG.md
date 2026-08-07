@@ -17,9 +17,9 @@ Format: `- [ ] <id> — <one-line description of the concept to visualize>`
 - [x] normal-vs-skew — skewness and kurtosis reshaping a distribution
 - [x] central-limit-theorem — sample means going normal as n grows
 - [x] confidence-interval — what "95% confident" actually covers
+- [x] p-value — a null distribution and where the observed statistic falls
 
 ## Up next (statistics & ML intuition)
-- [ ] p-value — a null distribution and where the observed statistic falls
 - [ ] bayes-theorem — base rates and why rare-disease positives mislead
 - [ ] roc-auc — sweeping the threshold to trace an ROC curve
 - [ ] confusion-matrix — TP/FP/FN/TN as an interactive grid

@@ -6,6 +6,41 @@ code. Newest entries go at the top.
 
 ---
 
+## p-value — how surprising is this, if nothing's really going on?
+**The idea in one line:** a p-value is just the area under a "no effect"
+curve that's at least as extreme as what you actually observed — nothing
+more, and importantly, not "the probability the null hypothesis is true".
+
+Start from the null distribution: what your test statistic would look like
+if there were truly no effect, no difference, nothing going on — here, a
+standard normal. Run your real experiment and get an observed statistic z.
+The p-value asks one narrow question: under the null distribution, how much
+of the probability lives at least as far from zero as z, in either
+direction? That shaded area is the whole definition. A small p-value means
+your observed result would be a rare, surprising draw if the null were true —
+which is evidence against the null, but is not itself "the probability the
+null is true" (that's a different, more slippery quantity that a single
+p-value can't give you).
+
+The significance level α turns that shaded area into a yes/no decision: pick
+a threshold in advance (0.05 is conventional, not magic), find the critical
+boundary ±z* where the null distribution's tail area equals exactly α (the
+dashed lines), and check whether your observed z fell past it. Push z further
+from zero and the shaded p-value area shrinks; once it drops below α, the
+observed statistic has crossed the dashed boundary and the result counts as
+"statistically significant" at that α — a label about the *procedure*
+crossing a line you drew beforehand, not a certificate of truth.
+
+**Where it bites in real life:** "p < 0.05" gets read as "there's a 95%
+chance the effect is real," which the picture makes clear it isn't — it's a
+statement about how the null distribution behaves, built before you saw the
+data. It's also why p-hacking (trying many thresholds, subgroups, or metrics
+until one clears α by chance) is a real problem: with enough looks, a
+surprising-looking shaded area shows up eventually even when there's truly
+nothing going on.
+
+---
+
 ## confidence-interval — what "95% confident" actually covers
 **The idea in one line:** a confidence level doesn't describe one interval —
 it describes how often intervals built this way would capture the true value
