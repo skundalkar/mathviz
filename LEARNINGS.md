@@ -6,6 +6,38 @@ code. Newest entries go at the top.
 
 ---
 
+## central-limit-theorem — averages go normal, no matter where they started
+**The idea in one line:** the distribution of a sample *mean* converges to a
+normal curve as the sample size n grows, even when the population you're
+averaging from looks nothing like a bell curve.
+
+The population here is deliberately about as far from normal as it gets: an
+exponential distribution, sharply peaked at zero with a long right tail (think
+"time between rare events," or income data with a few huge outliers). At n=1,
+"the sample mean" is just one draw from that population, so the picture is the
+skewed exponential itself. But average n independent draws together and look
+at *that* number's distribution instead of any single draw's: it tightens
+around the true mean and its shape reshapes itself toward a normal curve — and
+it keeps doing this for any population with finite variance, not just this one.
+
+The picture is exact rather than simulated: the sum of n iid Exponential(λ)
+draws is exactly a Gamma(n, λ) distribution, so the sample mean's distribution
+has a closed form (`SampleMeanPDF`) with no random sampling involved. Two
+things are worth watching as you drag n up: the peak (thick curve) narrows and
+tracks a normal curve of the same mean and variance (thin reference line) more
+and more closely, while the mean itself never moves — only the *spread*
+shrinks, proportional to 1/√n.
+
+**Where it bites in real life:** it's the reason polling averages, A/B test
+metrics, and quality-control sample means can be treated as roughly normal
+(and t-tests/z-tests applied) even when the underlying data is skewed or
+weird — as long as the sample is big enough. It's also why "n is too small"
+is a real objection: with a handful of draws from a skewed population, the
+sample mean's own distribution is still skewed, and normal-based confidence
+intervals can mislead.
+
+---
+
 ## normal-vs-skew — two more knobs on the bell curve
 **The idea in one line:** skewness and kurtosis are the next two "shape"
 numbers after mean and variance, and turning them reshapes a normal curve

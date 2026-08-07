@@ -15,9 +15,9 @@ Format: `- [ ] <id> — <one-line description of the concept to visualize>`
 - [x] mean-median-mode — how a skewed sample pulls the three apart
 - [x] variance-vs-stddev — why we square, then square-root back
 - [x] normal-vs-skew — skewness and kurtosis reshaping a distribution
+- [x] central-limit-theorem — sample means going normal as n grows
 
 ## Up next (statistics & ML intuition)
-- [ ] central-limit-theorem — sample means going normal as n grows
 - [ ] confidence-interval — what "95% confident" actually covers
 - [ ] p-value — a null distribution and where the observed statistic falls
 - [ ] bayes-theorem — base rates and why rare-disease positives mislead
