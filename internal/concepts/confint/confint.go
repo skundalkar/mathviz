@@ -9,6 +9,7 @@
 package confint
 
 import (
+	"fmt"
 	"math"
 
 	"mathviz/internal/concept"
@@ -114,5 +115,69 @@ func CoverageCount(confidence float64, n int) int {
 }
 
 func render(p map[string]float64) string {
-	return viz.New(680, 460, -1, 1, 0, 1).String()
+	confidence := p["confidence"] / 100
+	if confidence <= 0 {
+		confidence = 0.5
+	}
+	if confidence >= 1 {
+		confidence = 0.99
+	}
+	n := int(p["n"] + 0.5)
+	if n < 1 {
+		n = 1
+	}
+
+	se := StandardError(PopulationSigma, n)
+	z := CriticalZ(confidence)
+	means := SampleMeans(n)
+
+	// Symmetric x window sized to the widest interval, with a little margin.
+	xlim := 0.0
+	for _, m := range means {
+		lo, hi := Interval(m, z, se)
+		if -lo > xlim {
+			xlim = -lo
+		}
+		if hi > xlim {
+			xlim = hi
+		}
+	}
+	xlim *= 1.15
+
+	c := viz.New(680, 460, -xlim, xlim, 0, NumSamples+1)
+	c.Axes()
+	step := xlim / 4
+	for x := -xlim + step; x < xlim; x += step {
+		label := x
+		if math.Abs(label) < 1e-9 {
+			label = 0
+		}
+		c.Tick(x, fmt.Sprintf("%.2f", label))
+	}
+
+	// True mean, dashed — the thing a real experimenter never gets to see.
+	c.VLine(TrueMean, viz.Ink, true)
+
+	covered := 0
+	for i, m := range means {
+		y := float64(NumSamples - i) // top row = first sample, for reading order
+		lo, hi := Interval(m, z, se)
+		hit := lo <= TrueMean && TrueMean <= hi
+		color := viz.Bad
+		if hit {
+			color = viz.Good
+			covered++
+		}
+		c.Path([][2]float64{{lo, y}, {hi, y}}, color, 2.5)
+		mx, my := c.X(m), c.Y(y)
+		c.Rect(mx-2, my-2, 4, 4, color, 1)
+	}
+
+	c.Text(20, 24, fmt.Sprintf("confidence = %.0f%%    n = %d    SE = %.3f    z = %.2f",
+		confidence*100, n, se, z), 13, viz.Ink, "start")
+	c.Text(20, 44, fmt.Sprintf("%d of %d intervals capture the true mean (dashed line) — "+
+		"close to the %.0f%% you'd expect over many repeats", covered, NumSamples, confidence*100),
+		12, viz.Muted, "start")
+
+	return c.String()
 }
