@@ -39,7 +39,7 @@ func init() {
 			"true mean. Raise the confidence level and every interval widens (fewer misses); " +
 			"raise the sample size and every interval narrows (more precision).",
 		Params: []concept.ParamSpec{
-			{Key: "confidence", Label: "Confidence level", Min: 50, Max: 99, Step: 1, Def: 95, Unit: "%"},
+			{Key: "confidence", Label: "Confidence level", Min: 50, Max: 99, Step: 1, Def: 90, Unit: "%"},
 			{Key: "n", Label: "Sample size (n)", Min: 2, Max: 100, Step: 1, Def: 20},
 		},
 		Render: render,
