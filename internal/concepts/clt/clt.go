@@ -9,6 +9,8 @@
 package clt
 
 import (
+	"math"
+
 	"mathviz/internal/concept"
 	"mathviz/internal/viz"
 )
@@ -29,6 +31,56 @@ func init() {
 		},
 		Render: render,
 	})
+}
+
+// ExponentialPDF is the density of an Exponential(λ) population: sharply
+// peaked at zero with a long right tail, mean 1/λ, variance 1/λ².
+func ExponentialPDF(x, lambda float64) float64 {
+	if x < 0 || lambda <= 0 {
+		return 0
+	}
+	return lambda * math.Exp(-lambda*x)
+}
+
+// SampleMeanPDF is the exact density of the mean of n iid Exponential(λ)
+// draws. The sum of n such draws is Gamma(shape=n, rate=λ); dividing by n
+// rescales that to Gamma(shape=n, rate=n·λ), a closed form with no sampling
+// required:
+//
+//	f(m) = (nλ)^n · m^(n-1) · e^(-nλm) / (n-1)!
+//
+// Computed in log-space (via math.Lgamma) so it stays accurate for the large
+// n this concept's slider allows.
+func SampleMeanPDF(m float64, n int, lambda float64) float64 {
+	if n < 1 || lambda <= 0 || m <= 0 {
+		return 0
+	}
+	rate := float64(n) * lambda
+	lgammaN, _ := math.Lgamma(float64(n))
+	logf := float64(n)*math.Log(rate) - rate*m - lgammaN
+	if n > 1 {
+		logf += float64(n-1) * math.Log(m)
+	}
+	return math.Exp(logf)
+}
+
+// SampleMeanVariance is Var(mean of n iid draws) = Var(population)/n, with
+// Var(Exponential(λ)) = 1/λ².
+func SampleMeanVariance(n int, lambda float64) float64 {
+	if n < 1 || lambda <= 0 {
+		return 0
+	}
+	return 1 / (float64(n) * lambda * lambda)
+}
+
+// NormalPDF is the density of a normal distribution — used to draw the
+// reference curve the sample-mean distribution converges to.
+func NormalPDF(x, mu, sigma float64) float64 {
+	if sigma <= 0 {
+		return 0
+	}
+	z := (x - mu) / sigma
+	return math.Exp(-0.5*z*z) / (sigma * math.Sqrt(2*math.Pi))
 }
 
 func render(p map[string]float64) string {
