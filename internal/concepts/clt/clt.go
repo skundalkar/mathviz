@@ -9,6 +9,7 @@
 package clt
 
 import (
+	"fmt"
 	"math"
 
 	"mathviz/internal/concept"
@@ -21,10 +22,10 @@ func init() {
 		Title: "Central limit theorem",
 		Blurb: "The population here (n=1) is an exponential distribution: sharply peaked at " +
 			"zero with a long right tail — about as far from a bell curve as a distribution " +
-			"gets. Raise the sample size n and watch the distribution of the *sample mean* " +
-			"tighten around the true mean and reshape itself into a normal curve (dashed), " +
-			"regardless of how skewed the population you started from was. This is the central " +
-			"limit theorem: averages of independent draws go normal as n grows.",
+			"gets. Raise the sample size n and watch the distribution of the sample mean " +
+			"tighten around the true mean and reshape itself into a normal curve (the thin " +
+			"reference line), regardless of how skewed the population you started from was. " +
+			"This is the central limit theorem: averages of independent draws go normal as n grows.",
 		Params: []concept.ParamSpec{
 			{Key: "n", Label: "Sample size (n)", Min: 1, Max: 30, Step: 1, Def: 1},
 			{Key: "lambda", Label: "Population rate (λ)", Min: 0.3, Max: 3, Step: 0.1, Def: 1},
@@ -84,5 +85,59 @@ func NormalPDF(x, mu, sigma float64) float64 {
 }
 
 func render(p map[string]float64) string {
-	return viz.New(680, 340, 0, 5, 0, 1).String()
+	n := int(p["n"] + 0.5)
+	if n < 1 {
+		n = 1
+	}
+	lambda := p["lambda"]
+	if lambda <= 0 {
+		lambda = 0.3
+	}
+
+	mean := 1 / lambda
+	sigma := math.Sqrt(SampleMeanVariance(n, lambda))
+
+	// Fixed x window sized off the population (n=1) so the curve visibly
+	// narrows within the same frame as n grows, instead of the frame
+	// rescaling with it.
+	const xmax = 5.0
+	xhi := xmax / lambda
+
+	curve := viz.Sample(1e-4, xhi, 300, func(x float64) float64 {
+		return SampleMeanPDF(x, n, lambda)
+	})
+	refCurve := viz.Sample(0, xhi, 300, func(x float64) float64 {
+		return NormalPDF(x, mean, sigma)
+	})
+
+	peak := 0.0
+	for _, pt := range curve {
+		if pt[1] > peak {
+			peak = pt[1]
+		}
+	}
+	if peak <= 0 {
+		peak = lambda
+	}
+
+	c := viz.New(680, 340, 0, xhi, 0, peak*1.2)
+	c.Axes()
+	step := xhi / 5
+	for x := step; x <= xhi; x += step {
+		c.Tick(x, fmt.Sprintf("%.1f", x))
+	}
+
+	// Reference normal with the same mean & variance, thin and muted — the
+	// shape the sample-mean curve converges to.
+	c.Path(refCurve, viz.Muted, 1.5)
+	c.Path(curve, viz.Accent, 2.5)
+	c.VLine(mean, viz.Ink, false)
+
+	c.Text(20, 24, fmt.Sprintf("n = %d    λ = %.1f", n, lambda), 14, viz.Ink, "start")
+	c.Text(20, 44, fmt.Sprintf("sample mean: μ = %.2f (fixed)    σ = %.3f (shrinks as n grows)", mean, sigma),
+		12, viz.Muted, "start")
+	c.Text(20, 62, "thick: exact distribution of the sample mean   thin: matching normal curve",
+		12, viz.Muted, "start")
+
+	return c.String()
 }
