@@ -7,6 +7,7 @@
 package confusionmatrix
 
 import (
+	"fmt"
 	"math"
 
 	"mathviz/internal/concept"
@@ -86,6 +87,50 @@ func Metrics(tp, fp, fn, tn int) (accuracy, precision, recall, f1 float64) {
 }
 
 func render(p map[string]float64) string {
-	_ = p
-	return viz.New(680, 400, 0, 1, 0, 1).String()
+	t, sep := p["thresh"], p["sep"]
+	n := int(p["n"])
+	if n < 2 {
+		n = 2
+	}
+
+	tp, fp, fn, tn := Counts(t, sep, n)
+	acc, prec, rec, f1 := Metrics(tp, fp, fn, tn)
+	total := tp + fp + fn + tn
+
+	c := viz.New(680, 400, 0, 1, 0, 1)
+
+	const cellW, cellH, gap = 220.0, 110.0, 14.0
+	const originX, originY = 170.0, 76.0
+
+	cell := func(col, row int, label string, count int, color string) {
+		x := originX + float64(col)*(cellW+gap)
+		y := originY + float64(row)*(cellH+gap)
+		frac := 0.0
+		if total > 0 {
+			frac = float64(count) / float64(total)
+		}
+		// Darker fill = more of the population landed in this cell.
+		c.Rect(x, y, cellW, cellH, color, 0.15+0.75*frac)
+		c.Text(x+cellW/2, y+cellH/2-6, label, 16, viz.Ink, "middle")
+		c.Text(x+cellW/2, y+cellH/2+16, fmt.Sprintf("%d  (%.0f%%)", count, frac*100), 13, viz.Ink, "middle")
+	}
+
+	cell(0, 0, "TP", tp, viz.Good)
+	cell(1, 0, "FP", fp, viz.Bad)
+	cell(0, 1, "FN", fn, viz.Warm)
+	cell(1, 1, "TN", tn, viz.Muted)
+
+	c.Text(originX+cellW/2, originY-16, "predicted positive", 12, viz.Muted, "middle")
+	c.Text(originX+cellW+gap+cellW/2, originY-16, "predicted negative", 12, viz.Muted, "middle")
+	c.Text(originX-16, originY+cellH/2, "actual positive", 12, viz.Muted, "end")
+	c.Text(originX-16, originY+cellH+gap+cellH/2, "actual negative", 12, viz.Muted, "end")
+
+	c.Text(20, 24, fmt.Sprintf("threshold = %.1f    separation = %.1f    n = %d", t, sep, n),
+		14, viz.Ink, "start")
+	c.Text(20, 44, "rows = ground truth, columns = what the classifier predicted",
+		12, viz.Muted, "start")
+	c.Text(20, 372, fmt.Sprintf("accuracy = %.0f%%   precision = %.0f%%   recall = %.0f%%   F1 = %.0f%%",
+		acc*100, prec*100, rec*100, f1*100), 14, viz.Ink, "start")
+
+	return c.String()
 }
