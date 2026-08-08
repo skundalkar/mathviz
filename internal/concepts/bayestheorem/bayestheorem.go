@@ -18,12 +18,16 @@ func init() {
 	concept.Register(concept.Concept{
 		ID:    "bayes-theorem",
 		Title: "Bayes' theorem",
-		Blurb: "A population of 100 people is split into a 'tested positive' group and a " +
-			"'tested negative' group. Within 'tested positive', green squares are people who " +
-			"really are sick (true positives) and red squares are people who aren't (false " +
-			"alarms). When the condition is rare, red usually outnumbers green even for a " +
-			"pretty accurate test — that's Bayes' theorem: a positive result updates your " +
-			"belief, but it starts from how rare the condition was in the first place.",
+		Blurb: "A test for a rare disease is 99% accurate, and you just tested positive. " +
+			"What's the chance you actually have it? Most people's gut answer is '99%' — the " +
+			"test is 99% accurate, after all. It's wrong, often by a lot: how rare the disease " +
+			"was BEFORE you took the test matters just as much as the test's accuracy. If only " +
+			"1 in 100 people actually have it, even a '99% accurate' test run across everyone " +
+			"throws off nearly as many false alarms (from the huge healthy population) as true " +
+			"catches (from the tiny sick population). Below, a population of 100 is regrouped " +
+			"by test result: green squares in 'tested positive' are real cases, red squares are " +
+			"false alarms — and red usually outnumbers green when the condition is rare, even " +
+			"for a pretty accurate test.",
 		Params: []concept.ParamSpec{
 			{Key: "prior", Label: "Base rate (prior)", Min: 0.001, Max: 0.5, Step: 0.001, Def: 0.01},
 			{Key: "sensitivity", Label: "Sensitivity (catches true cases)", Min: 0.5, Max: 0.999, Step: 0.001, Def: 0.99},

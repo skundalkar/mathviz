@@ -82,40 +82,50 @@ threshold and live with its false-positive rate.
 
 ---
 
-## bayes-theorem — a positive test is only as good as how rare the thing was
-**The idea in one line:** Bayes' theorem is just bookkeeping — it takes how
-common a condition was *before* the test (the prior) and updates it using how
-reliable the test is, and for rare conditions the "before" number dominates
-far more than intuition expects.
+## bayes-theorem — why "99% accurate" doesn't mean what it sounds like
+**The idea in one line:** a positive test result should update your belief,
+but it has to start from how rare the thing was *before* the test — and
+skipping that step is why "99% accurate" and "99% likely you have it" are
+two very different numbers.
 
-The picture starts with a population of 100 people at the given base rate
-(prior) and runs a test with a given sensitivity (catches true cases) and
-specificity (clears true negatives) over all of them. It then regroups
-everyone by test result: the "tested positive" strip and the "tested
-negative" strip. Inside "tested positive", green squares are true positives
-and red squares are false alarms — people who don't have the condition but
-tested positive anyway. At the default 1% base rate with a 99%-sensitive,
-95%-specific test, the positive group is mostly red: about 5 false alarms
-for every true positive, even though the test looks accurate on paper. Raise
-the prior and green takes over the positive strip; raise specificity and the
-red squares vanish, because specificity controls exactly how many healthy
-people get swept up into a positive result.
+A test for a rare disease is 99% accurate, and you test positive. Gut
+instinct says: 99% chance you have it — the test is 99% accurate, after all,
+what else would it mean? That instinct is wrong, often dramatically so, and
+the gap is exactly what Bayes' theorem measures.
 
-The reason is arithmetic, not surprise: false positives come from the (huge)
-healthy population times a small false-positive rate, while true positives
-come from the (tiny) diseased population times a large sensitivity. When the
-healthy population dwarfs the diseased one, even a small false-positive rate
-applied to it can outnumber the true positives drawn from a small prior.
-Bayes' theorem is the formula that adds these two contributions correctly:
-P(condition | positive) = (sensitivity × prior) / (sensitivity × prior +
-false-positive-rate × (1 - prior)).
+Here's the arithmetic gut instinct skips: imagine 100 people take the test,
+and the disease is rare — say only 1 person actually has it. The test almost
+certainly catches that 1 true case (99% sensitivity). But the test also has
+some false-positive rate among the 99 healthy people — say it wrongly flags
+5% of them, roughly 5 people. Count up everyone who tested positive: 1 real
+case plus roughly 5 false alarms — about 6 positive results, only 1 of which
+is real. A "99% accurate" test just produced a positive-test group that's
+more than 80% wrong, because the healthy population was so much bigger than
+the sick one that even a small false-positive rate on it outweighs the tiny
+number of true cases available to catch.
+
+The picture makes this concrete: split a population of 100 by the given base
+rate, sensitivity and specificity, then regroup everyone by test *result*
+instead of true status. In the "tested positive" strip, green squares are
+true positives and red squares are false alarms — at the default numbers
+(1% base rate, 99% sensitive, 95% specific), the strip is mostly red: about
+5 false alarms for every true positive. Raise the base rate and green takes
+over the strip; raise specificity and the false alarms vanish, because
+specificity directly controls how many healthy people get swept into a
+positive result in the first place.
+
+Bayes' theorem is just the formula that combines these two contributions
+correctly: P(condition | positive) = (sensitivity × prior) / (sensitivity ×
+prior + false-positive-rate × (1 − prior)). Sensitivity alone (the "99%
+accurate" part everyone fixates on) is only half the story — the prior
+matters just as much.
 
 **Where it bites in real life:** screening for a rare disease, a rare fraud
-pattern, or a rare security alert — a "99% accurate" test sounds like a
-near-certainty, but if the thing it's testing for is rare, most positives
-are still noise. It's why doctors ask a second, more specific test before
-acting on a positive screen, and why "the model flagged it" needs a base
-rate attached before anyone should trust the flag.
+pattern, or a rare security alert — a "99% accurate" flag sounds like a
+near-certainty, but if the thing being flagged is rare, most flags are still
+noise. It's why doctors order a second, more specific test before acting on
+one positive screen, and why "the model flagged it" needs a base rate
+attached before anyone should trust the flag.
 
 ---
 
