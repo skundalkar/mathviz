@@ -16,11 +16,18 @@ func init() {
 	concept.Register(concept.Concept{
 		ID:    "logarithms",
 		Title: "What a logarithm means",
-		Blurb: "log base b of x asks: 'b to what power gives me x?' Slide the base. " +
-			"Notice the marked points: each time x multiplies by the base (b, then b², " +
-			"then b³ …), the log value only steps up by 1. Multiplying the input becomes " +
-			"adding to the output — that is the entire trick behind slide rules, decibels, " +
-			"pH, earthquake magnitudes, and log-scale charts.",
+		Blurb: "Fold a 0.1mm-thick sheet of paper in half, over and over — each fold doubles " +
+			"whatever thickness you already have (0.1 → 0.2 → 0.4 → 0.8mm …). How many folds " +
+			"until the stack passes a 100m building? Your instinct might be to divide: " +
+			"100,000mm ÷ 0.1mm = 1,000,000 — but that answers a different question, stacking " +
+			"a million loose sheets where each one just adds a fixed 0.1mm. Folding " +
+			"multiplies instead of adding, so the fold count is stuck up in an exponent: " +
+			"0.1×2ⁿ = 100,000. Division can't pull n out of an exponent — that's the one job " +
+			"a logarithm does. log₂(1,000,000) ≈ 20: just 20 folds. The curve below shows " +
+			"that trick directly: slide the base and watch the marked points — each time x " +
+			"multiplies by the base, the log value only steps up by 1. Multiplying the input " +
+			"becomes adding to the output — the whole trick behind slide rules, decibels, pH, " +
+			"earthquake magnitudes, and log-scale charts.",
 		Params: []concept.ParamSpec{
 			{Key: "base", Label: "Base (b)", Min: 2, Max: 10, Step: 1, Def: 2},
 			{Key: "mark", Label: "Highlight x", Min: 1, Max: 64, Step: 1, Def: 8},

@@ -362,18 +362,57 @@ detection. Every one is a choice about which mistake is cheaper.
 
 ---
 
-## logarithms — turning multiplication into addition
-**The idea in one line:** log_b(x) is the exponent — "b to what power gives x?"
+## logarithms — the question "how many doublings does it take?"
+**The idea in one line:** a logarithm answers the reverse of multiplication —
+not "what do I get if I multiply b by itself n times," but "how many times do
+I need to multiply by b to reach x."
 
-Mark the powers of the base on the curve: b⁰=1, b¹, b², b³. The x-values
-*multiply* by b each step, but the log values only step up by **+1**. That is
-the whole magic: logs convert multiplying into adding. It's why slide rules
-worked, why decibels, pH, star magnitudes, and earthquake scales are all
-logarithmic (they compress enormous ranges), and why a "log scale" chart turns
-exponential growth into a straight line.
+Fold a 0.1mm-thick sheet of paper in half, over and over. Each fold doesn't
+add a fixed amount — it doubles whatever thickness you already have: 0.1 →
+0.2 → 0.4 → 0.8mm, and so on. How many folds until the stack passes a
+100-meter building?
+
+The tempting shortcut is division: convert 100m to 100,000mm, divide by the
+0.1mm sheet, get 1,000,000. Done — right? That's actually the answer to a
+*different* problem: stacking a million loose, unfolded sheets on top of each
+other, where each new sheet just adds another fixed 0.1mm. That process is
+additive — n sheets give you n × 0.1mm — and plain division solves it fine.
+
+Folding is not that. Each fold *multiplies* your current thickness by 2, so
+after n folds you have 0.1 × 2ⁿ mm, and the question becomes 0.1 × 2ⁿ =
+100,000. Try to isolate n the way you would in the stacking problem and you
+get stuck — n isn't multiplying anything here, it's counting how many times 2
+gets multiplied by itself, buried up in an exponent. Division has no move for
+that. The one thing that can reach into an exponent and pull it back down to
+an ordinary number is a logarithm: n = log₂(1,000,000) ≈ 20. Twenty folds
+passes the building — not a million sheets, twenty folds — because doubling
+compounds.
+
+That gap between "20 folds" and "1,000,000 sheets" for the *same* size
+increase is exactly why logarithms exist, and why they show up wherever
+growth is multiplicative rather than additive. The picture makes the
+mechanism visible: mark the powers of the base (b⁰, b¹, b², b³, …) on the
+curve, and while the x-values are multiplying by b each step, the log values
+are only ever stepping up by exactly **+1**. Multiplying the input becomes
+adding to the output — that's the whole trick, and it's why logarithms were
+invented centuries before calculators (to turn slow multiplication into fast
+addition), and why decibels, pH, star magnitudes, and earthquake scales are
+all logarithmic — each compresses an enormous multiplicative range into a
+scale humans can actually read.
 
 **Handy anchors:** log₁₀(1000) = 3, log₂(8) = 3, log_b(1) = 0 for any base,
 and log_b(b) = 1.
+
+**Where it bites in real life:** "this investment compounds annually" or
+"this outbreak doubles every few days" are folding stories, not stacking
+stories — reach for a logarithm, not division, to get from a growth rate to
+"how long until X." It's also why a Richter magnitude of 7 isn't "a bit more"
+than 6 — it's about 32x more energy, because each whole step up the scale is
+another multiplication, not another addition. And it's the reason the
+instinct to just divide is worth pausing on: division answers "how many
+times do I add this," a logarithm answers "how many times do I multiply by
+this" — different questions that happen to look similar until you write them
+out.
 
 ---
 
