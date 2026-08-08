@@ -6,6 +6,46 @@ code. Newest entries go at the top.
 
 ---
 
+## roc-auc — the whole trade-off curve, not just one threshold
+**The idea in one line:** an ROC curve is what you get by drawing precision
+and recall's threshold trade-off (see precision-recall) as a path instead of
+a single point — sweep the threshold across every possible setting and plot
+false-positive rate against true-positive rate at each one.
+
+Positive- and negative-class scores are modeled as two overlapping normal
+distributions, "separation" apart — the same setup as precision-recall.
+Instead of picking one threshold and reading off precision and recall, this
+picture sweeps the threshold from "call nothing positive" down to "call
+everything positive" and traces every (false-positive rate, true-positive
+rate) pair along the way. At one extreme the classifier flags nothing —
+(0, 0). At the other it flags everyone — (1, 1). Where the curve goes between
+those two corners is the whole story: a classifier that can't tell the
+classes apart traces the diagonal (at any threshold, whatever fraction of
+negatives it catches, it catches the same fraction of positives — no
+better than a coin flip), while a classifier with real separation bows the
+curve up and to the left, catching positives while dragging along far fewer
+false alarms.
+
+AUC — the shaded area under that curve — compresses the entire curve into
+one number: it's exactly the probability that a randomly chosen positive
+example scores higher than a randomly chosen negative one. That's why AUC
+0.5 means random guessing (no separation) and AUC 1.0 means perfect
+separation, and why it doesn't require picking a threshold at all — it grades
+the ranking a model produces, before any operating point is chosen. Slide
+"class separation" and watch the curve peel away from the diagonal as AUC
+climbs; slide "threshold" and watch the orange marker slide along the fixed
+curve, because changing the threshold moves *where on the curve* you're
+operating, not the curve's shape.
+
+**Where it bites in real life:** two models can have the same accuracy at
+their default threshold yet very different AUCs — the one with higher AUC
+has more headroom no matter where you eventually set the cutoff. It's also
+why AUC is popular for comparing models before deployment, but a poor
+substitute for precision/recall once you actually have to pick one operating
+threshold and live with its false-positive rate.
+
+---
+
 ## bayes-theorem — a positive test is only as good as how rare the thing was
 **The idea in one line:** Bayes' theorem is just bookkeeping — it takes how
 common a condition was *before* the test (the prior) and updates it using how
