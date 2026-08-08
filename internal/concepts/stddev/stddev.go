@@ -16,11 +16,14 @@ func init() {
 	concept.Register(concept.Concept{
 		ID:    "standard-deviation",
 		Title: "Standard deviation (σ)",
-		Blurb: "Standard deviation measures how spread out data is around its average. " +
-			"Small σ = values huddle near the mean; large σ = they fan out. The blue band " +
-			"is always mean ± 1σ, and for a normal distribution it always contains about 68% " +
-			"of everything — no matter how wide you make it. That fixed 68% is why σ is such a " +
-			"useful ruler: '1 sigma away' means the same thing everywhere.",
+		Blurb: "Two students each score '10 points above average' — sound equally impressive? " +
+			"Not necessarily: if class A's scores all huddled within 2 points of the mean, +10 " +
+			"is off the charts; if class B's scores were scattered across 40 points, +10 barely " +
+			"clears the middle. Standard deviation (σ) is that spread, in the data's own units, " +
+			"and it comes with a guarantee raw point-gaps never do: mean ± 1σ always covers " +
+			"about 68% of everyone, whether the curve is narrow or wide. Drag σ and watch the " +
+			"band stretch or shrink while always holding that same 68% — that's what makes " +
+			"'2 sigma above average' comparable across two totally different tests.",
 		Params: []concept.ParamSpec{
 			{Key: "mu", Label: "Mean (μ)", Min: -4, Max: 4, Step: 0.1, Def: 0},
 			{Key: "sigma", Label: "Std dev (σ)", Min: 0.4, Max: 3, Step: 0.05, Def: 1, Unit: "σ"},

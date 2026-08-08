@@ -416,16 +416,34 @@ out.
 
 ---
 
-## standard-deviation — a universal ruler for spread
-**The idea in one line:** σ is the width of the "typical" band around the mean.
+## standard-deviation — a ruler that means the same thing everywhere
+**The idea in one line:** "10 points above average" tells you nothing by
+itself — standard deviation is what turns a raw distance from average into a
+number you can actually compare across totally different situations.
 
-Drag σ and the bell curve gets fatter or skinnier, but the shaded mean ± 1σ band
-*always* holds about **68%** of the data (95% within 2σ, 99.7% within 3σ — the
-"68–95–99.7 rule"). That fixed coverage is what makes σ a portable ruler: saying
-something is "2 sigma out" means the same rarity whether you're measuring heights
-or test scores. Standard deviation is just the square root of the variance (the
-average squared distance from the mean) — we square to make distances positive,
-then square-root to get back to the original units.
+Two students each score 10 points above the class average on their tests.
+Student A: sounds impressive — until you learn everyone in class A scored
+within 2 points of the mean, so being 10 points up puts them off the charts,
+practically alone at the top. Student B scored 10 points up too, but that
+class's scores were scattered across a 40-point range — 10 points above
+average there barely clears the middle of the pack. Same raw number, wildly
+different meaning, because "10 points" only means something relative to how
+spread out everyone else is.
 
-**Where it bites in real life:** z-scores, control charts in manufacturing,
-"1-in-20" thresholds in science, risk/volatility in finance.
+Standard deviation (σ) is that spread, and it comes with a guarantee raw
+point-differences never do: for a bell-shaped distribution, the band from
+mean − 1σ to mean + 1σ always contains about **68%** of everyone — not
+"usually," always, whether σ is tiny (a tightly clustered class) or huge (an
+all-over-the-place one). That fixed 68% is what makes "z standard deviations
+above average" a portable ruler: student A's +10 might be +5σ (astonishingly
+rare), student B's +10 might be +0.5σ (unremarkable) — the same raw gap,
+translated into a number that actually means the same rarity everywhere it's
+used. (Standard deviation itself is just the square root of variance — see
+variance-vs-stddev for why we square first, then square-root back.)
+
+**Where it bites in real life:** a 101°F fever is routine for some people and
+alarming for others depending on their normal baseline and its variability;
+manufacturing tolerances are set in sigmas, not raw units, because "off by
+2mm" means something different for a bolt than for a bridge; and "1-in-20"
+scientific thresholds (p < 0.05) are really a statement about how many sigmas
+out a result has to land before it counts as surprising.
