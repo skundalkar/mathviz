@@ -20,14 +20,16 @@ func init() {
 	concept.Register(concept.Concept{
 		ID:    "p-value",
 		Title: "P-value",
-		Blurb: "The curve is the null distribution: what a test statistic would look like " +
-			"if there were truly no effect. The vertical line is the statistic you actually " +
-			"observed; the shaded area is everything at least as extreme as it in either " +
-			"direction — that shaded area IS the p-value. It answers one narrow question: " +
-			"'if the null hypothesis were true, how often would we see a result this extreme " +
-			"just from noise?' The dashed lines mark the critical boundary for your chosen " +
-			"significance level α — if the shaded area is smaller than α, the observed " +
-			"statistic falls outside the boundary and the result is 'statistically significant'.",
+		Blurb: "Your friend hands you a coin and claims it's fair. You flip it 10 times and " +
+			"get 8 heads. Suspicious — but is it PROOF the coin is rigged, or could a fair " +
+			"coin just get lucky sometimes? Imagine flipping a truly fair coin 10 times over " +
+			"and over: how often would it produce a result at least this extreme (8+ heads, " +
+			"or by symmetry 8+ tails) just by chance? That probability is the p-value — here, " +
+			"about 11%. The curve is that 'null' distribution: what a test statistic would " +
+			"look like if there were truly no effect. The vertical line is what you actually " +
+			"observed; the shaded area is everything at least as extreme — that shaded area " +
+			"IS the p-value. The dashed lines mark the critical boundary for your chosen " +
+			"significance level α — cross it and the result is 'statistically significant'.",
 		Params: []concept.ParamSpec{
 			{Key: "z", Label: "Observed statistic (z)", Min: -4, Max: 4, Step: 0.1, Def: 2.0},
 			{Key: "alpha", Label: "Significance level (α)", Min: 0.01, Max: 0.20, Step: 0.01, Def: 0.05},

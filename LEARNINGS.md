@@ -119,38 +119,49 @@ rate attached before anyone should trust the flag.
 
 ---
 
-## p-value — how surprising is this, if nothing's really going on?
-**The idea in one line:** a p-value is just the area under a "no effect"
-curve that's at least as extreme as what you actually observed — nothing
-more, and importantly, not "the probability the null hypothesis is true".
+## p-value — how suspicious is this, assuming nothing's actually going on?
+**The idea in one line:** a p-value is the chance of seeing a result at
+least this extreme purely by luck, if the thing you suspect isn't actually
+true — it is not, and never was, "the probability you're wrong."
 
-Start from the null distribution: what your test statistic would look like
-if there were truly no effect, no difference, nothing going on — here, a
-standard normal. Run your real experiment and get an observed statistic z.
-The p-value asks one narrow question: under the null distribution, how much
-of the probability lives at least as far from zero as z, in either
-direction? That shaded area is the whole definition. A small p-value means
-your observed result would be a rare, surprising draw if the null were true —
-which is evidence against the null, but is not itself "the probability the
-null is true" (that's a different, more slippery quantity that a single
-p-value can't give you).
+Your friend hands you a coin and claims it's fair. You flip it 10 times and
+get 8 heads. Suspicious? Maybe — but a fair coin doesn't produce exactly 5
+heads every single time either; sometimes it runs hot by pure chance. So the
+real question isn't "is 8 heads a lot" in isolation, it's: if the coin
+really were fair, how often would 10 flips produce a result this lopsided
+(8+ heads, or by symmetry 8+ tails) just from ordinary luck? Work that out
+and the answer is about 11% of the time — not rare enough to be damning, but
+not nothing either. That 11% is a p-value.
 
-The significance level α turns that shaded area into a yes/no decision: pick
-a threshold in advance (0.05 is conventional, not magic), find the critical
-boundary ±z* where the null distribution's tail area equals exactly α (the
-dashed lines), and check whether your observed z fell past it. Push z further
-from zero and the shaded p-value area shrinks; once it drops below α, the
-observed statistic has crossed the dashed boundary and the result counts as
-"statistically significant" at that α — a label about the *procedure*
-crossing a line you drew beforehand, not a certificate of truth.
+That's the whole recipe: start from the "null" assumption — here, a fair
+coin, formally a distribution of what results would look like if nothing
+suspicious were going on. Run your actual test and get an observed result.
+The p-value asks one narrow question: under that null distribution, how much
+of the probability lies at least as far out as what you actually saw, in
+either direction? That's the entire definition — nothing more. A small
+p-value means your result would be a rare, surprising draw *if* the null
+were true, which counts as evidence against the null — but it is emphatically
+not "the probability the null is true." That's a different, much slipperier
+quantity a single p-value can never hand you (getting 8 heads doesn't tell
+you the probability the coin is fair; it tells you how surprising 8 heads
+would be from a coin that already is fair).
 
-**Where it bites in real life:** "p < 0.05" gets read as "there's a 95%
-chance the effect is real," which the picture makes clear it isn't — it's a
-statement about how the null distribution behaves, built before you saw the
-data. It's also why p-hacking (trying many thresholds, subgroups, or metrics
-until one clears α by chance) is a real problem: with enough looks, a
-surprising-looking shaded area shows up eventually even when there's truly
-nothing going on.
+The significance level α turns that shaded area into a yes/no call: pick a
+threshold in advance (0.05 is conventional, not sacred), find the critical
+boundary where the null distribution's tail area equals exactly α, and check
+whether your observed statistic crossed it. Push the observed statistic
+further from what the null predicts and the shaded p-value area shrinks;
+once it drops below α, the result is labeled "statistically significant" —
+a statement that a pre-drawn line got crossed, not a certificate of truth.
+
+**Where it bites in real life:** "p < 0.05" gets read as "95% chance the
+effect is real," which the coin story makes clear it isn't — it's a
+statement about how a fair coin (or a no-effect world) behaves, computed
+before you ever saw the data. It's also why p-hacking — trying enough
+thresholds, subgroups, or metrics until one clears α by chance — is a real
+problem: flip enough different coins, or ask enough different questions of
+the same data, and a suspicious-looking result shows up eventually even when
+nothing real is going on.
 
 ---
 
