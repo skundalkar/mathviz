@@ -7,6 +7,7 @@
 package bayestheorem
 
 import (
+	"fmt"
 	"math"
 
 	"mathviz/internal/concept"
@@ -90,6 +91,74 @@ func roundHalfUp(x float64) int {
 }
 
 func render(p map[string]float64) string {
-	_ = p
-	return viz.New(680, 360, 0, 1, 0, 1).String()
+	prior := clampProb(p["prior"])
+	sens := clampProb(p["sensitivity"])
+	spec := clampProb(p["specificity"])
+
+	const n = 100
+	tp, fn, fp, tn := Counts(prior, sens, spec, n)
+	postPos := PosteriorPositive(prior, sens, spec)
+	postNegHealthy := PosteriorNegative(prior, sens, spec)
+
+	c := viz.New(680, 360, 0, 1, 0, 1)
+
+	posColors := make([]string, 0, tp+fp)
+	for i := 0; i < tp; i++ {
+		posColors = append(posColors, viz.Good)
+	}
+	for i := 0; i < fp; i++ {
+		posColors = append(posColors, viz.Bad)
+	}
+
+	negColors := make([]string, 0, fn+tn)
+	for i := 0; i < fn; i++ {
+		negColors = append(negColors, viz.Warm)
+	}
+	for i := 0; i < tn; i++ {
+		negColors = append(negColors, viz.Faint)
+	}
+
+	c.Text(20, 24, fmt.Sprintf("population of %d   prior = %.1f%%   sensitivity = %.1f%%   specificity = %.1f%%",
+		n, prior*100, sens*100, spec*100), 13, viz.Ink, "start")
+
+	y := drawStrip(c, 46, fmt.Sprintf("tested positive (%d)  —  green = true positive, red = false alarm", len(posColors)), posColors)
+	y = drawStrip(c, y+28, fmt.Sprintf("tested negative (%d)  —  orange = missed case, gray = true negative", len(negColors)), negColors)
+
+	c.Text(20, y+26, fmt.Sprintf("P(condition | positive test) = %d/%d ≈ %.0f%%", tp, tp+fp, postPos*100), 15, viz.Bad, "start")
+	c.Text(20, y+46, fmt.Sprintf("P(healthy | negative test) = %d/%d ≈ %.1f%%", tn, fn+tn, postNegHealthy*100), 13, viz.Muted, "start")
+
+	return c.String()
+}
+
+// drawStrip renders a labeled row of small squares, wrapping to a new pixel
+// row every maxCols squares, and returns the pixel y just below the strip so
+// the caller can stack the next one underneath.
+func drawStrip(c *viz.Canvas, top float64, label string, colors []string) (bottom float64) {
+	c.Text(20, top, label, 12, viz.Muted, "start")
+
+	const cell, gap, maxCols = 16.0, 2.0, 25
+	startY := top + 10
+	for i, col := range colors {
+		row := i / maxCols
+		colIdx := i % maxCols
+		x := 20 + float64(colIdx)*(cell+gap)
+		y := startY + float64(row)*(cell+gap)
+		c.Rect(x, y, cell, cell, col, 0.9)
+	}
+
+	rows := (len(colors) + maxCols - 1) / maxCols
+	if rows == 0 {
+		rows = 1
+	}
+	return startY + float64(rows)*(cell+gap)
+}
+
+func clampProb(x float64) float64 {
+	if x < 0.001 {
+		return 0.001
+	}
+	if x > 0.999 {
+		return 0.999
+	}
+	return x
 }
