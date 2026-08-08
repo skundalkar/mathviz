@@ -189,35 +189,50 @@ across many repeats).
 
 ---
 
-## central-limit-theorem — averages go normal, no matter where they started
-**The idea in one line:** the distribution of a sample *mean* converges to a
-normal curve as the sample size n grows, even when the population you're
-averaging from looks nothing like a bell curve.
+## central-limit-theorem — why averaging fixes wildly unreliable guesses
+**The idea in one line:** no matter how skewed or strange a population of
+individual values is, the distribution of the *average* of many draws from
+it becomes approximately normal and tightens around the true mean as you
+average more of them.
 
-The population here is deliberately about as far from normal as it gets: an
-exponential distribution, sharply peaked at zero with a long right tail (think
-"time between rare events," or income data with a few huge outliers). At n=1,
-"the sample mean" is just one draw from that population, so the picture is the
-skewed exponential itself. But average n independent draws together and look
-at *that* number's distribution instead of any single draw's: it tightens
-around the true mean and its shape reshapes itself toward a normal curve — and
-it keeps doing this for any population with finite variance, not just this one.
+At a school fair, a jar of jellybeans sits on a table and everyone takes a
+guess at how many are inside. Look at any one guess and it's basically
+useless — kids guess 50, guess 900, guess a suspiciously round 1,000. The
+guesses as a group don't look like a tidy bell curve at all; they're skewed,
+scattered, full of wild outliers. And yet a strange thing happens if you
+average every single guess together: that average lands remarkably close to
+the true count, far closer than almost any individual guess did. This is the
+"wisdom of crowds" effect, and it isn't magic — it's the central limit
+theorem.
 
-The picture is exact rather than simulated: the sum of n iid Exponential(λ)
-draws is exactly a Gamma(n, λ) distribution, so the sample mean's distribution
-has a closed form (`SampleMeanPDF`) with no random sampling involved. Two
-things are worth watching as you drag n up: the peak (thick curve) narrows and
-tracks a normal curve of the same mean and variance (thin reference line) more
-and more closely, while the mean itself never moves — only the *spread*
-shrinks, proportional to 1/√n.
+Here's why it works: each individual guess is one noisy draw from "the
+population of everything a person might guess," and that population can be
+as lopsided as you like. But the *average* of many draws is a different
+quantity entirely, with its own distribution — and that distribution behaves
+in a way individual draws never do: it concentrates tightly around the true
+mean and its shape becomes normal (bell-curved), regardless of how weird the
+underlying population was, as long as you're averaging enough independent
+draws. One wildly-off guess barely moves a large average; a handful of
+wildly-off guesses in different directions mostly cancel each other out.
 
-**Where it bites in real life:** it's the reason polling averages, A/B test
-metrics, and quality-control sample means can be treated as roughly normal
-(and t-tests/z-tests applied) even when the underlying data is skewed or
-weird — as long as the sample is big enough. It's also why "n is too small"
-is a real objection: with a handful of draws from a skewed population, the
-sample mean's own distribution is still skewed, and normal-based confidence
-intervals can mislead.
+The picture makes this exact rather than simulated: the population is an
+exponential distribution — sharply peaked at zero with a long right tail,
+about as far from a bell curve as it gets (think "time between rare events,"
+or a population of guesses with a few extreme overestimates). At n=1, "the
+sample mean" is just one draw, so the picture shows the skewed exponential
+itself. Raise n and the sample-mean distribution visibly tightens and
+reshapes toward the normal reference curve — and because the sum of n
+exponential draws has an exact closed form (a Gamma distribution), this
+isn't a simulation with sampling noise of its own; it's the true shape at
+every n.
+
+**Where it bites in real life:** polling averages, A/B test metrics, and
+quality-control sample means can be treated as roughly normal — and standard
+statistical tests applied — even when individual data points are skewed or
+weird, as long as the sample is big enough. It's also why "the sample size
+is too small" is a real objection: with just a handful of draws from a
+skewed population, the average is still skewed too, and normal-based
+confidence intervals can quietly mislead.
 
 ---
 
