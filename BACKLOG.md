@@ -20,9 +20,9 @@ Format: `- [ ] <id> — <one-line description of the concept to visualize>`
 - [x] p-value — a null distribution and where the observed statistic falls
 - [x] bayes-theorem — base rates and why rare-disease positives mislead
 - [x] roc-auc — sweeping the threshold to trace an ROC curve
+- [x] confusion-matrix — TP/FP/FN/TN as an interactive grid
 
 ## Up next (statistics & ML intuition)
-- [ ] confusion-matrix — TP/FP/FN/TN as an interactive grid
 - [ ] overfitting — a wiggly curve chasing noise vs. a smooth fit
 - [ ] gradient-descent — a ball rolling downhill with an adjustable learning rate
 - [ ] entropy — how surprise/information changes with probability

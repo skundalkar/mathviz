@@ -6,6 +6,42 @@ code. Newest entries go at the top.
 
 ---
 
+## confusion-matrix — the four ways a classifier can be right or wrong
+**The idea in one line:** every classification a model makes lands in exactly
+one of four buckets — correct-positive, correct-negative, or one of two
+distinct kinds of *wrong* — and nearly every classification metric is just
+some ratio built from those four counts.
+
+Rows are ground truth (actually positive / actually negative), columns are
+the prediction (predicted positive / predicted negative), and the two
+diagonals mean very different things: the TP/TN diagonal is where the
+classifier agreed with reality, the FP/FN diagonal is where it didn't — and
+those two kinds of wrong are not interchangeable. A false positive (FP) is a
+false alarm: flagging something that was actually fine. A false negative
+(FN) is a miss: letting something real slip through. The picture shades each
+cell by its share of the population, so at a glance you can see not just
+which mistake is more common but how the four numbers move as the knobs
+change: raising the threshold shrinks both "predicted positive" cells (TP
+and FP) and grows both "predicted negative" cells (FN and TN), because
+fewer examples clear a higher bar.
+
+Accuracy, precision, recall and F1 are all just different ratios over these
+same four counts — accuracy asks "what fraction did I get right overall"
+(the diagonal over everything), precision asks "of what I flagged, how much
+was real" (TP over the predicted-positive column), recall asks "of what was
+real, how much did I catch" (TP over the actual-positive row). None of them
+is "the" right metric — which one matters depends on whether a false alarm
+or a miss costs you more.
+
+**Where it bites in real life:** a 99%-accurate fraud model can still be
+useless if fraud is rare — nearly all its correct predictions are the easy
+"not fraud" calls, and accuracy alone hides whether it's catching any real
+fraud (recall) or drowning investigators in false alarms (precision). Read
+the actual 2x2 grid, not just one summary number, before trusting a
+classifier's headline accuracy.
+
+---
+
 ## roc-auc — the whole trade-off curve, not just one threshold
 **The idea in one line:** an ROC curve is what you get by drawing precision
 and recall's threshold trade-off (see precision-recall) as a path instead of
