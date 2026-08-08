@@ -8,6 +8,7 @@
 package rocauc
 
 import (
+	"fmt"
 	"math"
 
 	"mathviz/internal/concept"
@@ -92,6 +93,40 @@ func normCDF(z float64) float64 {
 }
 
 func render(p map[string]float64) string {
-	_ = p
-	return viz.New(680, 380, 0, 1, 0, 1).String()
+	t, sep := p["thresh"], p["sep"]
+	if sep < 0.01 {
+		sep = 0.01
+	}
+
+	pts := CurvePoints(sep, 300)
+	auc := AUC(sep)
+	numericAUC := TrapezoidalAUC(pts)
+
+	c := viz.New(680, 380, 0, 1, 0, 1)
+	c.Axes()
+	for x := 0.0; x <= 1.0; x += 0.2 {
+		c.Tick(x, fmt.Sprintf("%.1f", x))
+	}
+
+	// The area under the curve IS the AUC — shade it directly.
+	c.Area(pts, 0, 1, viz.Accent, 0.15)
+	// The diagonal is what a coin-flip classifier achieves; a real classifier
+	// should bow up and to the left of it.
+	c.Path([][2]float64{{0, 0}, {1, 1}}, viz.Muted, 1.5)
+	c.Path(pts, viz.Ink, 2.5)
+
+	// Mark where the current threshold sits on the curve.
+	curFPR, curTPR := FPR(t), TPR(t, sep)
+	c.VLine(curFPR, viz.Warm, true)
+	mx, my := c.X(curFPR), c.Y(curTPR)
+	c.Rect(mx-4, my-4, 8, 8, viz.Warm, 1)
+
+	c.Text(20, 24, fmt.Sprintf("AUC = %.3f (numerically ≈ %.3f)    separation = %.1f", auc, numericAUC, sep),
+		14, viz.Ink, "start")
+	c.Text(20, 44, fmt.Sprintf("at threshold t=%.1f: FPR = %.2f, TPR (recall) = %.2f", t, curFPR, curTPR),
+		13, viz.Muted, "start")
+	c.Text(20, 62, "x = false-positive rate, y = true-positive rate   diagonal = random guessing",
+		12, viz.Muted, "start")
+
+	return c.String()
 }
