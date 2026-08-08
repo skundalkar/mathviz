@@ -7,6 +7,8 @@
 package bayestheorem
 
 import (
+	"math"
+
 	"mathviz/internal/concept"
 	"mathviz/internal/viz"
 )
@@ -28,6 +30,63 @@ func init() {
 		},
 		Render: render,
 	})
+}
+
+// PosteriorPositive is P(condition | positive test) via Bayes' theorem:
+//
+//	P(C|+) = P(+|C)*P(C) / [ P(+|C)*P(C) + P(+|~C)*P(~C) ]
+//
+// where P(+|C) is the sensitivity and P(+|~C) is the false-positive rate
+// (1 - specificity).
+func PosteriorPositive(prior, sensitivity, specificity float64) float64 {
+	fpr := 1 - specificity
+	num := sensitivity * prior
+	den := num + fpr*(1-prior)
+	if den <= 0 {
+		return 0
+	}
+	return num / den
+}
+
+// PosteriorNegative is P(no condition | negative test): given a negative
+// result, how likely is the person actually healthy?
+func PosteriorNegative(prior, sensitivity, specificity float64) float64 {
+	fnr := 1 - sensitivity
+	num := specificity * (1 - prior)
+	den := num + fnr*prior
+	if den <= 0 {
+		return 0
+	}
+	return num / den
+}
+
+// Counts splits a population of n people into the four Bayes outcomes —
+// true positive, false negative, false positive, true negative — given a
+// prior prevalence, sensitivity and specificity. Counts are whole people,
+// rounded to the nearest integer; any rounding slack is absorbed into tn
+// (typically the largest group) so the four counts always sum to n.
+func Counts(prior, sensitivity, specificity float64, n int) (tp, fn, fp, tn int) {
+	if n < 0 {
+		n = 0
+	}
+	diseased := prior * float64(n)
+	healthy := float64(n) - diseased
+
+	tp = roundHalfUp(diseased * sensitivity)
+	fn = roundHalfUp(diseased * (1 - sensitivity))
+	fp = roundHalfUp(healthy * (1 - specificity))
+	tn = n - tp - fn - fp
+	if tn < 0 {
+		tn = 0
+	}
+	return
+}
+
+func roundHalfUp(x float64) int {
+	if x < 0 {
+		return 0
+	}
+	return int(math.Floor(x + 0.5))
 }
 
 func render(p map[string]float64) string {
