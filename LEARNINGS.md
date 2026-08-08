@@ -6,39 +6,48 @@ code. Newest entries go at the top.
 
 ---
 
-## confusion-matrix — the four ways a classifier can be right or wrong
-**The idea in one line:** every classification a model makes lands in exactly
-one of four buckets — correct-positive, correct-negative, or one of two
-distinct kinds of *wrong* — and nearly every classification metric is just
-some ratio built from those four counts.
+## confusion-matrix — the trap a single accuracy number can hide
+**The idea in one line:** "99% accurate" can describe both a genuinely
+excellent classifier and a useless one that just guesses the common answer
+every time — the confusion matrix is what tells you which one you're
+looking at.
 
-Rows are ground truth (actually positive / actually negative), columns are
-the prediction (predicted positive / predicted negative), and the two
-diagonals mean very different things: the TP/TN diagonal is where the
-classifier agreed with reality, the FP/FN diagonal is where it didn't — and
-those two kinds of wrong are not interchangeable. A false positive (FP) is a
-false alarm: flagging something that was actually fine. A false negative
-(FN) is a miss: letting something real slip through. The picture shades each
-cell by its share of the population, so at a glance you can see not just
-which mistake is more common but how the four numbers move as the knobs
-change: raising the threshold shrinks both "predicted positive" cells (TP
-and FP) and grows both "predicted negative" cells (FN and TN), because
-fewer examples clear a higher bar.
+A hospital announces a new test for a rare disease is "99% accurate." That
+sounds excellent — until you notice that a test which does nothing at all,
+just prints "healthy" for every single patient without looking at anything,
+would *also* score 99% accurate, as long as only 1% of patients actually
+have the disease. That do-nothing test catches zero real cases. It is, for
+the one purpose a medical test exists for, completely useless — and yet it
+posts the exact same headline number as a test that's genuinely good at its
+job. Accuracy alone cannot tell these two situations apart, because it
+collapses four very different outcomes into a single ratio.
 
-Accuracy, precision, recall and F1 are all just different ratios over these
-same four counts — accuracy asks "what fraction did I get right overall"
-(the diagonal over everything), precision asks "of what I flagged, how much
-was real" (TP over the predicted-positive column), recall asks "of what was
-real, how much did I catch" (TP over the actual-positive row). None of them
-is "the" right metric — which one matters depends on whether a false alarm
-or a miss costs you more.
+The confusion matrix refuses to collapse them. Every classification a model
+makes lands in exactly one of four buckets: rows are the ground truth
+(actually positive / actually negative), columns are the prediction
+(predicted positive / predicted negative). The TP/TN diagonal is where the
+model agreed with reality; the FP/FN diagonal is where it didn't — and those
+two kinds of wrong mean very different things. A false positive is a false
+alarm: flagging something that was actually fine. A false negative is a
+miss: letting something real slip through undetected — exactly the failure
+mode the do-nothing "always healthy" test commits 100% of the time, which
+the raw accuracy number never revealed.
 
-**Where it bites in real life:** a 99%-accurate fraud model can still be
-useless if fraud is rare — nearly all its correct predictions are the easy
-"not fraud" calls, and accuracy alone hides whether it's catching any real
-fraud (recall) or drowning investigators in false alarms (precision). Read
-the actual 2x2 grid, not just one summary number, before trusting a
-classifier's headline accuracy.
+Look at the grid instead of the headline number and the do-nothing test is
+exposed instantly: its TP cell (real cases actually caught) sits at zero, no
+matter how green its TN cell looks. The picture shades each cell by its
+share of the population so this is visible at a glance, and lets you watch
+the four counts — and the accuracy/precision/recall/F1 built from them —
+shift as the threshold or class separation change: raising the threshold
+shrinks both "predicted positive" cells and grows both "predicted negative"
+cells, because fewer examples clear a higher bar.
+
+**Where it bites in real life:** fraud detection, rare-disease screening,
+security alerting — anywhere the thing you're trying to catch is rare, a
+model can hit sky-high accuracy by mostly predicting the common outcome and
+still be worthless at the one job it exists to do. Reading the actual 2x2
+grid — not just the headline accuracy — is the only way to tell a genuinely
+skilled classifier from one that's just exploiting an imbalanced dataset.
 
 ---
 

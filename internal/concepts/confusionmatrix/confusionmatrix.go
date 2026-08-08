@@ -18,13 +18,17 @@ func init() {
 	concept.Register(concept.Concept{
 		ID:    "confusion-matrix",
 		Title: "Confusion matrix",
-		Blurb: "A population is split 50/50 into a real-positive and real-negative class, " +
-			"scored from two overlapping normal distributions 'separation' apart, and " +
-			"classified positive whenever the score clears the threshold. The 2x2 grid is " +
-			"the result: true positives and true negatives on one diagonal, false positives " +
-			"and false negatives (the two ways a classifier gets it wrong) on the other. " +
-			"Darker cells hold more of the population. Slide the threshold or separation and " +
-			"watch counts — and the accuracy/precision/recall/F1 built from them — shift.",
+		Blurb: "A hospital brags that its new test for a rare disease is '99% accurate.' " +
+			"Sounds great — until you realize a test that just says 'healthy' for literally " +
+			"everyone, never checking anything, would ALSO be 99% accurate if only 1% of " +
+			"people actually have the disease. It would catch zero real cases while still " +
+			"scoring 99%. Accuracy alone can't tell these two situations apart because it " +
+			"lumps four very different outcomes into one number. The confusion matrix refuses " +
+			"to lump them: it's the literal 2x2 breakdown of every outcome — true positive, " +
+			"false positive, false negative, true negative — for a population classified " +
+			"positive whenever its score clears the threshold. Darker cells hold more of the " +
+			"population. Slide the threshold or separation and watch the four counts — and " +
+			"the accuracy/precision/recall/F1 built from them — shift.",
 		Params: []concept.ParamSpec{
 			{Key: "thresh", Label: "Threshold", Min: -3, Max: 6, Step: 0.1, Def: 1.5},
 			{Key: "sep", Label: "Class separation", Min: 1, Max: 5, Step: 0.1, Def: 3},
