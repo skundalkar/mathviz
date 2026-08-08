@@ -252,34 +252,48 @@ is secretly lopsided or spiky.
 
 ---
 
-## variance-vs-stddev — why we square, then square-root back
-**The idea in one line:** raw deviations from the mean always cancel to zero,
-so we square them to measure spread — then square-root the result to get back
-to the data's own units.
+## variance-vs-stddev — why "average distance from average" doesn't work
+**The idea in one line:** the obvious way to measure spread — average how far
+each point is from the mean — always gives exactly zero, so variance squares
+first (to stop the cancellation) and standard deviation square-roots back (to
+undo the squared units).
 
-Take any dataset's deviations from its mean and add them up: by definition the
-positives and negatives cancel exactly, giving zero every time. That makes a
-raw average deviation useless as a spread measure. Squaring each deviation
-fixes the cancellation (every term becomes positive) and, as a side effect,
-punishes far-out points much harder than close ones — a point twice as far
-from the mean contributes four times the squared deviation. The average of
-those squared deviations is the **variance**. Its only flaw: squaring the data
-also squares the units (dollars become dollars², seconds become seconds²), so
-variance isn't directly comparable to the data. Taking its square root — the
-**standard deviation** — undoes that and lands back in the original units.
+A friend hands you two lists of dart-throw distances from the bullseye and
+asks which thrower is more consistent. The obvious plan: for each throw,
+measure how far off it was (left is negative, right is positive, say), then
+average those numbers across all the throws. Try it and something strange
+happens — for *both* throwers, no matter how wild or tight their throws
+actually were, the average comes out to roughly zero. That's not telling you
+both throwers are equally consistent; it's a property of the mean itself.
+Deviations from the mean always sum to zero by definition — the positive
+ones and negative ones cancel exactly, every time — so "average raw
+deviation" can never distinguish a tight thrower from a scattered one.
 
-The picture makes both effects visible: scaling every point away from the
-mean by a factor *k* scales variance by *k²* but stddev only by *k* (drag
-spread and watch the bars shoot up much faster than the eye expects), and
-pushing one point out further as an "outlier" inflates variance disproportionately
-— the whole reason variance/stddev are sensitive to outliers while the median
-and IQR are not.
+The fix is to stop the cancellation before it happens: square each deviation
+first. A throw 4 inches left becomes +16, a throw 4 inches right also
+becomes +16 — nothing cancels anymore, and a throw twice as far off
+contributes *four times* the squared deviation, so wild outliers get
+punished harder than close misses. Average those squared deviations and you
+get **variance** — a real, non-zero number that grows the wilder the throws
+get. Its one wrinkle: squaring the data also squares the units, so if throws
+are measured in inches, variance comes out in inches² — awkward to interpret
+("this thrower's variance is 9 square inches" isn't a natural sentence).
+Taking the square root of variance lands back in the original units, and
+that's the **standard deviation**.
+
+The picture makes the asymmetry concrete: scale every point away from the
+mean by a factor k, and variance scales by k² while standard deviation only
+scales by k — drag the spread slider and watch the variance bar shoot up far
+faster than intuition expects. Push one point out as an outlier and variance
+jumps disproportionately too, because that squaring step punishes the single
+far-out point hardest of all.
 
 **Where it bites in real life:** why one wild outlier can wreck a
-variance-based estimate (use median/IQR for robustness instead), why RMSE
-(root-mean-squared-error) is reported in the target's own units instead of
-raw MSE, and why standard deviation — not variance — is the number quoted
-alongside a mean.
+variance-based estimate more than you'd guess (median/IQR are more robust
+because they don't square anything), why error is usually reported as RMSE —
+root-mean-squared-error, i.e. "square, average, then square-root back" —
+instead of raw MSE, and why standard deviation, not variance, is the number
+that actually gets quoted next to a mean.
 
 ---
 

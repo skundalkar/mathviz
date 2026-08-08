@@ -72,14 +72,17 @@ func init() {
 	concept.Register(concept.Concept{
 		ID:    "variance-vs-stddev",
 		Title: "Variance vs. standard deviation",
-		Blurb: "Raw deviations from the mean always sum to zero — positives and negatives " +
-			"cancel out, so they can't measure spread directly. Squaring each deviation makes " +
-			"every term positive (and punishes outliers hardest, since they get squared too), " +
-			"so the average squared deviation — the variance — actually grows with spread. The " +
-			"catch: variance is in squared units. Taking its square root, the standard " +
-			"deviation, brings the number back to the same units as the data. Drag spread to " +
-			"see stddev scale linearly while variance scales with the square; drag the outlier " +
-			"to see how much one extreme point can inflate both.",
+		Blurb: "A friend hands you two lists of dart-throw distances from the bullseye and " +
+			"asks which thrower is more consistent. Obvious plan: average how far off each " +
+			"throw was. Do that and — for BOTH throwers, however wild or tight their throws " +
+			"actually were — the average comes out to roughly zero, because deviations from " +
+			"the mean always cancel: positives and negatives sum to nothing, every time. " +
+			"Squaring each deviation first stops the cancellation (a throw twice as far off " +
+			"counts four times as much) — the average of those squares is variance. Its one " +
+			"flaw: squaring the data also squares the units (inches become inches²), so we " +
+			"square-root back down to standard deviation, an answer in the units you started " +
+			"with. Drag spread to see stddev scale linearly while variance scales with the " +
+			"square; drag the outlier to see how much one extreme point inflates both.",
 		Params: []concept.ParamSpec{
 			{Key: "spread", Label: "Spread", Min: 0.3, Max: 2.5, Step: 0.1, Def: 1},
 			{Key: "outlier", Label: "Outlier push", Min: 0, Max: 10, Step: 0.5, Def: 0},
