@@ -283,31 +283,44 @@ alongside a mean.
 
 ---
 
-## mean-median-mode — three averages, one skew
-**The idea in one line:** for a symmetric distribution, mean, median, and mode
-all coincide; skew the distribution and they peel apart in a fixed order.
+## mean-median-mode — three "typical" values that agree until they don't
+**The idea in one line:** mean, median, and mode all answer "what's typical
+here," but they answer it differently enough that a skewed dataset pulls
+them apart — and knowing which one you're looking at matters.
 
-The picture uses a log-normal curve because all three statistics have exact
-closed forms in terms of its two parameters (μ, σ): median = e^μ, mean =
-e^(μ+σ²/2), mode = e^(μ-σ²). No sampling needed — the lesson is exact. Drag σ
-up from near-zero and watch the three vertical lines split apart from a single
-point into **mode < median < mean**, always in that order for a right-skewed
-curve. The mode marks the peak (most likely single value), the median splits
-the area in half, and the mean is pulled hardest because it's an average of
-*every* value including the ones way out in the long tail — a few big values
-drag it further than they drag the median.
+Bill Gates walks into a small bar with 20 regulars, each with a net worth
+around $80,000. Before he sits down, the bar's *average* (mean) net worth is
+about $80,000 — a fair summary of "the typical person here." The moment he
+sits down, that mean net worth rockets into the billions. Nothing about the
+20 regulars changed — not one of them got richer or poorer — but "the
+average person in this bar" now sounds like a billionaire. That's obviously
+a lie about what's typical, and it's the mean's fault: it's an average of
+*every* value, including the one wildly extreme one, so a single outlier can
+drag it anywhere.
 
-This is also why "average" is an ambiguous word: for skewed real-world
-quantities (income, home prices, response times, city populations) the mean is
-almost always higher than the median, sometimes dramatically. A "mean income"
-headline can be pulled way up by a handful of very high earners, while the
-median (what a typical person actually makes) barely moves — which is why
-income statistics are usually reported as medians.
+The median doesn't have this problem: it's just "the middle value when
+everyone's lined up in order." With Bill Gates added, the middle of a line
+of 21 people barely shifts — the median net worth is still roughly $80,000,
+because Bill Gates is just one more person standing at the far end of the
+line, not a value that gets *averaged in*. The mode — the single most common
+value — doesn't move at all either.
 
-**Where it bites in real life:** household income and wealth reporting, home
-prices, response-time/latency dashboards (mean is dragged by rare slow
-requests — p50 vs. mean tells a different story), city/company size
-distributions, and any "average" claim about data you suspect is skewed.
+For a symmetric distribution these three "typical value" measures all
+coincide, but skew the underlying distribution — as the picture does,
+dragging a log-normal curve's tail out to the right — and they peel apart in
+a fixed order: **mode < median < mean**. The mode sits at the peak (most
+likely single outcome), the median splits the population exactly in half,
+and the mean gets pulled hardest toward whichever direction the long tail
+stretches, because it's the only one of the three that actually does
+arithmetic with the extreme values instead of just counting or ranking them.
+
+**Where it bites in real life:** "average household income" headlines are
+almost always higher than what a typical household actually earns, because a
+small number of very high earners drag the mean up while the median (what
+statisticians usually mean by "typical") barely moves — exactly why income
+and home-price statistics are usually reported as medians, and why a
+company's "average" salary can look great in a press release while most
+employees make noticeably less.
 
 ---
 

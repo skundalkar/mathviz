@@ -18,12 +18,15 @@ func init() {
 	concept.Register(concept.Concept{
 		ID:    "mean-median-mode",
 		Title: "Mean, median & mode",
-		Blurb: "For a symmetric distribution, the mean, median, and mode all land in the " +
-			"same place. Skew the distribution and they peel apart in a fixed order: the mode " +
-			"stays at the peak, the median sits at the 50/50 point, and the mean gets dragged " +
-			"toward the long tail — because the mean, unlike the median, is sensitive to extreme " +
-			"values. Drag the skew slider and watch mean > median > mode open up as the right " +
-			"tail lengthens.",
+		Blurb: "Bill Gates walks into a small bar with 20 regulars, average net worth maybe " +
+			"$80K each. The moment he sits down, the bar's *average* net worth rockets into " +
+			"the billions — even though every regular's actual wealth is exactly what it was " +
+			"five minutes ago. That's the mean doing what it does: getting dragged by extreme " +
+			"values, even a single one. The median (the person exactly in the middle of the " +
+			"line-up) barely moves. For a symmetric distribution, mean, median, and mode all " +
+			"land in the same place; skew it and they peel apart in a fixed order: mode stays " +
+			"at the peak, median at the 50/50 point, mean dragged hardest toward the long tail. " +
+			"Drag the skew slider and watch mean > median > mode open up.",
 		Params: []concept.ParamSpec{
 			{Key: "sigma", Label: "Skew (σ)", Min: 0.05, Max: 1.2, Step: 0.05, Def: 0.6},
 			{Key: "mu", Label: "Log-location (μ)", Min: -0.5, Max: 0.5, Step: 0.05, Def: 0},
