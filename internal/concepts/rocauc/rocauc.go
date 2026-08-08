@@ -19,13 +19,17 @@ func init() {
 	concept.Register(concept.Concept{
 		ID:    "roc-auc",
 		Title: "ROC & AUC",
-		Blurb: "Positive- and negative-class scores are two overlapping normal " +
-			"distributions, 'separation' apart. Sweeping the decision threshold from high " +
-			"to low traces the ROC curve: x is the false-positive rate, y is the " +
-			"true-positive rate (recall). The diagonal is what a coin-flip classifier " +
-			"achieves; a better classifier bows the curve toward the top-left corner. AUC " +
-			"is the area under that curve — the probability a random positive example " +
-			"scores higher than a random negative one, across every threshold at once.",
+		Blurb: "Two doctors review the same X-rays for a rare condition. Doctor A calls " +
+			"almost everything 'suspicious' — catches nearly every real case, but raises a " +
+			"lot of false alarms too. Doctor B is conservative — rarely wrong when flagging " +
+			"something, but misses real cases. Whose judgment is actually better, independent " +
+			"of how cautious each one happens to be? You can't tell from accuracy at their " +
+			"current habits — those are personal styles, not skill. Sweep an imaginary " +
+			"threshold from 'flag nothing' to 'flag everything' and trace it: x is the " +
+			"false-positive rate, y is the true-positive rate (recall). The diagonal is what " +
+			"a coin-flip achieves; real skill bows the curve toward the top-left corner. AUC " +
+			"is the area under that curve — the probability a random positive example scores " +
+			"higher than a random negative one, across every threshold at once.",
 		Params: []concept.ParamSpec{
 			{Key: "thresh", Label: "Threshold", Min: -4, Max: 4, Step: 0.1, Def: 0},
 			{Key: "sep", Label: "Class separation", Min: 0.5, Max: 5, Step: 0.1, Def: 2.5},

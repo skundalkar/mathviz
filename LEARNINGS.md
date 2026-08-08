@@ -42,43 +42,51 @@ classifier's headline accuracy.
 
 ---
 
-## roc-auc — the whole trade-off curve, not just one threshold
-**The idea in one line:** an ROC curve is what you get by drawing precision
-and recall's threshold trade-off (see precision-recall) as a path instead of
-a single point — sweep the threshold across every possible setting and plot
-false-positive rate against true-positive rate at each one.
+## roc-auc — grading judgment, not just the cutoff someone happened to pick
+**The idea in one line:** comparing two classifiers by their accuracy at
+whatever threshold they happen to be using compares their *habits*, not
+their underlying skill — an ROC curve and its AUC grade the skill directly,
+at every possible threshold at once.
 
-Positive- and negative-class scores are modeled as two overlapping normal
-distributions, "separation" apart — the same setup as precision-recall.
-Instead of picking one threshold and reading off precision and recall, this
-picture sweeps the threshold from "call nothing positive" down to "call
-everything positive" and traces every (false-positive rate, true-positive
-rate) pair along the way. At one extreme the classifier flags nothing —
-(0, 0). At the other it flags everyone — (1, 1). Where the curve goes between
-those two corners is the whole story: a classifier that can't tell the
-classes apart traces the diagonal (at any threshold, whatever fraction of
-negatives it catches, it catches the same fraction of positives — no
-better than a coin flip), while a classifier with real separation bows the
-curve up and to the left, catching positives while dragging along far fewer
-false alarms.
+Two doctors review the same set of X-rays for a rare condition. Doctor A
+calls almost anything even slightly ambiguous "suspicious" — nearly every
+real case gets caught, but so does a lot of harmless noise, so Doctor A also
+generates a pile of false alarms. Doctor B is the opposite: cautious, only
+flags the clearest cases, rarely wrong when they do flag something, but
+quietly misses a fair number of real cases along the way. Ask "which doctor
+is more accurate" using their current habits and you'll get a misleading
+answer, because their thresholds for "suspicious enough to flag" are
+personal styles, not a measure of how well they can actually tell a real
+case from a healthy one when they look at the same scan.
 
-AUC — the shaded area under that curve — compresses the entire curve into
-one number: it's exactly the probability that a randomly chosen positive
-example scores higher than a randomly chosen negative one. That's why AUC
-0.5 means random guessing (no separation) and AUC 1.0 means perfect
-separation, and why it doesn't require picking a threshold at all — it grades
-the ranking a model produces, before any operating point is chosen. Slide
-"class separation" and watch the curve peel away from the diagonal as AUC
-climbs; slide "threshold" and watch the orange marker slide along the fixed
-curve, because changing the threshold moves *where on the curve* you're
-operating, not the curve's shape.
+What you actually want to know is threshold-independent: at every possible
+cutoff — from "flag almost nothing" to "flag almost everything" — how well
+does each doctor separate the two groups? Sweep an imaginary threshold
+across that whole range and, at each setting, plot the false-positive rate
+against the true-positive rate. That path is the ROC curve. A doctor with
+real diagnostic skill bows that curve up toward the top-left corner —
+catching real cases while dragging along comparatively few false alarms at
+every threshold, not just their habitual one. A doctor guessing blindly (or
+a coin flip) can't do better than the diagonal, because at any cutoff,
+whatever fraction of healthy scans they wrongly flag, they catch exactly
+that same fraction of real cases too — no separation, no skill.
 
-**Where it bites in real life:** two models can have the same accuracy at
-their default threshold yet very different AUCs — the one with higher AUC
-has more headroom no matter where you eventually set the cutoff. It's also
-why AUC is popular for comparing models before deployment, but a poor
-substitute for precision/recall once you actually have to pick one operating
-threshold and live with its false-positive rate.
+**AUC**, the shaded area under that curve, compresses the entire
+threshold-independent comparison into one number: it's exactly the
+probability that a randomly chosen real case scores more "suspicious" than a
+randomly chosen healthy one, under that doctor's judgment. AUC 0.5 is a coin
+flip; AUC 1.0 is perfect separation — and crucially, it never requires
+either doctor to have picked the same cutoff, or any cutoff at all, before
+you can compare them.
+
+**Where it bites in real life:** two models can post identical accuracy at
+their default settings and have very different AUCs — the higher-AUC one
+has more headroom no matter where you eventually set the operating
+threshold, which is why AUC is the standard way to compare models before
+deployment. It's a poor substitute for precision/recall once you've actually
+picked one operating threshold and have to live with its specific
+false-positive rate, though — AUC grades potential, not the one decision
+you're actually stuck with in production.
 
 ---
 
