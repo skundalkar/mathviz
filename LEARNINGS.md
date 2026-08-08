@@ -311,30 +311,43 @@ distributions, and any "average" claim about data you suspect is skewed.
 
 ---
 
-## correlation — how tightly the dots hug a line
-**The idea in one line:** r measures how tightly a scatter of points hugs a
-straight line, from -1 (perfect downhill) through 0 (no linear pattern) to +1
-(perfect uphill).
+## correlation — moving together is not the same as causing
+**The idea in one line:** r measures how tightly two variables move
+together — from -1 (perfect opposite) through 0 (no linear relationship) to
++1 (perfect together) — and moving together is a fact about the data, not an
+explanation for it.
 
-Both axes are standardized (mean 0, variance 1), so the trend line r implies
-always passes through the origin with slope r — that's why the orange guide
-line visibly steepens as you drag r toward ±1 and flattens toward 0. At the
-extremes (r = ±1) there's no noise left at all: every point falls exactly on
-the line. In between, the cloud is a mix of "along the line" and independent
-noise, weighted by r and √(1-r²) respectively.
+Every summer, ice cream sales climb. Every summer, drowning deaths climb too.
+Plot one against the other across the year and you'll find a strong positive
+correlation — high r, tight cloud. It's tempting to read that as "ice cream
+causes drowning" (or, mixed up the other way, "drowning makes people crave
+ice cream"). Neither is true. Both are being dragged along by a third thing
+entirely: hot weather. Heat means more people swim (more drowning risk) *and*
+more people buy ice cream — the two variables never touch each other
+causally, they're just both downstream of summer.
 
-The picture also shows the sample r alongside the target r — with a small `n`
-they can drift apart noticeably, the same "sample vs. population" lesson as
-standard deviation's ±1σ band: a statistic estimated from a sample is not the
-same thing as the true population value. **Correlation is not causation** is
-the other half of the lesson: r only says two variables move together, it says
-nothing about mechanism — a third variable, reverse causation, or pure
-coincidence can all produce a strong r.
+That's the trap r sets by design: it only ever measures how tightly a
+scatter of points hugs a straight line. Both axes here are standardized, so
+the trend line r implies always runs through the origin with slope r — why
+the orange guide line visibly steepens as r moves toward ±1. At the extremes
+there's no noise left: every point sits exactly on the line. But "sits
+exactly on a line" and "one causes the other" are different claims, and the
+math only ever makes the first one. A hidden third variable (like summer
+heat), reverse causation, or even pure coincidence in a small sample can all
+produce a strong r with zero causal link behind it — the number can't
+distinguish between them; only more information (a controlled experiment, a
+mechanism, timing) can.
 
-**Where it bites in real life:** spurious correlations (ice cream sales and
-drowning both track summer heat), feature selection in ML (a feature can
-correlate with the label without being causal), and any headline that reports
-a correlation as if it were a proven cause.
+The picture also shows sample r next to target r: with a small n they
+visibly drift apart, a reminder that a correlation measured from one sample
+is itself just an estimate of the true relationship, not the relationship.
+
+**Where it bites in real life:** "cities with more police have more crime"
+(both driven by population density), a stock-picking strategy that
+correlates with past returns purely by chance, or a feature in an ML model
+that correlates with the label without causing it — swap it out in
+production and the correlation, having no causal footing, quietly
+disappears.
 
 ---
 

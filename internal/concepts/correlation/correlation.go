@@ -17,11 +17,15 @@ func init() {
 	concept.Register(concept.Concept{
 		ID:    "correlation",
 		Title: "Correlation (r)",
-		Blurb: "r measures how tightly a scatter of points hugs a straight line, from " +
-			"-1 (perfect downhill) through 0 (no linear pattern) to +1 (perfect uphill). " +
-			"Slide r and watch the cloud tighten into a line or spread into a blob. The " +
-			"orange line is the trend r implies. A strong r only tells you the two " +
-			"variables move together — it never tells you that one causes the other.",
+		Blurb: "Ice cream sales and drowning deaths both spike every summer — track them " +
+			"over a year and you'll find a strong positive correlation between the two. Does " +
+			"buying ice cream cause drowning? Obviously not — both are being pulled along by " +
+			"a third thing entirely (hot weather: more swimming, more ice cream). r measures " +
+			"exactly how tightly two variables move together, from -1 (perfect opposite) " +
+			"through 0 (no linear relationship) to +1 (perfect together) — and it cannot tell " +
+			"you why. Slide r and watch the scatter cloud tighten into a line or spread into " +
+			"a shapeless blob; the orange line is the trend r implies. A strong r is a real, " +
+			"useful signal that something is going on — it just never tells you what.",
 		Params: []concept.ParamSpec{
 			{Key: "r", Label: "Target correlation (r)", Min: -1, Max: 1, Step: 0.05, Def: 0.6},
 			{Key: "n", Label: "Sample size (n)", Min: 20, Max: 300, Step: 10, Def: 150},
