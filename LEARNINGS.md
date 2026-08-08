@@ -6,6 +6,43 @@ code. Newest entries go at the top.
 
 ---
 
+## bayes-theorem — a positive test is only as good as how rare the thing was
+**The idea in one line:** Bayes' theorem is just bookkeeping — it takes how
+common a condition was *before* the test (the prior) and updates it using how
+reliable the test is, and for rare conditions the "before" number dominates
+far more than intuition expects.
+
+The picture starts with a population of 100 people at the given base rate
+(prior) and runs a test with a given sensitivity (catches true cases) and
+specificity (clears true negatives) over all of them. It then regroups
+everyone by test result: the "tested positive" strip and the "tested
+negative" strip. Inside "tested positive", green squares are true positives
+and red squares are false alarms — people who don't have the condition but
+tested positive anyway. At the default 1% base rate with a 99%-sensitive,
+95%-specific test, the positive group is mostly red: about 5 false alarms
+for every true positive, even though the test looks accurate on paper. Raise
+the prior and green takes over the positive strip; raise specificity and the
+red squares vanish, because specificity controls exactly how many healthy
+people get swept up into a positive result.
+
+The reason is arithmetic, not surprise: false positives come from the (huge)
+healthy population times a small false-positive rate, while true positives
+come from the (tiny) diseased population times a large sensitivity. When the
+healthy population dwarfs the diseased one, even a small false-positive rate
+applied to it can outnumber the true positives drawn from a small prior.
+Bayes' theorem is the formula that adds these two contributions correctly:
+P(condition | positive) = (sensitivity × prior) / (sensitivity × prior +
+false-positive-rate × (1 - prior)).
+
+**Where it bites in real life:** screening for a rare disease, a rare fraud
+pattern, or a rare security alert — a "99% accurate" test sounds like a
+near-certainty, but if the thing it's testing for is rare, most positives
+are still noise. It's why doctors ask a second, more specific test before
+acting on a positive screen, and why "the model flagged it" needs a base
+rate attached before anyone should trust the flag.
+
+---
+
 ## p-value — how surprising is this, if nothing's really going on?
 **The idea in one line:** a p-value is just the area under a "no effect"
 curve that's at least as extreme as what you actually observed — nothing
