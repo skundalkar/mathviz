@@ -338,27 +338,41 @@ a correlation as if it were a proven cause.
 
 ---
 
-## precision-recall — the threshold trade-off
-**The idea in one line:** Precision and recall measure two different failure
-modes, and the classification threshold trades one for the other.
+## precision-recall — two ways to be wrong, and a knob that trades between them
+**The idea in one line:** a classifier can fail in two different ways —
+flagging things that aren't real (false alarms) or missing things that are
+(misses) — and no single threshold setting minimizes both at once.
 
-Picture two overlapping bell curves: real negatives on the left, real positives
-on the right. Your model scores each example, and you call everything above a
-threshold "positive."
+You're building a spam filter. The obvious plan: make it aggressive, flag
+anything suspicious, catch every last piece of spam. Turn that dial all the
+way up and you *do* catch 100% of the spam — recall is perfect — but you also
+start flagging your boss's emails, meeting invites, and password-reset links,
+because "suspicious" was cast too wide. Loosen the dial to stop burying real
+mail and now actual spam slips through the net untouched. There's no setting
+of this one dial that avoids both problems — that's not a bug in your filter,
+it's structural.
 
-- **Recall** = of all the *real positives*, how many did you catch? = TP / (TP + FN)
-- **Precision** = of everything you *flagged*, how many were right? = TP / (TP + FP)
+The picture makes the structure visible: real negatives (legitimate email)
+and real positives (spam) are two overlapping bell curves, and "flag as
+spam" means "score above the threshold." **Recall** asks, of everything that
+really was spam, how much did you catch — TP/(TP+FN). **Precision** asks, of
+everything you flagged, how much was actually spam — TP/(TP+FP). Slide the
+threshold right and you only flag the most obvious spam: precision climbs
+(what you flag is almost always right) but recall falls (borderline spam
+slips through). Slide it left and the opposite happens. **F1**, their
+harmonic mean, only rises when *both* rise together — which the threshold
+alone can't deliver.
 
-Slide the threshold right: you only flag the most confident cases, so precision
-rises — but you miss more real positives, so recall falls. Slide it left: you
-catch almost everything (high recall) but drag in false alarms (low precision).
-**F1** is their harmonic mean, high only when *both* are high. The one way to
-improve both at once is to separate the classes better — i.e. a better model,
-not just a better threshold.
+The one thing that genuinely improves both is separating the two curves
+further apart: a better model that scores real spam and real mail more
+differently in the first place, leaving more room between "clearly not
+spam" and "clearly spam" for a threshold to land cleanly.
 
-**Where it bites in real life:** spam filters (false positives = lost email),
-cancer screening (false negatives = missed disease), search ranking, fraud
-detection. Every one is a choice about which mistake is cheaper.
+**Where it bites in real life:** cancer screening (a false negative means
+missed disease — worth tolerating more false positives to avoid), spam
+filters (a false positive means a lost important email), fraud detection,
+search ranking — anywhere "how sensitive should this be" is really a
+business decision about which mistake costs more, dressed up as a slider.
 
 ---
 

@@ -19,12 +19,16 @@ func init() {
 	concept.Register(concept.Concept{
 		ID:    "precision-recall",
 		Title: "Precision vs. recall",
-		Blurb: "Right of the threshold = predicted positive. Recall = of all the real " +
-			"positives (right curve), what fraction did we catch? Precision = of everything " +
-			"we flagged, what fraction was actually positive? Slide the threshold right and " +
-			"precision goes up but recall drops; slide it left and you catch more but let in " +
-			"false positives. Increase separation and both improve — that is what a 'better " +
-			"model' does. You rarely get both at once from the threshold alone.",
+		Blurb: "You're building a spam filter. The easy instinct: make it aggressive, flag " +
+			"anything that even smells like spam, and you'll catch it all. Try that and you'll " +
+			"also flag your boss's emails and password resets as spam — perfect recall, " +
+			"terrible precision. Loosen it up to stop annoying people and real spam slips " +
+			"through untouched. Right of the threshold = predicted positive. Recall = of all " +
+			"the real positives (right curve), what fraction did we catch? Precision = of " +
+			"everything we flagged, what fraction was actually positive? Slide the threshold " +
+			"right and precision climbs while recall falls; slide it left and the opposite " +
+			"happens. Only a better model — more separation between the curves — improves both " +
+			"at once; the threshold alone just trades one for the other.",
 		Params: []concept.ParamSpec{
 			{Key: "thresh", Label: "Threshold", Min: -3, Max: 6, Step: 0.1, Def: 1.5},
 			{Key: "sep", Label: "Class separation", Min: 1, Max: 5, Step: 0.1, Def: 3},
