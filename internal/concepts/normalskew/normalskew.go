@@ -17,13 +17,16 @@ func init() {
 	concept.Register(concept.Concept{
 		ID:    "normal-vs-skew",
 		Title: "Normal vs. skewed & fat-tailed",
-		Blurb: "A standard normal curve is symmetric with zero excess kurtosis: its skewness " +
-			"and kurtosis knobs are both at zero. Turn the skew knob and the curve leans — one " +
-			"tail lengthens while the other shortens, exactly what a real-world skewed dataset " +
-			"looks like. Turn the kurtosis knob and the curve stays symmetric but its peak " +
-			"sharpens and its tails fatten (positive excess kurtosis, 'leptokurtic') or the " +
-			"opposite (negative, 'platykurtic'). The dashed curve is the plain normal for " +
-			"comparison.",
+		Blurb: "Two neighborhoods report the exact same average home price and the exact " +
+			"same standard deviation — interchangeable, right? Neighborhood A's prices cluster " +
+			"in a clean bell around the average. Neighborhood B is mostly modest homes, but a " +
+			"handful of mansions drag the mean up to match A exactly. Same mean, same spread, " +
+			"totally different shape — invisible to those two numbers alone. Skewness is the " +
+			"third number: it measures which way a distribution leans (turn the knob and one " +
+			"tail lengthens while the other shortens). Kurtosis is a fourth: whether extreme, " +
+			"rare outcomes are more likely than a plain bell curve predicts ('fat tails' — a " +
+			"lesson risk models learned expensively in 2008). At skew = kurtosis = 0 this is " +
+			"exactly the standard normal; the dashed curve is that plain normal for comparison.",
 		Params: []concept.ParamSpec{
 			{Key: "skew", Label: "Skewness", Min: -0.9, Max: 0.9, Step: 0.1, Def: 0},
 			{Key: "kurt", Label: "Excess kurtosis", Min: -1, Max: 2, Step: 0.1, Def: 0},

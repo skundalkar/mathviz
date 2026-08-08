@@ -221,34 +221,49 @@ intervals can mislead.
 
 ---
 
-## normal-vs-skew — two more knobs on the bell curve
-**The idea in one line:** skewness and kurtosis are the next two "shape"
-numbers after mean and variance, and turning them reshapes a normal curve
-into something lopsided or spiky-with-fat-tails.
+## normal-vs-skew — same average, same spread, different shape
+**The idea in one line:** two distributions can share an identical mean and
+an identical standard deviation and still look nothing alike — skewness and
+kurtosis are the extra numbers that capture the difference.
 
-The mean tells you where a distribution is centered and the variance tells
-you how wide it is, but two distributions can share both of those and still
-look completely different. **Skewness** measures lopsidedness — positive skew
-means a longer right tail (a few big values dragging out to the right, like
-income), negative skew means a longer left tail. **Kurtosis** (specifically
-*excess* kurtosis, measured relative to the normal's baseline) measures how
-"peaked-and-fat-tailed" versus "flat-and-thin-tailed" a distribution is: a
-positive value means more of the probability sits in a sharp central peak
-*and* in rare extreme outliers, at the expense of the shoulders — real-world
-returns and error distributions are almost always like this ("fat tails"
-mean the rare disaster is more likely than a plain normal curve would suggest).
+Two neighborhoods report the exact same average home price and the exact
+same standard deviation. A house hunter might assume they're basically
+interchangeable — same "typical" price, same amount of variation. But
+picture neighborhood A: prices cluster in a clean bell shape around the
+average, most homes genuinely close to typical. Now picture neighborhood B:
+most homes are modest, well below the average, but a handful of mansions sit
+far out on the high end and drag the mean up to match neighborhood A
+exactly. The mean and the spread are identical between the two — and the
+actual experience of house-hunting in them is completely different. That gap
+is invisible to mean and standard deviation alone; you need a third number.
 
-The picture builds both from a normal curve using a closed-form correction
-(the Gram-Charlier series): skew scales an odd cubic-shaped term and kurtosis
-scales an even quartic-shaped term, and at skew=kurt=0 the curve is exactly
-the standard normal — no approximation, no sampling.
+**Skewness** is that number: it measures which way a distribution leans.
+Positive skew (like neighborhood B) means a long right tail — a few big
+values stretching out and dragging the mean above where most of the data
+actually sits. **Kurtosis** (specifically *excess* kurtosis, measured
+against the normal curve's baseline) answers a different question: are
+extreme outcomes more or less common than a plain bell curve predicts? A
+positive value means "fat tails" — more of the probability sits in a sharp
+central peak *and* out in rare extremes, at the expense of the ordinary
+middle ground. That sounds abstract until you remember 2008: risk models
+built assuming roughly normal (thin-tailed) returns treated a market crash
+as a once-in-thousands-of-years event. It happened anyway, because real
+returns have fat tails — the "impossible" outcome was simply more likely
+than the model's normal-curve assumption allowed for.
 
-**Where it bites in real life:** financial returns and risk models (fat
-tails mean "once in a century" events happen far more than a normal-curve
-model predicts — a lesson learned expensively in 2008), A/B test metrics that
-aren't actually normal (skew breaks assumptions behind some significance
-tests), and any dashboard that reports only a mean and stddev for data that
-is secretly lopsided or spiky.
+The picture builds both effects on top of a plain normal curve using a
+closed-form correction, so at skew = kurtosis = 0 it's exactly the standard
+bell curve, and each knob's effect is visible in isolation: skew tilts the
+curve, lengthening one tail and shortening the other; kurtosis sharpens the
+peak and fattens the tails (or the reverse) while keeping the curve
+symmetric.
+
+**Where it bites in real life:** financial risk models that assume
+normality and get blindsided by fat-tailed crashes, A/B test metrics that
+violate the normality assumptions baked into some significance tests, and
+any dashboard that reports only "mean ± stddev" for data that's secretly
+lopsided or spiky — two numbers that can hide a very different-shaped
+reality.
 
 ---
 
