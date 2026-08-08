@@ -17,7 +17,9 @@ No server, no JavaScript framework, no database.
 | **Precision vs. recall** | Moving the threshold trades precision against recall; only a better model improves both. |
 
 More are queued in [`BACKLOG.md`](BACKLOG.md). The plain-language explanations
-live in [`LEARNINGS.md`](LEARNINGS.md).
+live in [`LEARNINGS.md`](LEARNINGS.md). How the daily build loop itself is
+wired together — the cron trigger, the plugin architecture, the commit
+gate — is documented in [`AUTOMATION.md`](AUTOMATION.md).
 
 ## Run it locally
 
