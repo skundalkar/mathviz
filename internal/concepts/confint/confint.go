@@ -32,13 +32,18 @@ func init() {
 	concept.Register(concept.Concept{
 		ID:    "confidence-interval",
 		Title: "Confidence interval",
-		Blurb: "The dashed line is the true population mean, which in real life you never " +
-			"get to see. Each row is a hypothetical experiment: draw a sample, compute its mean, " +
-			"and build an interval around it. A green interval happened to capture the true " +
-			"mean; a red one missed. \"95% confidence\" doesn't describe any single interval — " +
-			"it describes this whole process: about 95% of intervals built this way capture the " +
-			"true mean. Raise the confidence level and every interval widens (fewer misses); " +
-			"raise the sample size and every interval narrows (more precision).",
+		Blurb: "A fish hides somewhere in a lake, sitting perfectly still. You get an " +
+			"imperfect reading of roughly where it is and cast a net centered on that reading. " +
+			"A wide net catches it almost every time, even with a rough guess; a narrow net " +
+			"only succeeds when your guess lands close. Once you've thrown one specific net, " +
+			"it's tempting to say 'there's a 95% chance the fish is in this net' — but the " +
+			"fish never moved and the net already landed; it either caught it or it didn't. " +
+			"What 95% actually describes is the METHOD: repeat this cast-around-your-guess " +
+			"process many times and about 95% of the nets you throw capture the fish. The " +
+			"dashed line here is the true mean, which in real life you never get to see. Each " +
+			"row is one hypothetical 'cast' — green if its interval captured the true mean, " +
+			"red if it missed. Raise the confidence level and every interval widens (fewer " +
+			"misses); raise the sample size and every interval narrows (more precision).",
 		Params: []concept.ParamSpec{
 			{Key: "confidence", Label: "Confidence level", Min: 50, Max: 99, Step: 1, Def: 90, Unit: "%"},
 			{Key: "n", Label: "Sample size (n)", Min: 2, Max: 100, Step: 1, Def: 20},

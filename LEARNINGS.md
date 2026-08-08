@@ -154,38 +154,52 @@ nothing going on.
 
 ---
 
-## confidence-interval — what "95% confident" actually covers
-**The idea in one line:** a confidence level doesn't describe one interval —
-it describes how often intervals built this way would capture the true value
-if you repeated the experiment many times.
+## confidence-interval — a statement about the method, not about one answer
+**The idea in one line:** "95% confidence" doesn't mean this one interval has
+a 95% chance of containing the truth — it means that if you repeated the
+whole procedure many times, about 95% of the intervals you built this way
+would contain it.
 
-It's tempting to read "95% confidence interval" as "there's a 95% chance the
-true mean is in this interval," but once an interval is built, the true mean
-either is or isn't in it — there's no more randomness left to assign a
-probability to. What the 95% actually describes is the *procedure*: draw a
-sample, compute its mean, build an interval of mean ± z·(σ/√n). Do that many
-times and about 95% of the resulting intervals will contain the true mean,
-purely because 95% of sample means land close enough to the true mean for
-their interval to reach it.
+Imagine a fish hiding somewhere in a lake, sitting perfectly still. You can't
+see it, but you get an imperfect reading of roughly where it is, and you cast
+a net centered on that reading. Cast a generously wide net and you'll
+capture the fish almost every time, even with a rough guess. Cast a narrow
+net and you'll only succeed when your guess happens to land close to the
+truth. Now here's where intuition goes wrong: once you've thrown one
+specific net, it's tempting to say "there's a 95% chance the fish is in this
+net." But the fish was never moving, and the net has already landed — it
+either caught the fish or it didn't. There's no more randomness left to
+attach a probability to; you just don't know which case you're in.
 
-The picture makes this concrete without leaning on randomness at all: 20
-"hypothetical experiments" are placed at evenly spaced quantiles of the
-sampling distribution (an exact, reproducible stand-in for repeated random
-sampling), and each gets its own confidence interval — green if it captures
-the true mean (dashed line), red if it misses. Raise the confidence knob and
-every interval widens, turning red rows green; raise the sample size and
-every interval narrows around the same mean, because standard error shrinks
-as 1/√n. Coverage — how many rows are green — depends only on the confidence
-level, never on n: n changes how *tight* the net is, not how *often* it's cast
-wide enough to catch the fish.
+What the 95% actually describes is the *casting method*, not any single
+cast: draw a sample, compute its mean, build an interval of mean ± z·(σ/√n)
+around it — do that many times, and about 95% of the resulting intervals
+will contain the true value, purely because 95% of sample means happen to
+land close enough to the truth for their interval to reach it. The
+confidence level is a statement about how often this whole process succeeds,
+made *before* you ever throw a net, not a probability you get to attach to
+the specific net sitting in front of you.
 
-**Where it bites in real life:** "the poll's margin of error is ±3 points at
-95% confidence" means 95% of polls run this way would bracket the true
+The picture makes this concrete without leaning on actual randomness: 20
+"hypothetical repeated experiments" sit at evenly spaced quantiles of the
+sampling distribution — an exact, reproducible stand-in for "cast the net 20
+times" — each with its own interval, green if it captured the true mean
+(dashed line), red if it missed. Raise the confidence knob and every
+interval widens, turning red rows green, because a wider net catches more
+fish regardless of how good your guess was. Raise the sample size instead
+and every interval narrows around the same mean, because a bigger sample
+means a sharper reading of where the fish actually is — standard error
+shrinks as 1/√n. Notice what *doesn't* change coverage: n changes how tight
+the net is, never how often it's cast wide enough to succeed — that's the
+confidence level's job alone.
+
+**Where it bites in real life:** "this poll has a ±3 point margin of error
+at 95% confidence" means 95% of polls run this way would bracket the true
 value — not that this specific poll has a 95% chance of being right. It's
-also why a *narrower* interval from a bigger sample is a real improvement
-(tighter net) while cherry-picking a higher confidence level just to get a
-cleaner-looking one-off result is not (it only pays off in the long run,
-across many repeats).
+also why a narrower interval from a bigger sample is a genuine improvement
+(a tighter net, same success rate) while cherry-picking a higher confidence
+level just to get a cleaner-looking one-off result buys you nothing (it only
+pays off across many repeats, not on the one that matters to you).
 
 ---
 
