@@ -77,3 +77,19 @@ func TestRenderProducesSVG(t *testing.T) {
 		t.Fatal("render did not produce a well-formed svg")
 	}
 }
+
+func TestRenderHandlesDivergentAndZeroSteps(t *testing.T) {
+	c, ok := concept.Get("gradient-descent")
+	if !ok {
+		t.Fatal("concept not registered")
+	}
+	for _, p := range []map[string]float64{
+		{"lr": 1.2, "steps": 30},
+		{"lr": 0.01, "steps": 1},
+	} {
+		out := c.Render(p)
+		if !strings.HasPrefix(out, "<svg") || !strings.HasSuffix(out, "</svg>") {
+			t.Fatalf("render(%v) did not produce a well-formed svg", p)
+		}
+	}
+}

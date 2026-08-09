@@ -5,6 +5,9 @@
 package gradientdescent
 
 import (
+	"fmt"
+	"math"
+
 	"mathviz/internal/concept"
 	"mathviz/internal/viz"
 )
@@ -69,6 +72,56 @@ func Descend(x0, lr float64, steps int) []float64 {
 }
 
 func render(p map[string]float64) string {
-	_ = p
-	return viz.New(680, 340, -1, 1, -1, 1).String()
+	lr, steps := p["lr"], int(p["steps"])
+
+	const xmin, xmax = -6.5, 6.5
+	const ymin, ymax = -3.0, 44.0
+	c := viz.New(680, 340, xmin, xmax, ymin, ymax)
+	c.Axes()
+	for x := -6.0; x <= 6.0; x += 2 {
+		c.Tick(x, fmt.Sprintf("%g", x))
+	}
+
+	// The valley itself.
+	c.Path(viz.Sample(xmin, xmax, 200, F), viz.Muted, 2)
+
+	path := Descend(StartX, lr, steps)
+
+	// Draw the ball's trajectory as straight jumps between successive
+	// positions on the curve, stopping if it flies off the visible window —
+	// that's what a diverging (too-large) learning rate looks like.
+	diverged := false
+	visible := 0
+	for i, x := range path {
+		if math.Abs(x) > xmax {
+			diverged = true
+			break
+		}
+		visible = i
+		if i > 0 {
+			prev := path[i-1]
+			c.Path([][2]float64{{prev, F(prev)}, {x, F(x)}}, viz.Warm, 1.5)
+		}
+	}
+	for i := 0; i <= visible; i++ {
+		x := path[i]
+		px, py := c.X(x), c.Y(F(x))
+		if i == 0 {
+			c.Rect(px-4, py-4, 8, 8, viz.Ink, 0.9) // start
+		} else if i == visible && !diverged {
+			c.Rect(px-4, py-4, 8, 8, viz.Good, 0.95) // final resting spot
+		} else {
+			c.Rect(px-3, py-3, 6, 6, viz.Accent, 0.7)
+		}
+	}
+
+	c.Text(20, 24, fmt.Sprintf("learning rate = %.2f    steps = %d", lr, steps), 14, viz.Ink, "start")
+	final := path[len(path)-1]
+	status := fmt.Sprintf("x ≈ %.3f    f(x) ≈ %.3f — converging toward the minimum at x=0", final, F(final))
+	if diverged {
+		status = "diverged — the learning rate is too large, each step overshoots further"
+	}
+	c.Text(20, 44, status, 13, viz.Muted, "start")
+
+	return c.String()
 }
