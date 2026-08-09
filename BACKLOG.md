@@ -22,9 +22,9 @@ Format: `- [ ] <id> — <one-line description of the concept to visualize>`
 - [x] roc-auc — sweeping the threshold to trace an ROC curve
 - [x] confusion-matrix — TP/FP/FN/TN as an interactive grid
 - [x] overfitting — a wiggly curve chasing noise vs. a smooth fit
+- [x] gradient-descent — a ball rolling downhill with an adjustable learning rate
 
 ## Up next (statistics & ML intuition)
-- [ ] gradient-descent — a ball rolling downhill with an adjustable learning rate
 - [ ] entropy — how surprise/information changes with probability
 - [ ] sigmoid-softmax — squashing logits into probabilities
 

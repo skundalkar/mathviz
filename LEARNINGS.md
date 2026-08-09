@@ -6,6 +6,41 @@ code. Newest entries go at the top.
 
 ---
 
+## gradient-descent — why "learning rate" is the knob that can break everything
+**The idea in one line:** gradient descent always knows which way is
+downhill, but the learning rate decides whether it walks there or vaults
+straight over it.
+
+Drop a ball on the inside wall of a bowl and it rolls to the bottom — at
+every instant, gravity pulls it in the direction of steepest descent. Turn
+that into an algorithm and you get gradient descent: at each step, look at
+the slope where you're standing (the gradient) and move against it. The one
+thing physics doesn't have to decide, but the algorithm does, is *how far*
+to move at each step — that's the learning rate.
+
+The picture uses the simplest possible valley, f(x) = x², whose minimum sits
+at x = 0. A ball starts partway up the wall and takes a fixed number of
+steps, each one x_new = x_old − learning_rate × slope. With a small learning
+rate the ball creeps downhill, step after cautious step, converging on the
+bottom — accurate, but slow. Push the learning rate up and it starts
+overshooting: it crosses the bottom and lands partway up the *opposite*
+wall, then crosses back, etc. As long as the overshoot each time is smaller
+than the last, it still spirals in on the minimum. But past a critical
+learning rate the overshoot gets *bigger* each step — the ball doesn't
+oscillate toward the bottom, it flies further from it with every bounce,
+literally off the edge of the chart. That's divergence: the algorithm didn't
+get stuck, it actively made things worse by taking steps too large for the
+curvature of the valley it's in.
+
+**Where it bites in real life:** this is exactly how neural network training
+fails when the learning rate is set too high — the loss doesn't plateau, it
+blows up to NaN within the first few steps. It's also why training
+schedules often *start* with a larger learning rate for speed and shrink it
+over time: big steps to cover ground fast early on, small steps to settle
+precisely into the minimum once you're close.
+
+---
+
 ## overfitting — memorizing the practice problems instead of learning the rule
 **The idea in one line:** a model that scores perfectly on its training data
 hasn't necessarily learned anything — it may have just memorized the noise.
