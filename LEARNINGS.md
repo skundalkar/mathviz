@@ -6,80 +6,73 @@ code. Newest entries go at the top.
 
 ---
 
-## entropy — how many yes/no questions would it take?
-**The idea in one line:** entropy counts, on average, how many yes/no
-questions you'd need to nail down an outcome — and "bits" are just that
-question-count, so a "surprising" outcome is literally one that took more
-questions to pin down.
+## entropy — what people actually mean when they say the word
+**The idea in one line:** "entropy" is just a fancy word for how mixed-up,
+spread-out, or hard-to-call something is — high entropy means "could go a
+lot of different ways, no clear favorite," low entropy means "pretty much
+locked in, one obvious answer."
 
-**Start with a game, not a formula.** Someone picks a whole number from 1 to
-100 and you have to find it by asking only yes/no questions ("is it higher
-than 50?"). If you're smart about it — always split the remaining range in
-half — you can always find the number in at most 7 questions, because
-2⁷ = 128, which is more than 100 possible numbers. Double the range to 1–200
-and you only need one more question (2⁸ = 256): every extra question doubles
-how many possibilities you can tell apart. That "doubling" relationship is
-exactly what a logarithm measures, and it's *all* entropy is built from — no
-new machinery, just counting halvings.
+Forget the math entirely for a second. The word started in physics: a messy
+room has high entropy, a tidy one has low entropy. Left alone, a tidy room
+drifts toward messy — never the other way around — unless someone actively
+puts in effort to re-organize it. Hot coffee left on a counter cools down
+and its heat spreads into the room until everything's the same temperature;
+it never spontaneously un-mixes back into "hot coffee, cool room." That
+drift — from concentrated and orderly toward spread-out and mixed — is what
+"entropy increasing" originally meant, and it's the intuition every other
+use of the word is quietly leaning on, even when no physics is involved.
 
-**Now shrink the game to one coin flip.** Flipping a fair coin is like a
-mini guessing game with only 2 equally likely outcomes, so — following the
-same halving logic — it takes exactly 1 question ("heads?") to find out
-which one happened. That's why a fair coin flip is worth exactly 1 "bit":
-one yes/no question's worth of genuine information, no more, no less. Four
-equally likely outcomes (like a spinner with 4 slices) would take 2
-questions, because 2² = 4 — that outcome is worth 2 bits. This is the whole
-trick behind "surprise" = -log2(p): an outcome with probability p is treated
-as "1 out of 1/p equally likely things," and -log2(p) just asks "how many
-yes/no questions would it take to find *that* thing?" A coin that lands
-heads only 1 time in 4 (p = 0.25) is "1 out of 4," which takes 2 questions
-to pin down — so landing heads is worth 2 bits of surprise, matching the
-spinner exactly.
+**Outside physics, the word got borrowed to describe the same shape of
+thing: are the possibilities concentrated (predictable) or spread out
+(you-can't-really-say)?** That's it — that's the whole transplant. Nothing
+mathematical has to be happening for the word to fit; you're just describing
+whether something leans one clear way or is genuinely up for grabs.
 
-**But real coins aren't fair, and that's where averaging comes in.** Picture
-a trick coin that lands heads 90% of the time. If it lands tails (the rare
-1-in-10 event), that's genuinely surprising — about 3.3 bits worth, close to
-what a 1-in-10 lottery-style guess would take. But it only happens 10% of
-the time. Heads, the boring 90%-of-the-time outcome, barely tells you
-anything — about 0.15 bits — but it happens constantly. Entropy is the
-average of those two numbers, weighted by how often each actually shows up:
-mostly-cheap heads plus occasionally-expensive tails averages out to just
-0.47 bits total — much less than the fair coin's full bit, because you could
-already guess "probably heads" and be right most of the time. The picture's
-curve traces this average for every possible bias p, and it peaks at
-exactly 1 bit right at p = 0.5 — a fair coin is the *only* coin where you
-truly have no useful guess in advance, so it's the most informative one to
-watch.
+**Sentences where someone would actually say it, and what they mean:**
 
-**How to spot entropy in your own life:** ask yourself, "if I had to guess
-right now, would the actual answer surprise me?" If you're already pretty
-sure, finding out just confirms what you guessed — low entropy, not much
-new information. If it's a genuine toss-up, finding out actually teaches you
-something — high entropy. A few places this shows up:
+- *"There's a lot of entropy in this org chart right now."* — Nobody's
+  really sure who owns what; responsibilities are scattered, not
+  concentrated on clear owners. Not "bad," just unsettled and hard to
+  predict who you'd even ask.
+- *"This password has high entropy."* — There's no discernible pattern to
+  exploit; a guesser has no shortcut, every character genuinely could've
+  been anything. A low-entropy password ("password123") is the opposite —
+  heavily concentrated on a small, guessable set of likely choices.
+- *"Left alone, codebases/garages/inboxes tend toward entropy."* — This is
+  the physics metaphor directly: things drift toward disorganized unless
+  someone spends effort keeping them organized. Order doesn't happen by
+  itself; mess is the default direction things drift.
+- *"The market's been really entropic this week."* — Price moves aren't
+  following any readable trend; outcomes are scattered rather than leaning
+  one way, so predicting the next move is close to a coin flip.
+- *"The model's predictions have high entropy here."* — Someone building AI
+  saying the model is genuinely unsure on this input — its confidence is
+  spread thinly across several possible answers instead of piled onto one.
+  Low entropy there would mean the model is confidently committed to a
+  single answer (right or wrong).
 
-- **Wordle:** a strong opening word (like ARISE or ADIEU) is one that
-  splits the remaining possible words roughly in half no matter what colors
-  come back — the same "split it evenly" trick as the 1–100 game. A weak
-  opening word you can already guess the result of teaches you almost
-  nothing, exactly like asking "is it the sun?" in 20 Questions.
-- **Sports upsets:** the heavily-favored team winning is barely news — you
-  basically already knew. The underdog winning is what makes headlines,
-  because it's the higher-entropy, more-informative outcome; nobody was
-  sure how that one would go.
-- **Weather forecasts:** "50% chance of rain" means tomorrow is a genuine
-  toss-up — high entropy, worth checking the app again in the morning.
-  "99% chance of rain" means you already know to bring an umbrella;
-  actually checking barely adds anything.
-- **Studying for a test:** the questions worth spending time on are the
-  ones you're genuinely unsure about (high entropy) — re-reading material
-  you can already answer confidently teaches you close to nothing, no
-  matter how many times you do it.
+**When the word doesn't fit:** if something is just wrong, or leans hard in
+one predictable direction, that's actually the *opposite* of entropy — it's
+low entropy, just low entropy pointed at the wrong answer. A rigged coin
+that always lands heads is extremely low entropy (utterly predictable) even
+though it's unfair. Reach for "entropy" specifically when the honest
+description is "spread out / could go several ways," not just "off" or
+"biased."
 
-If you go further into computer science, this exact idea reappears as *why*
-file compression works (predictable, low-entropy patterns compress; random,
-high-entropy data doesn't), as the rule a decision tree uses to pick which
-question to ask first, and as the "cross-entropy loss" that grades how
-surprised a machine-learning model is by the right answer.
+**Now, cross-entropy — since it's the other place you'll hear this word.**
+In AI conversations you'll hear "we're minimizing cross-entropy loss." Set
+aside the math; here's what's actually being scored: how well does the
+model's *confidence* match what's *actually true*? If a model says "I'm 90%
+sure this photo is a cat" and it is a cat, that's a small penalty — good
+call, stay confident. If it says "90% sure it's a cat" and it's actually a
+dog, that's a *big* penalty — much bigger than if it had hedged and said
+"maybe 50/50." Cross-entropy loss specifically punishes being confidently
+wrong harder than it punishes being unsure. So when someone says "the
+cross-entropy loss went down during training," what they mean in plain
+English is: the model's confidence levels are now doing a better job of
+matching reality — it's not just getting answers right more often, it's
+getting *appropriately more or less sure of itself* as the evidence
+warrants.
 
 ---
 

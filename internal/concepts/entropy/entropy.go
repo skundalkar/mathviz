@@ -16,20 +16,19 @@ func init() {
 	concept.Register(concept.Concept{
 		ID:    "entropy",
 		Title: "Entropy",
-		Blurb: "Picture guessing a number from 1-100 using only yes/no questions: split the range in " +
-			"half each time and you always finish in 7 questions, since 2^7=128 covers 100 " +
-			"possibilities. That 'doubling' relationship is a logarithm, and it's all entropy is " +
-			"built from. A fair coin flip is a 2-outcome version of that game, so it's worth " +
-			"exactly 1 yes/no question's worth of information — 1 'bit'. A trick coin that lands " +
-			"heads 90% of the time is different: heads is boringly predictable (barely any " +
-			"surprise), while the rare tails would genuinely surprise you (worth a lot) — and " +
-			"because tails is rare, the AVERAGE surprise across many flips ends up low. That " +
-			"average is entropy: it peaks at exactly 1 bit when p=0.5 (a true toss-up, no good " +
-			"guess in advance) and drops toward 0 as p nears 0 or 1 (you can already guess the " +
-			"outcome, so watching it happen barely teaches you anything). Rule of thumb: if the " +
-			"actual result would surprise you, it's high-entropy; if you already saw it coming, " +
-			"it's low-entropy — the same logic behind a good Wordle opening word or why an " +
-			"underdog's win is the sports headline, not the favorite's.",
+		Blurb: "Forget the math for a second: 'entropy' just means how mixed-up or hard-to-call " +
+			"something is. A messy room has high entropy; a tidy one has low entropy. 'This " +
+			"password has high entropy' means it's got no guessable pattern. 'The model's " +
+			"predictions have high entropy' means it's genuinely unsure, spreading its confidence " +
+			"across several answers instead of committing to one. A coin is the simplest version of " +
+			"that same idea: a fair coin (p=0.5) is the ultimate toss-up — nobody has a good guess in " +
+			"advance, so it's high-entropy. A trick coin that lands heads 90% of the time (p=0.9) is " +
+			"low-entropy — you can already guess 'probably heads' and mostly be right, so watching it " +
+			"land barely tells you anything new. Drag p and watch the curve trace exactly that: " +
+			"entropy peaks at p=0.5 (true toss-up) and falls toward 0 as p nears 0 or 1 (the outcome " +
+			"is basically already decided). The two bars below show why: the rare outcome would " +
+			"genuinely surprise you if it happened, the common one wouldn't — entropy blends those " +
+			"two by how often each actually occurs.",
 		Params: []concept.ParamSpec{
 			{Key: "p", Label: "P(heads)", Min: 0.01, Max: 0.99, Step: 0.01, Def: 0.5},
 		},
