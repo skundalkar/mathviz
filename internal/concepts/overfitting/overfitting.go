@@ -7,6 +7,7 @@
 package overfitting
 
 import (
+	"fmt"
 	"math"
 
 	"mathviz/internal/concept"
@@ -208,7 +209,45 @@ func TrueError(coeffs []float64) float64 {
 	return sum / float64(n+1)
 }
 
+// numPoints is the fixed size of the "practice problem" dataset — small
+// enough that a high enough degree can pass through every point exactly.
+const numPoints = 12
+
 func render(p map[string]float64) string {
-	_ = p
-	return viz.New(680, 340, -1, 1, -1, 1).String()
+	degree, noise := int(p["degree"]), p["noise"]
+
+	xs, ys := DataPoints(numPoints, noise)
+	coeffs := PolyFit(xs, ys, degree)
+
+	const xmin, xmax = -3.5, 3.5
+	const ymin, ymax = -2.5, 2.5
+	c := viz.New(680, 340, xmin, xmax, ymin, ymax)
+	c.Axes()
+	for x := -3.0; x <= 3.0; x++ {
+		c.Tick(x, fmt.Sprintf("%g", x))
+	}
+
+	trueCurve := viz.Sample(xmin, xmax, 240, TrueFunction)
+	c.Path(trueCurve, viz.Muted, 1.5)
+
+	fitCurve := viz.Sample(xmin, xmax, 240, func(x float64) float64 {
+		return PolyEval(coeffs, x)
+	})
+	c.Path(fitCurve, viz.Accent, 2.5)
+
+	// The noisy "practice problems" the model was trained on.
+	for i := range xs {
+		px, py := c.X(xs[i]), c.Y(ys[i])
+		c.Rect(px-3.5, py-3.5, 7, 7, viz.Warm, 0.85)
+	}
+
+	trainErr := MSE(xs, ys, coeffs)
+	trueErr := TrueError(coeffs)
+	c.Text(20, 24, fmt.Sprintf("degree = %d    noise = %.2f", degree, noise), 14, viz.Ink, "start")
+	c.Text(20, 44, fmt.Sprintf("training error ≈ %.3f    true error ≈ %.3f", trainErr, trueErr),
+		13, viz.Muted, "start")
+	c.Text(20, 62, "dots = noisy data    grey = true pattern    blue = fitted curve",
+		12, viz.Muted, "start")
+
+	return c.String()
 }
