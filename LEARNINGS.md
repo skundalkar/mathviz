@@ -109,6 +109,15 @@ schedules often *start* with a larger learning rate for speed and shrink it
 over time: big steps to cover ground fast early on, small steps to settle
 precisely into the minimum once you're close.
 
+**Say it like this:** "We're overcorrecting — dial back how much we change
+each time" is a learning-rate problem in plain English, whether it's a
+thermostat, a steering wheel, or a training run: the adjustment per attempt
+is too big, so it overshoots the target and the next correction overshoots
+back the other way.
+**Not like this:** "Just make bigger adjustments, we'll get there faster" —
+true only up to a point. Past that point, bigger steps don't just take
+longer, they actively make each round worse than the last, not better.
+
 ---
 
 ## overfitting — memorizing the practice problems instead of learning the rule
@@ -145,6 +154,16 @@ accuracy that looks fantastic and real-world performance that's worse than a
 simpler model's. The fix is never "make the model even more powerful"; it's
 validating on data the model never saw, and choosing complexity by how well
 it does *there*, not on the practice set.
+
+**Say it like this:** "You're overfitting to one bad interview" — treating
+the specifics of a single, possibly-unrepresentative experience as if it
+were the general rule. "This strategy is overfit to last quarter" — it was
+tuned to fit exactly what just happened, not to what tends to happen.
+**Not like this:** "It just needs more data to fix the overfitting" — not
+automatically true. More of the same noisy data can let an already
+too-flexible model memorize even more precisely; the usual fix is
+simplifying the model or checking it against data it hasn't seen, not
+volume alone.
 
 ---
 
@@ -190,6 +209,16 @@ model can hit sky-high accuracy by mostly predicting the common outcome and
 still be worthless at the one job it exists to do. Reading the actual 2x2
 grid — not just the headline accuracy — is the only way to tell a genuinely
 skilled classifier from one that's just exploiting an imbalanced dataset.
+
+**Say it like this:** "That's a false positive" — flagged as a problem, but
+it wasn't one (a spam filter catching a real email, a smoke alarm going off
+from toast). "We had a false negative" — a real problem, missed entirely.
+These are not interchangeable mistakes; which one you'd rather live with
+depends entirely on what's actually at stake.
+**Not like this:** "It's 99% accurate, so it's basically fine" — accuracy
+alone can't tell you whether the mistakes it does make are harmless false
+alarms or costly misses, and those two failures are almost never equally
+bad.
 
 ---
 
@@ -239,6 +268,14 @@ picked one operating threshold and have to live with its specific
 false-positive rate, though — AUC grades potential, not the one decision
 you're actually stuck with in production.
 
+**Say it like this:** "Model A has a higher AUC than Model B" means A has
+more underlying skill at telling the two classes apart, at every possible
+cutoff — not just at whatever threshold happens to be in use today.
+**Not like this:** "Model A is more accurate right now, so it's the better
+model" — that's comparing today's threshold setting, a tunable choice, not
+either model's real separating power; a lower-AUC model can still look
+better at one specific cutoff while being the weaker model overall.
+
 ---
 
 ## bayes-theorem — why "99% accurate" doesn't mean what it sounds like
@@ -286,6 +323,15 @@ noise. It's why doctors order a second, more specific test before acting on
 one positive screen, and why "the model flagged it" needs a base rate
 attached before anyone should trust the flag.
 
+**Say it like this:** "Don't ignore the base rate" — before updating your
+belief off one new piece of evidence, remember how rare or common the thing
+was to begin with; a positive test for a rare condition means far less than
+gut instinct suggests.
+**Not like this:** "The test is 99% accurate, so a positive result means a
+99% chance I have it" — that skips the base rate entirely, and for a rare
+enough condition, the base rate is often *most* of what determines the real
+answer.
+
 ---
 
 ## p-value — how suspicious is this, assuming nothing's actually going on?
@@ -331,6 +377,14 @@ thresholds, subgroups, or metrics until one clears α by chance — is a real
 problem: flip enough different coins, or ask enough different questions of
 the same data, and a suspicious-looking result shows up eventually even when
 nothing real is going on.
+
+**Say it like this:** "The result was statistically significant" means:
+if nothing real were going on, a result this extreme would have been
+unlikely to show up by chance alone (below an agreed-on threshold, usually
+5%) — nothing more, and nothing about how big or important the effect is.
+**Not like this:** "p < 0.05, so there's a 95% chance the effect is real" —
+a p-value is not the probability your hypothesis is true; it's the
+probability of seeing data this extreme *if your hypothesis were false*.
 
 ---
 
@@ -381,6 +435,14 @@ also why a narrower interval from a bigger sample is a genuine improvement
 level just to get a cleaner-looking one-off result buys you nothing (it only
 pays off across many repeats, not on the one that matters to you).
 
+**Say it like this:** "This poll has a 3-point margin of error at 95%
+confidence" means the polling *method*, repeated many times, would bracket
+the true number about 95% of the time.
+**Not like this:** "There's a 95% chance the true value is in this specific
+interval" — once the interval is drawn, it either contains the true value
+or it doesn't; the 95% describes the method's long-run success rate, not
+this one instance sitting in front of you.
+
 ---
 
 ## central-limit-theorem — why averaging fixes wildly unreliable guesses
@@ -428,6 +490,15 @@ is too small" is a real objection: with just a handful of draws from a
 skewed population, the average is still skewed too, and normal-based
 confidence intervals can quietly mislead.
 
+**Say it like this:** "Let's average a bunch of independent estimates, the
+noise should wash out" — individual guesses can be wildly off, but averaging
+enough of them (the "wisdom of crowds") reliably lands close to the truth,
+regardless of how weird any one guess looked.
+**Not like this:** "One really confident estimate beats an average of many
+rough ones" — often false when the rough estimates are independent; the
+average's error shrinks as you add more of them, while one confident-but-
+biased guess never self-corrects at all.
+
 ---
 
 ## normal-vs-skew — same average, same spread, different shape
@@ -474,6 +545,14 @@ any dashboard that reports only "mean ± stddev" for data that's secretly
 lopsided or spiky — two numbers that can hide a very different-shaped
 reality.
 
+**Say it like this:** "That sample is skewed" means the data leans hard
+toward one side — a few extreme values on one end are pulling the average
+away from where most of the data actually sits, even if the "typical"
+spread (stddev) looks perfectly ordinary.
+**Not like this:** "The average looks fine, so the data's probably normal" —
+mean and standard deviation alone can't tell you the shape; two very
+differently-shaped distributions can share both numbers exactly.
+
 ---
 
 ## variance-vs-stddev — why "average distance from average" doesn't work
@@ -519,6 +598,14 @@ root-mean-squared-error, i.e. "square, average, then square-root back" —
 instead of raw MSE, and why standard deviation, not variance, is the number
 that actually gets quoted next to a mean.
 
+**Say it like this:** "That's a high-variance strategy" (common in startups,
+poker, investing) means outcomes are spread wide — could go great, could go
+badly, hard to call which. "Low variance" means outcomes cluster tightly
+around what you'd expect, for better or worse.
+**Not like this:** "High variance means it's worse" — variance measures
+spread, not direction; a high-variance bet can have a *better* average
+outcome than a safe one, just with far less certainty about any single try.
+
 ---
 
 ## mean-median-mode — three "typical" values that agree until they don't
@@ -560,6 +647,15 @@ and home-price statistics are usually reported as medians, and why a
 company's "average" salary can look great in a press release while most
 employees make noticeably less.
 
+**Say it like this:** whenever someone says "the average," it's worth
+asking which one they mean — "average household income" almost always means
+the mean, and it's usually well above what a typical household actually
+earns.
+**Not like this:** "half of people earn less than the average" — only
+guaranteed true if "average" means the median (the middle value by
+definition); it's often false for the mean, which a handful of outliers can
+drag well above where most people actually sit.
+
 ---
 
 ## correlation — moving together is not the same as causing
@@ -600,6 +696,14 @@ that correlates with the label without causing it — swap it out in
 production and the correlation, having no causal footing, quietly
 disappears.
 
+**Say it like this:** "X correlates with Y" is a purely descriptive claim —
+they tend to move together — and stops exactly there; it says nothing about
+which one, if either, is causing the other.
+**Not like this:** "it's just correlation" is said so reflexively it's
+become the opposite mistake just as often — dismissing a strong, useful
+signal as meaningless because no mechanism has been proven yet, when a
+strong correlation is usually worth investigating, not shrugging off.
+
 ---
 
 ## precision-recall — two ways to be wrong, and a knob that trades between them
@@ -637,6 +741,14 @@ missed disease — worth tolerating more false positives to avoid), spam
 filters (a false positive means a lost important email), fraud detection,
 search ranking — anywhere "how sensitive should this be" is really a
 business decision about which mistake costs more, dressed up as a slider.
+
+**Say it like this:** "We need higher recall here, even if precision drops"
+— for something like cancer screening, missing a real case is worse than a
+false alarm, so the tradeoff should be set on purpose, not left to a
+model's default.
+**Not like this:** "just make the model more accurate" — accuracy alone
+hides *which* kind of mistake it's making; the actual decision is which
+type of error costs more in your specific situation.
 
 ---
 
@@ -692,6 +804,15 @@ times do I add this," a logarithm answers "how many times do I multiply by
 this" — different questions that happen to look similar until you write them
 out.
 
+**Say it like this:** "this is growing exponentially" is a genuine folding
+story — each step multiplies what came before, not adds a fixed amount —
+and it's exactly when a logarithm, not a raw number, gives you a sane scale
+to reason about it (compound interest, an outbreak's doubling time).
+**Not like this:** "exponential" gets used constantly to just mean "a lot"
+or "suddenly" — most things people call exponential are actually growing at
+a steady additive rate that merely *felt* surprising; real exponential
+growth compounds, and compounding is what actually gets out of hand.
+
 ---
 
 ## standard-deviation — a ruler that means the same thing everywhere
@@ -725,3 +846,12 @@ manufacturing tolerances are set in sigmas, not raw units, because "off by
 2mm" means something different for a bolt than for a bridge; and "1-in-20"
 scientific thresholds (p < 0.05) are really a statement about how many sigmas
 out a result has to land before it counts as surprising.
+
+**Say it like this:** "that was a 3-sigma event" (said after market crashes,
+unusual test scores, quality-control failures) means something this extreme
+should be rare if the usual pattern of variation held — a specific, portable
+amount of "rare," not just a vague "very."
+**Not like this:** calling a fixed number of points or dollars "a lot" or
+"a little" on its own, without asking *relative to what* — the same 10-point
+gap can be unremarkable in one dataset and the single most extreme value in
+another.
