@@ -6,6 +6,43 @@ code. Newest entries go at the top.
 
 ---
 
+## overfitting — memorizing the practice problems instead of learning the rule
+**The idea in one line:** a model that scores perfectly on its training data
+hasn't necessarily learned anything — it may have just memorized the noise.
+
+Give a student twelve practice problems and their answers, then ask them to
+explain the pattern. One student writes down a short, general rule that gets
+most of the twelve right and should generalize to problem thirteen. Another
+memorizes all twelve exact answers, quirks and all — zero mistakes on
+practice, but no real idea what to do with a new problem. The second student
+has overfit: their "model" fits the specific data they saw, not the
+underlying pattern that generated it.
+
+The picture makes this literal. Twelve noisy data points sit near a smooth
+true curve (the pattern a good model would recover). A polynomial is fit to
+those twelve points by least squares, and its degree is the "model
+complexity" knob. At low degree the curve can't bend much, so it stays close
+to the true pattern and mostly ignores the noise. Crank the degree up and the
+curve gains enough free parameters to weave through every single point
+exactly — training error keeps dropping, all the way to zero once the degree
+reaches eleven (one fewer than the number of points, so an exact fit always
+exists). But look at the curve *between* the dots: it doesn't glide smoothly
+along the true pattern anymore, it swings wildly, overshooting in both
+directions to thread each noisy point precisely. That's the "true error"
+number climbing even as "training error" falls to zero — the model is now
+excellent at reproducing the twelve answers it memorized and worse at the
+actual underlying rule.
+
+**Where it bites in real life:** any model complex enough to memorize its
+training set — a deep enough decision tree, a large enough neural net, a
+high-enough-degree regression — will show this exact split: training
+accuracy that looks fantastic and real-world performance that's worse than a
+simpler model's. The fix is never "make the model even more powerful"; it's
+validating on data the model never saw, and choosing complexity by how well
+it does *there*, not on the practice set.
+
+---
+
 ## confusion-matrix — the trap a single accuracy number can hide
 **The idea in one line:** "99% accurate" can describe both a genuinely
 excellent classifier and a useless one that just guesses the common answer
