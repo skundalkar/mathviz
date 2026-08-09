@@ -9,6 +9,7 @@ import (
 	_ "mathviz/internal/concepts/confint"
 	_ "mathviz/internal/concepts/confusionmatrix"
 	_ "mathviz/internal/concepts/correlation"
+	_ "mathviz/internal/concepts/entropy"
 	_ "mathviz/internal/concepts/gradientdescent"
 	_ "mathviz/internal/concepts/logscale"
 	_ "mathviz/internal/concepts/meanmedianmode"
