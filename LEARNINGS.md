@@ -278,6 +278,14 @@ making completely different mistakes. Precision and recall have to be read
 side by side, not replaced by one number, to know which one you're
 actually looking at.
 
+Lowering the threshold here is a free, instant trade — try it before
+anything more expensive. If *no* threshold gets both numbers where they
+need to be, that's a separation problem, not a threshold problem — see the
+precision-recall concept's "from a reading to an action" table for what
+"improve separation" concretely means in a real system (better features,
+cleaner labels, more data of the harder class, or a bigger model —
+different fixes for different causes, not interchangeable).
+
 **Where it bites in real life:** fraud detection, rare-disease screening,
 security alerting — anywhere the thing you're trying to catch is rare, a
 model can hit sky-high accuracy by mostly predicting the common outcome and
@@ -1005,6 +1013,42 @@ The one thing that genuinely improves both is separating the two curves
 further apart: a better model that scores real spam and real mail more
 differently in the first place, leaving more room between "clearly not
 spam" and "clearly spam" for a threshold to land cleanly.
+
+**From a reading to an action: two knobs, two different costs.** Starting
+from threshold=1.5, separation=2.1 (TP=73, FN=27, FP=7, TN=93 — precision
+91%, recall 73%), compare what each knob actually buys:
+
+- **Move the threshold to 1.0, separation unchanged:** TP=86, FN=14, FP=16,
+  TN=84 → precision 84%, recall 86%. Recall gained 13 points; precision
+  paid 7 for it. A trade, made instantly, no retraining — worth trying
+  *first* whenever one metric is low and the other is comfortably high.
+- **Raise separation to 3.0, threshold unchanged:** TP=93, FN=7, FP=7,
+  TN=93 → precision 93%, recall 93%. *Both* improved. Not a trade — the
+  underlying signal genuinely got better, which only ever comes from
+  changing something upstream of the threshold.
+
+**How to tell which one you need, before spending real effort:** check the
+AUC (the concept next to this one). High AUC but disappointing numbers at
+your current threshold means you're just standing in the wrong spot on an
+otherwise good curve — sweep the threshold and stop. AUC close to 0.5 means
+no threshold rescues you; that's when it's actually time to change the
+model, not the cutoff.
+
+**What "improve separation" concretely means, once you're actually there**
+— "add more data" is the common instinct, and it's sometimes right, but
+only for one specific cause:
+
+| The real cause | The fix | Not this |
+|---|---|---|
+| Model never saw enough examples of the rarer class to learn its pattern | More labeled data *of that class* | More of the class you already have plenty of |
+| Features don't contain the information needed to tell the classes apart | New/better features | More rows of the same uninformative columns |
+| Some training labels are wrong, dragging one cluster toward the other | Clean the labels — often the cheapest fix, check this first | A bigger model, which will cheerfully learn the bad labels too |
+| The true boundary is complex and the model is too simple to represent it | A more expressive model, same data | More data — a linear model doesn't get less linear from volume alone |
+
+One check before any of these: compare performance on training data against
+held-out data. Good on training, poor on held-out is overfitting (fix:
+simplify or regularize, not enlarge — see the overfitting concept). Poor on
+both is a genuine signal shortage, and the table above applies.
 
 **Where it bites in real life:** cancer screening (a false negative means
 missed disease — worth tolerating more false positives to avoid), spam
