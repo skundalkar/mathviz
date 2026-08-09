@@ -659,31 +659,48 @@ outcome than a safe one, just with far less certainty about any single try.
 here," but they answer it differently enough that a skewed dataset pulls
 them apart — and knowing which one you're looking at matters.
 
-Bill Gates walks into a small bar with 20 regulars, each with a net worth
-around $80,000. Before he sits down, the bar's *average* (mean) net worth is
-about $80,000 — a fair summary of "the typical person here." The moment he
-sits down, that mean net worth rockets into the billions. Nothing about the
-20 regulars changed — not one of them got richer or poorer — but "the
-average person in this bar" now sounds like a billionaire. That's obviously
-a lie about what's typical, and it's the mean's fault: it's an average of
-*every* value, including the one wildly extreme one, so a single outlier can
-drag it anywhere.
+Bill Gates walks into a small bar with 20 regulars, each with a net worth of
+about $80,000. Before he sits down: total net worth in the room is
+20 × $80,000 = $1,600,000, so the *average* (mean) is $1,600,000 ÷ 20 =
+$80,000 — a fair summary of "the typical person here."
 
-The median doesn't have this problem: it's just "the middle value when
-everyone's lined up in order." With Bill Gates added, the middle of a line
-of 21 people barely shifts — the median net worth is still roughly $80,000,
-because Bill Gates is just one more person standing at the far end of the
-line, not a value that gets *averaged in*. The mode — the single most common
-value — doesn't move at all either.
+Now Bill Gates sits down. His real net worth is roughly $100 billion — round
+it to exactly $100,000,000,000 for the math. The room's total net worth is
+now $1,600,000 + $100,000,000,000 = $100,001,600,000, split across 21
+people: $100,001,600,000 ÷ 21 ≈ **$4.76 billion**. That's the new mean.
+Nothing about the 20 regulars changed — not one of them got richer or
+poorer — but "the average person in this bar" now sounds like a
+multi-billionaire, because the mean did arithmetic with Gates's number and
+one $100-billion value is enough to drag a 21-person average that far on
+its own.
 
-For a symmetric distribution these three "typical value" measures all
-coincide, but skew the underlying distribution — as the picture does,
-dragging a log-normal curve's tail out to the right — and they peel apart in
-a fixed order: **mode < median < mean**. The mode sits at the peak (most
-likely single outcome), the median splits the population exactly in half,
-and the mean gets pulled hardest toward whichever direction the long tail
-stretches, because it's the only one of the three that actually does
-arithmetic with the extreme values instead of just counting or ranking them.
+The median doesn't have this problem. Sort all 21 net worths from lowest to
+highest: twenty $80,000 values, then Gates's $100 billion sitting alone at
+the very end. The *middle* of that line — the 11th person out of 21 — is
+still one of the ordinary $80,000 regulars, because Gates is just one more
+name standing at the far end of the line, not a number that gets *averaged
+in*. Median net worth: still $80,000, barely moved. The mode — the single
+most common value — doesn't move at all either: $80,000 is still shared by
+20 out of 21 people in the room.
+
+That gap between "median barely moves" and "mean rockets to billions" is
+the whole lesson, and it generalizes: for a symmetric distribution, mean,
+median, and mode all coincide, but skew the data and they peel apart in a
+fixed order, **mode < median < mean**, which you can see with a much
+smaller example. Five salaries: $40k, $40k, $45k, $50k, $200k.
+
+- **Mode** = $40k (it's the only value that repeats — appears twice, every
+  other value appears once)
+- **Median** = $45k (sort them — 40k, 40k, 45k, 50k, 200k — and take the
+  middle, the 3rd of 5)
+- **Mean** = (40k+40k+45k+50k+200k) ÷ 5 = 375k ÷ 5 = $75k
+
+$40k < $45k < $75k — mode, then median, then mean, in that exact order,
+because the mean is the only one of the three that actually does arithmetic
+with the $200k outlier instead of just counting or ranking it. The picture
+shows the same effect continuously: drag the skew slider and watch mode,
+median, and mean peel apart from a single starting point in that same fixed
+order as the tail stretches out.
 
 **Where it bites in real life:** "average household income" headlines are
 almost always higher than what a typical household actually earns, because a
@@ -719,11 +736,63 @@ entirely: hot weather. Heat means more people swim (more drowning risk) *and*
 more people buy ice cream — the two variables never touch each other
 causally, they're just both downstream of summer.
 
+**Before going further, here's what r actually looks like with real
+numbers**, at the three landmark values. Four students, hours studied vs.
+test score:
+
+```
+hours:  1    2    3    4
+score: 60   70   80   90
+```
+```
+score
+ 90 |                    •
+ 80 |               •
+ 70 |          •
+ 60 |     •
+    +----+----+----+----+
+         1    2    3    4   hours
+```
+Every extra hour is worth exactly +10 points — the points sit dead on a
+straight uphill line, no exceptions. That's **r = +1**, perfect positive
+correlation. Now hours of sleep lost vs. next-day focus score:
+
+```
+lost:   0    1    2    3
+focus: 90   80   70   60
+```
+Same perfectly straight line, only downhill this time — every hour of lost
+sleep costs exactly 10 focus points. That's **r = -1**, perfect negative
+correlation. Now shoe size vs. test score — two things with no real reason
+to be related:
+
+```
+size:   8    9   10   11
+score: 72   58   81   65
+```
+```
+score
+ 81 |          •
+ 72 |     •
+ 65 |                    •
+ 58 |               •
+    +----+----+----+----+
+         8    9   10   11   shoe size
+```
+No line, no pattern — bigger shoe size doesn't reliably predict a higher or
+lower score. Run the actual numbers and r comes out to about **0.03**,
+essentially zero. That's the whole scale: r isn't measuring whether a
+relationship *exists* in some deep sense, only how tightly the points hug a
+straight line — and the ice-cream/drowning cloud above sits up near +1 for
+exactly the same reason the hours-studied cloud does: real, tight,
+predictable co-movement. It just doesn't tell you *why* the line is there.
+
 That's the trap r sets by design: it only ever measures how tightly a
-scatter of points hugs a straight line. Both axes here are standardized, so
+scatter of points hugs a straight line — as the three examples above just
+showed directly. In the interactive picture, both axes are standardized, so
 the trend line r implies always runs through the origin with slope r — why
-the orange guide line visibly steepens as r moves toward ±1. At the extremes
-there's no noise left: every point sits exactly on the line. But "sits
+the orange guide line visibly steepens as r moves toward ±1, the same way
+the hand-plotted lines above got perfectly straight at r = ±1. But "sits
 exactly on a line" and "one causes the other" are different claims, and the
 math only ever makes the first one. A hidden third variable (like summer
 heat), reverse causation, or even pure coincidence in a small sample can all

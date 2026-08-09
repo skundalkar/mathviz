@@ -18,15 +18,17 @@ func init() {
 	concept.Register(concept.Concept{
 		ID:    "mean-median-mode",
 		Title: "Mean, median & mode",
-		Blurb: "Bill Gates walks into a small bar with 20 regulars, average net worth maybe " +
-			"$80K each. The moment he sits down, the bar's *average* net worth rockets into " +
-			"the billions — even though every regular's actual wealth is exactly what it was " +
-			"five minutes ago. That's the mean doing what it does: getting dragged by extreme " +
-			"values, even a single one. The median (the person exactly in the middle of the " +
-			"line-up) barely moves. For a symmetric distribution, mean, median, and mode all " +
-			"land in the same place; skew it and they peel apart in a fixed order: mode stays " +
-			"at the peak, median at the 50/50 point, mean dragged hardest toward the long tail. " +
-			"Drag the skew slider and watch mean > median > mode open up.",
+		Blurb: "Bill Gates walks into a small bar with 20 regulars, $80K net worth each: total " +
+			"$1.6M, mean = $80K. He sits down with his real ~$100 billion: new total ≈ " +
+			"$100,001,600,000 over 21 people, new mean ≈ $4.76 BILLION — even though every " +
+			"regular's actual wealth is exactly what it was five minutes ago. That's the mean " +
+			"doing what it does: it does arithmetic with every value, so one extreme number can " +
+			"drag it anywhere. The median (sort everyone, take the middle person) barely moves — " +
+			"still ~$80K, since Gates is just one more name at the far end of the line, not a " +
+			"number that gets averaged in. Small proof of the general rule: salaries $40k, $40k, " +
+			"$45k, $50k, $200k give mode=$40k, median=$45k, mean=$75k — mode < median < mean, " +
+			"every time a distribution skews. Drag the skew slider and watch that same order " +
+			"open up continuously.",
 		Params: []concept.ParamSpec{
 			{Key: "sigma", Label: "Skew (σ)", Min: 0.05, Max: 1.2, Step: 0.05, Def: 0.6},
 			{Key: "mu", Label: "Log-location (μ)", Min: -0.5, Max: 0.5, Step: 0.05, Def: 0},

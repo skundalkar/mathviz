@@ -17,15 +17,19 @@ func init() {
 	concept.Register(concept.Concept{
 		ID:    "correlation",
 		Title: "Correlation (r)",
-		Blurb: "Ice cream sales and drowning deaths both spike every summer — track them " +
-			"over a year and you'll find a strong positive correlation between the two. Does " +
-			"buying ice cream cause drowning? Obviously not — both are being pulled along by " +
-			"a third thing entirely (hot weather: more swimming, more ice cream). r measures " +
-			"exactly how tightly two variables move together, from -1 (perfect opposite) " +
-			"through 0 (no linear relationship) to +1 (perfect together) — and it cannot tell " +
-			"you why. Slide r and watch the scatter cloud tighten into a line or spread into " +
-			"a shapeless blob; the orange line is the trend r implies. A strong r is a real, " +
-			"useful signal that something is going on — it just never tells you what.",
+		Blurb: "Hours studied 1,2,3,4 vs. test score 60,70,80,90 — each extra hour is worth " +
+			"exactly +10 points, points sit dead on a straight uphill line: that's r = +1. " +
+			"Hours of sleep lost 0,1,2,3 vs. focus score 90,80,70,60 — same line, downhill: " +
+			"r = -1. Shoe size 8,9,10,11 vs. test score 72,58,81,65 — no pattern, r works out " +
+			"to about 0.03: essentially r = 0. That's the whole scale, in real numbers. Now: " +
+			"ice cream sales and drowning deaths both spike every summer, giving a strong " +
+			"positive r — same tight-line signature as the hours-studied example. Does ice " +
+			"cream cause drowning? Obviously not — both are pulled along by a third thing " +
+			"(hot weather: more swimming, more ice cream). r only ever measures how tightly " +
+			"points hug a straight line; it is blind to *why* the line is there. Slide r and " +
+			"watch the scatter cloud tighten into a line or spread into a shapeless blob; the " +
+			"orange line is the trend r implies. A strong r is a real, useful signal that " +
+			"something is going on — it just never tells you what.",
 		Params: []concept.ParamSpec{
 			{Key: "r", Label: "Target correlation (r)", Min: -1, Max: 1, Step: 0.05, Def: 0.6},
 			{Key: "n", Label: "Sample size (n)", Min: 20, Max: 300, Step: 10, Def: 150},
