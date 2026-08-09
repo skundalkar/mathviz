@@ -817,8 +817,9 @@ growth compounds, and compounding is what actually gets out of hand.
 
 ## standard-deviation — a ruler that means the same thing everywhere
 **The idea in one line:** "10 points above average" tells you nothing by
-itself — standard deviation is what turns a raw distance from average into a
-number you can actually compare across totally different situations.
+itself — standard deviation is the ruler that turns a raw distance from
+average into a number that means the same thing no matter what you're
+measuring.
 
 Two students each score 10 points above the class average on their tests.
 Student A: sounds impressive — until you learn everyone in class A scored
@@ -829,16 +830,32 @@ average there barely clears the middle of the pack. Same raw number, wildly
 different meaning, because "10 points" only means something relative to how
 spread out everyone else is.
 
-Standard deviation (σ) is that spread, and it comes with a guarantee raw
-point-differences never do: for a bell-shaped distribution, the band from
-mean − 1σ to mean + 1σ always contains about **68%** of everyone — not
-"usually," always, whether σ is tiny (a tightly clustered class) or huge (an
-all-over-the-place one). That fixed 68% is what makes "z standard deviations
-above average" a portable ruler: student A's +10 might be +5σ (astonishingly
-rare), student B's +10 might be +0.5σ (unremarkable) — the same raw gap,
-translated into a number that actually means the same rarity everywhere it's
-used. (Standard deviation itself is just the square root of variance — see
-variance-vs-stddev for why we square first, then square-root back.)
+**So what is standard deviation, concretely?** Take every score, measure how
+far it sits from the average, and boil all of those distances down to one
+typical, representative distance — that's it. That single number is called
+standard deviation, written σ (sigma is just the Greek letter used as its
+label, nothing more). A small σ means everyone bunches close to the average,
+like class A. A large σ means scores are scattered wide, like class B. Once
+a class has that one number, you can describe any individual score by *how
+many σ's away from average it sits* — that count is called a **z-score**,
+and it's the actual portable ruler: student A's +10 points works out to
+about +5σ, student B's +10 points is only about +0.5σ. Same raw gap,
+translated into numbers that finally mean comparable things.
+
+**Here's the part that makes σ more than just a label — a fixed rule you
+can lean on.** For data piled up in the classic bell shape (most values near
+the middle, tapering off evenly on both sides), the same three percentages
+hold every single time, whether the bell is narrow or wide: about **68%** of
+everything sits within 1σ of the average, about **95%** within 2σ, and about
+**99.7%** within 3σ. That's not a coincidence you have to re-measure per
+situation — it's baked into the bell shape itself, the same way a circle's
+circumference is always about 3.14× its width no matter how big you draw the
+circle. That's why "+5σ" (student A) sounds astonishing and "+0.5σ" sounds
+unremarkable: the σ-to-percentage ladder is what lets you attach an actual
+rarity to a gap instead of eyeballing a raw number. (Computing σ exactly
+involves one extra step — squaring each distance before averaging, then
+square-rooting back — see variance-vs-stddev for why; the plain version
+above is close enough to build the right intuition.)
 
 **Where it bites in real life:** a 101°F fever is routine for some people and
 alarming for others depending on their normal baseline and its variability;
@@ -849,8 +866,8 @@ out a result has to land before it counts as surprising.
 
 **Say it like this:** "that was a 3-sigma event" (said after market crashes,
 unusual test scores, quality-control failures) means something this extreme
-should be rare if the usual pattern of variation held — a specific, portable
-amount of "rare," not just a vague "very."
+should happen only about 3 times in 1,000 if the usual pattern of variation
+held — the 99.7% rule made concrete, not just a vague "very rare."
 **Not like this:** calling a fixed number of points or dollars "a lot" or
 "a little" on its own, without asking *relative to what* — the same 10-point
 gap can be unremarkable in one dataset and the single most extreme value in
