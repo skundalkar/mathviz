@@ -102,6 +102,31 @@ literally off the edge of the chart. That's divergence: the algorithm didn't
 get stuck, it actively made things worse by taking steps too large for the
 curvature of the valley it's in.
 
+**Here's what that actually looks like in numbers.** Start at x = 4.5, with
+f(x) = x² so the slope at any point is 2x. At learning rate 0.3:
+
+| step | x | slope (2x) | next x = x − 0.3 × slope |
+|---|---|---|---|
+| 0 | 4.50 | 9.00 | 4.50 − 2.70 = 1.80 |
+| 1 | 1.80 | 3.60 | 1.80 − 1.08 = 0.72 |
+| 2 | 0.72 | 1.44 | 0.72 − 0.43 = 0.29 |
+| 3 | 0.29 | 0.58 | 0.29 − 0.17 = 0.12 |
+
+Each step lands closer to 0, the true minimum — cautious, steady progress.
+Now the same starting point at learning rate 1.1, just past this bowl's
+critical value of 1.0:
+
+| step | x | slope (2x) | next x = x − 1.1 × slope |
+|---|---|---|---|
+| 0 | 4.50 | 9.00 | 4.50 − 9.90 = −5.40 |
+| 1 | −5.40 | −10.80 | −5.40 + 11.88 = 6.48 |
+| 2 | 6.48 | 12.96 | 6.48 − 14.26 = −7.78 |
+
+The sign flips every step — crossing back and forth over the bottom — and
+the distance from zero *grows* each time: 4.50 → 5.40 → 6.48 → 7.78. That's
+the "flies further from it with every bounce" divergence described above,
+now with the actual numbers behind it.
+
 **Where it bites in real life:** this is exactly how neural network training
 fails when the learning rate is set too high — the loss doesn't plateau, it
 blows up to NaN within the first few steps. It's also why training
@@ -194,6 +219,15 @@ miss: letting something real slip through undetected — exactly the failure
 mode the do-nothing "always healthy" test commits 100% of the time, which
 the raw accuracy number never revealed.
 
+**With real counts, not just percentages:** 100 patients, 1 actually has
+the disease, 99 don't. The do-nothing test predicts "healthy" for all 100,
+no exceptions. Its confusion matrix: TP = 0 (it never predicts positive, so
+it can't catch the 1 real case), FN = 1 (that real case, missed), FP = 0
+(never wrongly flags anyone), TN = 99 (correctly clears every healthy
+patient). Accuracy = (TP+TN) ÷ 100 = (0+99) ÷ 100 = **99%** — the identical
+headline number a genuinely good test would post, produced here by a test
+that catches literally zero real cases.
+
 Look at the grid instead of the headline number and the do-nothing test is
 exposed instantly: its TP cell (real cases actually caught) sits at zero, no
 matter how green its TN cell looks. The picture shades each cell by its
@@ -251,6 +285,18 @@ a coin flip) can't do better than the diagonal, because at any cutoff,
 whatever fraction of healthy scans they wrongly flag, they catch exactly
 that same fraction of real cases too — no separation, no skill.
 
+**One point on that curve, with real numbers.** Four sick patients score 9,
+7, 6, 4; four healthy patients score 8, 5, 3, 1 (some overlap — this
+doctor isn't perfect). Flag anyone scoring 6 or higher as "suspicious":
+
+- Sick patients ≥6: 9, 7, 6 → caught 3 of 4 → **TPR = 75%**
+- Healthy patients ≥6: 8 → 1 false alarm out of 4 → **FPR = 25%**
+
+That's the single point (25% FPR, 75% TPR) this one threshold plots on the
+ROC curve. Slide the threshold from "flag almost everyone" down to "flag
+almost no one" and every possible cutoff plots its own (FPR, TPR) point —
+trace all of them together and that's the full curve.
+
 **AUC**, the shaded area under that curve, compresses the entire
 threshold-independent comparison into one number: it's exactly the
 probability that a randomly chosen real case scores more "suspicious" than a
@@ -258,6 +304,21 @@ randomly chosen healthy one, under that doctor's judgment. AUC 0.5 is a coin
 flip; AUC 1.0 is perfect separation — and crucially, it never requires
 either doctor to have picked the same cutoff, or any cutoff at all, before
 you can compare them.
+
+**Computed directly from that definition, same tiny dataset:** compare
+every sick score against every healthy score (4 × 4 = 16 pairs) and count
+how often the sick patient scored higher:
+
+| sick score | beats 8 | beats 5 | beats 3 | beats 1 | wins |
+|---|---|---|---|---|---|
+| 9 | ✓ | ✓ | ✓ | ✓ | 4 |
+| 7 | ✗ | ✓ | ✓ | ✓ | 3 |
+| 6 | ✗ | ✓ | ✓ | ✓ | 3 |
+| 4 | ✗ | ✗ | ✓ | ✓ | 2 |
+
+12 wins out of 16 pairs: AUC = 12 ÷ 16 = **0.75** — a randomly chosen sick
+patient outscores a randomly chosen healthy patient 75% of the time, under
+this doctor's judgment, computed without ever picking a threshold at all.
 
 **Where it bites in real life:** two models can post identical accuracy at
 their default settings and have very different AUCs — the higher-AUC one
@@ -316,6 +377,13 @@ prior + false-positive-rate × (1 − prior)). Sensitivity alone (the "99%
 accurate" part everyone fixates on) is only half the story — the prior
 matters just as much.
 
+Plug in the exact numbers from the 100-people story above — prior = 1%,
+sensitivity = 99%, false-positive rate = 5%: (0.99 × 0.01) ÷ (0.99 × 0.01 +
+0.05 × 0.99) = 0.0099 ÷ 0.0594 ≈ **16.7%**. That's the formula, computed
+independently of the counting story, landing on the same "about 1 in 6"
+answer the population-of-100 walkthrough gave — two different routes to the
+same number.
+
 **Where it bites in real life:** screening for a rare disease, a rare fraud
 pattern, or a rare security alert — a "99% accurate" flag sounds like a
 near-certainty, but if the thing being flagged is rare, most flags are still
@@ -347,6 +415,15 @@ really were fair, how often would 10 flips produce a result this lopsided
 (8+ heads, or by symmetry 8+ tails) just from ordinary luck? Work that out
 and the answer is about 11% of the time — not rare enough to be damning, but
 not nothing either. That 11% is a p-value.
+
+**Where does "about 11%" actually come from?** Flip a fair coin 10 times and
+there are 2¹⁰ = 1,024 equally likely head/tail sequences. Count how many of
+them land on 8 or more heads: 45 sequences give exactly 8 heads, 10 give
+exactly 9, and 1 gives all 10 — 56 sequences out of 1,024. By symmetry,
+another 56 sequences give 8 or more tails. That's 112 out of 1,024
+sequences landing at least this lopsided in either direction: 112 ÷ 1,024 ≈
+**10.9%**, rounding to the "about 11%" above — no simulation, no gut
+feeling, just counting equally likely outcomes.
 
 That's the whole recipe: start from the "null" assumption — here, a fair
 coin, formally a distribution of what results would look like if nothing
@@ -414,6 +491,13 @@ confidence level is a statement about how often this whole process succeeds,
 made *before* you ever throw a net, not a probability you get to attach to
 the specific net sitting in front of you.
 
+**With real numbers:** a sample of n = 25 has mean 50 and standard
+deviation σ = 10. The 95% margin is z × (σ/√n) = 1.96 × (10/√25) = 1.96 × 2
+= 3.92, so the interval is 50 ± 3.92, roughly **[46.1, 53.9]**. Quadruple
+the sample to n = 100 and the margin shrinks to 1.96 × (10/10) = **1.96** —
+a much tighter net — because standard error falls as 1/√n: 4× the sample
+only buys a 2× tighter interval (√4 = 2), not a 4× tighter one.
+
 The picture makes this concrete without leaning on actual randomness: 20
 "hypothetical repeated experiments" sit at evenly spaced quantiles of the
 sampling distribution — an exact, reproducible stand-in for "cast the net 20
@@ -471,6 +555,13 @@ underlying population was, as long as you're averaging enough independent
 draws. One wildly-off guess barely moves a large average; a handful of
 wildly-off guesses in different directions mostly cancel each other out.
 
+**With real numbers:** say the jar actually holds 620 jellybeans, and five
+kids guess 50, 900, 1000, 300, and 750 — wildly scattered, off by as much
+as 570 in either direction. Average those five guesses: (50 + 900 + 1000 +
+300 + 750) ÷ 5 = 3000 ÷ 5 = **600**, only 20 off from the true 620 — closer
+than four of the five individual guesses, even though every guess going
+into it looked like noise.
+
 The picture makes this exact rather than simulated: the population is an
 exponential distribution — sharply peaked at zero with a long right tail,
 about as far from a bell curve as it gets (think "time between rare events,"
@@ -508,14 +599,23 @@ kurtosis are the extra numbers that capture the difference.
 
 Two neighborhoods report the exact same average home price and the exact
 same standard deviation. A house hunter might assume they're basically
-interchangeable — same "typical" price, same amount of variation. But
-picture neighborhood A: prices cluster in a clean bell shape around the
-average, most homes genuinely close to typical. Now picture neighborhood B:
-most homes are modest, well below the average, but a handful of mansions sit
-far out on the high end and drag the mean up to match neighborhood A
-exactly. The mean and the spread are identical between the two — and the
-actual experience of house-hunting in them is completely different. That gap
-is invisible to mean and standard deviation alone; you need a third number.
+interchangeable — same "typical" price, same amount of variation.
+
+**With real numbers:** Neighborhood A, 5 homes: $380k, $390k, $400k, $410k,
+$420k — mean = $400k, a clean, tight, symmetric spread. Neighborhood B:
+four modest homes at $350k each and one mansion at $600k — mean =
+(4×$350k + $600k) ÷ 5 = $2,000k ÷ 5 = **$400k**, exactly matching
+Neighborhood A. Same reported average, built from two completely different
+sets of homes — most of B's residents live well *below* the average their
+own neighborhood reports, dragged up entirely by the one mansion. (Matching
+the spread too, not just the mean, takes more than five hand-picked points
+to pull off cleanly — the interactive picture does exactly that, with a
+closed-form correction that keeps mean and stddev locked together while you
+drag skew and watch the shape underneath them change.)
+
+The actual experience of house-hunting in the two neighborhoods is
+completely different. That gap is invisible to mean and standard deviation
+alone; you need a third number.
 
 **Skewness** is that number: it measures which way a distribution leans.
 Positive skew (like neighborhood B) means a long right tail — a few big
@@ -845,6 +945,20 @@ threshold right and you only flag the most obvious spam: precision climbs
 slips through). Slide it left and the opposite happens. **F1**, their
 harmonic mean, only rises when *both* rise together — which the threshold
 alone can't deliver.
+
+**With real numbers:** 100 emails arrive, 20 really are spam, 80 are legit.
+At one threshold the filter flags 25 emails as spam: 18 of those are truly
+spam (caught), 7 are legit mail wrongly flagged, and 2 of the 20 real spam
+emails slip through uncaught. Recall = 18 ÷ (18+2) = 18/20 = **90%** (caught
+90% of real spam). Precision = 18 ÷ (18+7) = 18/25 = **72%** (72% of what
+got flagged was actually spam). F1 = 2×0.72×0.90 ÷ (0.72+0.90) = 1.296 ÷
+1.62 = **80%**.
+
+Tighten the threshold and the filter gets pickier, flagging only 19 emails:
+17 true spam caught, just 2 false alarms — but now 3 real spam emails slip
+through instead of 2. Recall drops to 17/20 = **85%**, precision climbs to
+17/19 ≈ **89%** — precision up, recall down, from the exact same tightened
+dial. That's the tradeoff, in numbers instead of just a described shape.
 
 The one thing that genuinely improves both is separating the two curves
 further apart: a better model that scores real spam and real mail more
