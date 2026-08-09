@@ -22,13 +22,14 @@ func init() {
 		Title: "P-value",
 		Blurb: "Your friend hands you a coin and claims it's fair. You flip it 10 times and " +
 			"get 8 heads. Suspicious — but is it PROOF the coin is rigged, or could a fair " +
-			"coin just get lucky sometimes? Imagine flipping a truly fair coin 10 times over " +
-			"and over: how often would it produce a result at least this extreme (8+ heads, " +
-			"or by symmetry 8+ tails) just by chance? That probability is the p-value — here, " +
-			"about 11%. The curve is that 'null' distribution: what a test statistic would " +
-			"look like if there were truly no effect. The vertical line is what you actually " +
-			"observed; the shaded area is everything at least as extreme — that shaded area " +
-			"IS the p-value. The dashed lines mark the critical boundary for your chosen " +
+			"coin just get lucky? There are 2^10=1,024 equally likely head/tail sequences from " +
+			"10 flips. Count how many land on 8+ heads: 45+10+1=56. By symmetry, another 56 " +
+			"land on 8+ tails. That's 112 of 1,024 sequences this lopsided or worse in either " +
+			"direction: 112/1024 = 10.9%, about 11% — no simulation, just counting equally " +
+			"likely outcomes. That 11% is the p-value. The curve is that 'null' distribution: " +
+			"what a test statistic looks like if there's truly no effect. The vertical line is " +
+			"what you actually observed; the shaded area — everything at least as extreme — IS " +
+			"the p-value. The dashed lines mark the critical boundary for your chosen " +
 			"significance level α — cross it and the result is 'statistically significant'.",
 		Params: []concept.ParamSpec{
 			{Key: "z", Label: "Observed statistic (z)", Min: -4, Max: 4, Step: 0.1, Def: 2.0},

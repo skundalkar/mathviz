@@ -34,16 +34,19 @@ func init() {
 		Title: "Confidence interval",
 		Blurb: "A fish hides somewhere in a lake, sitting perfectly still. You get an " +
 			"imperfect reading of roughly where it is and cast a net centered on that reading. " +
-			"A wide net catches it almost every time, even with a rough guess; a narrow net " +
-			"only succeeds when your guess lands close. Once you've thrown one specific net, " +
-			"it's tempting to say 'there's a 95% chance the fish is in this net' — but the " +
-			"fish never moved and the net already landed; it either caught it or it didn't. " +
-			"What 95% actually describes is the METHOD: repeat this cast-around-your-guess " +
-			"process many times and about 95% of the nets you throw capture the fish. The " +
-			"dashed line here is the true mean, which in real life you never get to see. Each " +
-			"row is one hypothetical 'cast' — green if its interval captured the true mean, " +
-			"red if it missed. Raise the confidence level and every interval widens (fewer " +
-			"misses); raise the sample size and every interval narrows (more precision).",
+			"With real numbers: a sample of n=25 has mean 50, stddev 10. The 95% margin is " +
+			"1.96 x (10/sqrt(25)) = 1.96 x 2 = 3.92, so the interval is 50 +/- 3.92, about " +
+			"[46.1, 53.9]. Quadruple the sample to n=100 and the margin only shrinks to 1.96 " +
+			"— 4x the data buys 2x the precision, since standard error falls as 1/sqrt(n). " +
+			"Once you've thrown one specific net, it's tempting to say 'there's a 95% chance " +
+			"the fish is in this net' — but the fish never moved and the net already landed; " +
+			"it either caught it or it didn't. What 95% actually describes is the METHOD: " +
+			"repeat this cast-around-your-guess process many times and about 95% of the nets " +
+			"you throw capture the fish. The dashed line here is the true mean, which in real " +
+			"life you never get to see. Each row is one hypothetical 'cast' — green if its " +
+			"interval captured the true mean, red if it missed. Raise the confidence level and " +
+			"every interval widens (fewer misses); raise the sample size and every interval " +
+			"narrows (more precision).",
 		Params: []concept.ParamSpec{
 			{Key: "confidence", Label: "Confidence level", Min: 50, Max: 99, Step: 1, Def: 90, Unit: "%"},
 			{Key: "n", Label: "Sample size (n)", Min: 2, Max: 100, Step: 1, Def: 20},

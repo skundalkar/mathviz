@@ -18,15 +18,17 @@ func init() {
 		ID:    "normal-vs-skew",
 		Title: "Normal vs. skewed & fat-tailed",
 		Blurb: "Two neighborhoods report the exact same average home price and the exact " +
-			"same standard deviation — interchangeable, right? Neighborhood A's prices cluster " +
-			"in a clean bell around the average. Neighborhood B is mostly modest homes, but a " +
-			"handful of mansions drag the mean up to match A exactly. Same mean, same spread, " +
-			"totally different shape — invisible to those two numbers alone. Skewness is the " +
-			"third number: it measures which way a distribution leans (turn the knob and one " +
-			"tail lengthens while the other shortens). Kurtosis is a fourth: whether extreme, " +
-			"rare outcomes are more likely than a plain bell curve predicts ('fat tails' — a " +
-			"lesson risk models learned expensively in 2008). At skew = kurtosis = 0 this is " +
-			"exactly the standard normal; the dashed curve is that plain normal for comparison.",
+			"same standard deviation — interchangeable, right? With real numbers: Neighborhood " +
+			"A, 5 homes at $380k/390k/400k/410k/420k — mean $400k, tight and symmetric. " +
+			"Neighborhood B: 4 homes at $350k plus one $600k mansion — mean = (4x350k+600k)/5 " +
+			"= $400k, exactly matching A, even though most of B's residents live well below " +
+			"their own neighborhood's 'average.' Same mean, totally different shape — invisible " +
+			"to mean and stddev alone. Skewness is the third number: it measures which way a " +
+			"distribution leans (turn the knob and one tail lengthens while the other " +
+			"shortens). Kurtosis is a fourth: whether extreme, rare outcomes are more likely " +
+			"than a plain bell curve predicts ('fat tails' — a lesson risk models learned " +
+			"expensively in 2008). At skew = kurtosis = 0 this is exactly the standard normal; " +
+			"the dashed curve is that plain normal for comparison.",
 		Params: []concept.ParamSpec{
 			{Key: "skew", Label: "Skewness", Min: -0.9, Max: 0.9, Step: 0.1, Def: 0},
 			{Key: "kurt", Label: "Excess kurtosis", Min: -1, Max: 2, Step: 0.1, Def: 0},

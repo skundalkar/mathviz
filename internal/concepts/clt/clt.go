@@ -21,16 +21,17 @@ func init() {
 		ID:    "central-limit-theorem",
 		Title: "Central limit theorem",
 		Blurb: "At a school fair, a jar of jellybeans sits on a table and everyone guesses " +
-			"how many are inside. Any single guess is wildly unreliable — some way too high, " +
-			"some way too low. But average ALL the guesses together and that average lands " +
-			"remarkably close to the true count: the 'wisdom of crowds.' Why does averaging " +
-			"fix wildly-off individual guesses? The central limit theorem: no matter how " +
-			"skewed the population of individual values is, the distribution of the AVERAGE " +
-			"of many draws from it tightens around the true mean and turns bell-shaped as you " +
-			"average more of them. The population here (n=1) is deliberately about as far from " +
-			"normal as it gets: an exponential distribution, sharply peaked at zero with a " +
-			"long right tail. Raise the sample size n and watch the sample-mean distribution " +
-			"reshape into a normal curve (the thin reference line) regardless.",
+			"how many are inside. Say the jar holds 620, and five kids guess 50, 900, 1000, " +
+			"300, 750 — wildly scattered, off by up to 570. Average those five: " +
+			"(50+900+1000+300+750)/5 = 3000/5 = 600, only 20 off from the truth — closer than " +
+			"four of the five individual guesses. That's the 'wisdom of crowds,' and it isn't " +
+			"magic — it's the central limit theorem: no matter how skewed the population of " +
+			"individual values is, the distribution of the AVERAGE of many draws from it " +
+			"tightens around the true mean and turns bell-shaped as you average more of them. " +
+			"The population here (n=1) is deliberately about as far from normal as it gets: an " +
+			"exponential distribution, sharply peaked at zero with a long right tail. Raise the " +
+			"sample size n and watch the sample-mean distribution reshape into a normal curve " +
+			"(the thin reference line) regardless.",
 		Params: []concept.ParamSpec{
 			{Key: "n", Label: "Sample size (n)", Min: 1, Max: 30, Step: 1, Def: 1},
 			{Key: "lambda", Label: "Population rate (λ)", Min: 0.3, Max: 3, Step: 0.1, Def: 1},

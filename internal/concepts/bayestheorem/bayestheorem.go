@@ -19,15 +19,15 @@ func init() {
 		ID:    "bayes-theorem",
 		Title: "Bayes' theorem",
 		Blurb: "A test for a rare disease is 99% accurate, and you just tested positive. " +
-			"What's the chance you actually have it? Most people's gut answer is '99%' — the " +
-			"test is 99% accurate, after all. It's wrong, often by a lot: how rare the disease " +
-			"was BEFORE you took the test matters just as much as the test's accuracy. If only " +
-			"1 in 100 people actually have it, even a '99% accurate' test run across everyone " +
-			"throws off nearly as many false alarms (from the huge healthy population) as true " +
-			"catches (from the tiny sick population). Below, a population of 100 is regrouped " +
-			"by test result: green squares in 'tested positive' are real cases, red squares are " +
-			"false alarms — and red usually outnumbers green when the condition is rare, even " +
-			"for a pretty accurate test.",
+			"What's the chance you actually have it? Most people's gut answer is '99%.' It's " +
+			"wrong: with 100 people and only 1 actually sick, the test almost certainly catches " +
+			"that 1 (99% sensitivity) but also wrongly flags about 5% of the 99 healthy people " +
+			"— roughly 5 false alarms. That's 6 positive results total, only 1 real: about 17%, " +
+			"not 99%. The formula gives the same answer directly: (0.99x0.01) / (0.99x0.01 + " +
+			"0.05x0.99) = 0.0099/0.0594 = 16.7% — two routes, same number. Below, a population " +
+			"of 100 is regrouped by test result: green squares in 'tested positive' are real " +
+			"cases, red squares are false alarms — and red usually outnumbers green when the " +
+			"condition is rare, even for a pretty accurate test.",
 		Params: []concept.ParamSpec{
 			{Key: "prior", Label: "Base rate (prior)", Min: 0.001, Max: 0.5, Step: 0.001, Def: 0.01},
 			{Key: "sensitivity", Label: "Sensitivity (catches true cases)", Min: 0.5, Max: 0.999, Step: 0.001, Def: 0.99},

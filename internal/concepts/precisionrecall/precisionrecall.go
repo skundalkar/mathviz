@@ -19,16 +19,18 @@ func init() {
 	concept.Register(concept.Concept{
 		ID:    "precision-recall",
 		Title: "Precision vs. recall",
-		Blurb: "You're building a spam filter. The easy instinct: make it aggressive, flag " +
-			"anything that even smells like spam, and you'll catch it all. Try that and you'll " +
-			"also flag your boss's emails and password resets as spam — perfect recall, " +
-			"terrible precision. Loosen it up to stop annoying people and real spam slips " +
-			"through untouched. Right of the threshold = predicted positive. Recall = of all " +
-			"the real positives (right curve), what fraction did we catch? Precision = of " +
-			"everything we flagged, what fraction was actually positive? Slide the threshold " +
-			"right and precision climbs while recall falls; slide it left and the opposite " +
-			"happens. Only a better model — more separation between the curves — improves both " +
-			"at once; the threshold alone just trades one for the other.",
+		Blurb: "You're building a spam filter. 100 emails arrive, 20 really are spam. At " +
+			"one threshold it flags 25: 18 truly spam (caught), 7 legit mail wrongly flagged, " +
+			"2 real spam missed. Recall = 18/20 = 90%, precision = 18/25 = 72%. Tighten the " +
+			"threshold to flag only 19: 17 caught, just 2 false alarms, but now 3 real spam " +
+			"emails slip through. Recall drops to 17/20 = 85%, precision climbs to 17/19 = 89% " +
+			"— precision up, recall down, from the exact same dial. Right of the threshold = " +
+			"predicted positive. Recall = of all the real positives (right curve), what " +
+			"fraction did we catch? Precision = of everything we flagged, what fraction was " +
+			"actually positive? Slide the threshold right and precision climbs while recall " +
+			"falls; slide it left and the opposite happens. Only a better model — more " +
+			"separation between the curves — improves both at once; the threshold alone just " +
+			"trades one for the other.",
 		Params: []concept.ParamSpec{
 			{Key: "thresh", Label: "Threshold", Min: -3, Max: 6, Step: 0.1, Def: 1.5},
 			{Key: "sep", Label: "Class separation", Min: 1, Max: 5, Step: 0.1, Def: 3},
