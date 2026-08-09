@@ -16,15 +16,20 @@ func init() {
 	concept.Register(concept.Concept{
 		ID:    "entropy",
 		Title: "Entropy",
-		Blurb: "A weather app that says '50% chance of rain' is telling you something genuinely " +
-			"uncertain — either outcome would be news. One that says '99% chance of rain' has " +
-			"basically already told you the answer; if it then actually rains, that's barely " +
-			"surprising at all. Entropy is that intuition made precise: rarer outcomes carry " +
-			"more 'surprise' (information), quantified as -log2(p), and entropy is the average " +
-			"surprise you should expect across all outcomes, weighted by how often each happens. " +
-			"For a coin with P(heads) = p, entropy peaks at exactly 1 bit when p = 0.5 — maximum " +
-			"uncertainty — and falls toward 0 as p approaches 0 or 1, where the outcome is all " +
-			"but certain and learning it tells you almost nothing.",
+		Blurb: "In 20 Questions, 'is it bigger than a breadbox?' is a good question because either " +
+			"answer is plausible — whichever way it goes, you've learned something. 'Is it the " +
+			"sun?' is a bad one: you already know the answer, so hearing it confirmed teaches you " +
+			"nothing. Entropy is what makes that difference precise. A weather app saying '50% " +
+			"chance of rain' is telling you something genuinely uncertain; '99% chance of rain' " +
+			"has basically already told you the answer. Entropy is the average 'surprise' " +
+			"(-log2(p), in bits) you should expect across all outcomes, weighted by how often each " +
+			"happens. For a coin with P(heads) = p, entropy peaks at exactly 1 bit when p = 0.5 — " +
+			"maximum uncertainty — and falls toward 0 as p approaches 0 or 1, where the outcome is " +
+			"all but certain. Rule of thumb: if you already know how something will probably turn " +
+			"out, finding out is low-entropy (confirmation); if it's a genuine toss-up, it's " +
+			"high-entropy — exactly when finding out is worth the effort. That's the logic behind " +
+			"which question a decision tree asks first and why compressed files barely compress " +
+			"further.",
 		Params: []concept.ParamSpec{
 			{Key: "p", Label: "P(heads)", Min: 0.01, Max: 0.99, Step: 0.01, Def: 0.5},
 		},
