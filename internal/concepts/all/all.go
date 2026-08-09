@@ -12,6 +12,7 @@ import (
 	_ "mathviz/internal/concepts/logscale"
 	_ "mathviz/internal/concepts/meanmedianmode"
 	_ "mathviz/internal/concepts/normalskew"
+	_ "mathviz/internal/concepts/overfitting"
 	_ "mathviz/internal/concepts/precisionrecall"
 	_ "mathviz/internal/concepts/pvalue"
 	_ "mathviz/internal/concepts/rocauc"
