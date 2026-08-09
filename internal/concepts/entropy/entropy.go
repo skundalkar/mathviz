@@ -16,20 +16,20 @@ func init() {
 	concept.Register(concept.Concept{
 		ID:    "entropy",
 		Title: "Entropy",
-		Blurb: "In 20 Questions, 'is it bigger than a breadbox?' is a good question because either " +
-			"answer is plausible — whichever way it goes, you've learned something. 'Is it the " +
-			"sun?' is a bad one: you already know the answer, so hearing it confirmed teaches you " +
-			"nothing. Entropy is what makes that difference precise. A weather app saying '50% " +
-			"chance of rain' is telling you something genuinely uncertain; '99% chance of rain' " +
-			"has basically already told you the answer. Entropy is the average 'surprise' " +
-			"(-log2(p), in bits) you should expect across all outcomes, weighted by how often each " +
-			"happens. For a coin with P(heads) = p, entropy peaks at exactly 1 bit when p = 0.5 — " +
-			"maximum uncertainty — and falls toward 0 as p approaches 0 or 1, where the outcome is " +
-			"all but certain. Rule of thumb: if you already know how something will probably turn " +
-			"out, finding out is low-entropy (confirmation); if it's a genuine toss-up, it's " +
-			"high-entropy — exactly when finding out is worth the effort. That's the logic behind " +
-			"which question a decision tree asks first and why compressed files barely compress " +
-			"further.",
+		Blurb: "Picture guessing a number from 1-100 using only yes/no questions: split the range in " +
+			"half each time and you always finish in 7 questions, since 2^7=128 covers 100 " +
+			"possibilities. That 'doubling' relationship is a logarithm, and it's all entropy is " +
+			"built from. A fair coin flip is a 2-outcome version of that game, so it's worth " +
+			"exactly 1 yes/no question's worth of information — 1 'bit'. A trick coin that lands " +
+			"heads 90% of the time is different: heads is boringly predictable (barely any " +
+			"surprise), while the rare tails would genuinely surprise you (worth a lot) — and " +
+			"because tails is rare, the AVERAGE surprise across many flips ends up low. That " +
+			"average is entropy: it peaks at exactly 1 bit when p=0.5 (a true toss-up, no good " +
+			"guess in advance) and drops toward 0 as p nears 0 or 1 (you can already guess the " +
+			"outcome, so watching it happen barely teaches you anything). Rule of thumb: if the " +
+			"actual result would surprise you, it's high-entropy; if you already saw it coming, " +
+			"it's low-entropy — the same logic behind a good Wordle opening word or why an " +
+			"underdog's win is the sports headline, not the favorite's.",
 		Params: []concept.ParamSpec{
 			{Key: "p", Label: "P(heads)", Min: 0.01, Max: 0.99, Step: 0.01, Def: 0.5},
 		},

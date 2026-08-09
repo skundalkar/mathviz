@@ -6,65 +6,80 @@ code. Newest entries go at the top.
 
 ---
 
-## entropy — the number that tells you if an answer is worth asking for
-**The idea in one line:** entropy measures how much you genuinely don't know
-before an outcome is revealed — and that number tells you when a question is
-worth asking, a measurement worth taking, or a signal worth paying for.
+## entropy — how many yes/no questions would it take?
+**The idea in one line:** entropy counts, on average, how many yes/no
+questions you'd need to nail down an outcome — and "bits" are just that
+question-count, so a "surprising" outcome is literally one that took more
+questions to pin down.
 
-Start from 20 Questions, not from a formula. You're trying to guess an
-object and you get yes/no questions. "Is it bigger than a breadbox?" is a
-*good* question because either answer is plausible — whichever way it goes,
-you've genuinely narrowed the field. "Is it the sun?" is a *bad* question in
-almost any ordinary game — you already know the answer is "no" before you
-ask, so hearing "no" confirmed teaches you nothing. Entropy is what makes
-that difference precise instead of a gut feeling: it's the number of bits of
-real information an answer carries, and it's highest exactly when you're
-most unsure how it'll go.
+**Start with a game, not a formula.** Someone picks a whole number from 1 to
+100 and you have to find it by asking only yes/no questions ("is it higher
+than 50?"). If you're smart about it — always split the remaining range in
+half — you can always find the number in at most 7 questions, because
+2⁷ = 128, which is more than 100 possible numbers. Double the range to 1–200
+and you only need one more question (2⁸ = 256): every extra question doubles
+how many possibilities you can tell apart. That "doubling" relationship is
+exactly what a logarithm measures, and it's *all* entropy is built from — no
+new machinery, just counting halvings.
 
-The coin in the picture is 20 Questions shrunk to its smallest case: one
-yes/no question, P(heads) = p. At p = 0.5 you have no idea which way it'll
-land, so watching it land is worth a full bit — maximum entropy. At p = 0.1
-or p = 0.9 you already have a strong guess, so watching it land mostly just
-confirms what you expected — entropy near 0. The two surprise bars show
-*why*: the rare outcome, if it happens, is worth a lot (3.32 bits at p =
-0.1) — but it happens rarely. The common outcome happens often but each
-occurrence teaches you almost nothing (0.15 bits). Entropy is those two
-numbers blended by how often each actually occurs — not the biggest possible
-surprise, but the *expected* one.
+**Now shrink the game to one coin flip.** Flipping a fair coin is like a
+mini guessing game with only 2 equally likely outcomes, so — following the
+same halving logic — it takes exactly 1 question ("heads?") to find out
+which one happened. That's why a fair coin flip is worth exactly 1 "bit":
+one yes/no question's worth of genuine information, no more, no less. Four
+equally likely outcomes (like a spinner with 4 slices) would take 2
+questions, because 2² = 4 — that outcome is worth 2 bits. This is the whole
+trick behind "surprise" = -log2(p): an outcome with probability p is treated
+as "1 out of 1/p equally likely things," and -log2(p) just asks "how many
+yes/no questions would it take to find *that* thing?" A coin that lands
+heads only 1 time in 4 (p = 0.25) is "1 out of 4," which takes 2 questions
+to pin down — so landing heads is worth 2 bits of surprise, matching the
+spinner exactly.
 
-**How to tell entropy is the concept you're reaching for:** ask yourself,
-"if I already had to bet on how this turns out, would seeing the actual
-result change anything I do?" If you're already near-certain, learning the
-outcome is low-entropy — confirmation, not information. If it's a genuine
-toss-up, it's high-entropy — that's precisely the situation where finding
-out is worth the effort. A few everyday shapes this takes:
+**But real coins aren't fair, and that's where averaging comes in.** Picture
+a trick coin that lands heads 90% of the time. If it lands tails (the rare
+1-in-10 event), that's genuinely surprising — about 3.3 bits worth, close to
+what a 1-in-10 lottery-style guess would take. But it only happens 10% of
+the time. Heads, the boring 90%-of-the-time outcome, barely tells you
+anything — about 0.15 bits — but it happens constantly. Entropy is the
+average of those two numbers, weighted by how often each actually shows up:
+mostly-cheap heads plus occasionally-expensive tails averages out to just
+0.47 bits total — much less than the fair coin's full bit, because you could
+already guess "probably heads" and be right most of the time. The picture's
+curve traces this average for every possible bias p, and it peaks at
+exactly 1 bit right at p = 0.5 — a fair coin is the *only* coin where you
+truly have no useful guess in advance, so it's the most informative one to
+watch.
 
-- **Deciding what to ask or check next** (debugging, diagnosis, an
-  interview, 20 Questions itself): the useful question is the one you're
-  least sure of the answer to, not the one you already suspect. This is
-  exactly the rule decision trees use to pick which feature to split on —
-  the split that reduces entropy the most is the one that was most
-  uncertain, and therefore most informative, before you looked.
-- **File compression**: letters that show up constantly (like "e" in
-  English) get short codes, rare ones get long codes, and you can't shrink
-  a file past its entropy — which is also why an already-compressed file
-  (a .zip or .jpg) barely compresses further: there's no more predictable,
-  low-entropy structure left to squeeze out.
-- **Password strength**: a good strength meter isn't scoring length, it's
-  estimating entropy — how surprised an attacker's best guessing strategy
-  would be. "password123" is 11 characters but low-entropy (an attacker's
-  short list of common passwords gets there fast); a random 11-character
-  string is much higher-entropy for the same length.
-- **Is this measurement/poll/test even worth running?** If the likely
-  outcome is already near-certain (low entropy), running it mostly confirms
-  what you knew. If it's genuinely up in the air (high entropy), that's
-  exactly when the data earns its cost — pollsters, A/B tests, and medical
-  trials all get the most real information out of the toss-up cases, not
-  the lopsided ones.
-- **Cross-entropy loss** in machine learning is the same idea pointed at a
-  model: it penalizes a prediction in proportion to how "surprised" it
-  would be by the true label, so a confident-and-wrong prediction is
-  penalized far more than a hedged one.
+**How to spot entropy in your own life:** ask yourself, "if I had to guess
+right now, would the actual answer surprise me?" If you're already pretty
+sure, finding out just confirms what you guessed — low entropy, not much
+new information. If it's a genuine toss-up, finding out actually teaches you
+something — high entropy. A few places this shows up:
+
+- **Wordle:** a strong opening word (like ARISE or ADIEU) is one that
+  splits the remaining possible words roughly in half no matter what colors
+  come back — the same "split it evenly" trick as the 1–100 game. A weak
+  opening word you can already guess the result of teaches you almost
+  nothing, exactly like asking "is it the sun?" in 20 Questions.
+- **Sports upsets:** the heavily-favored team winning is barely news — you
+  basically already knew. The underdog winning is what makes headlines,
+  because it's the higher-entropy, more-informative outcome; nobody was
+  sure how that one would go.
+- **Weather forecasts:** "50% chance of rain" means tomorrow is a genuine
+  toss-up — high entropy, worth checking the app again in the morning.
+  "99% chance of rain" means you already know to bring an umbrella;
+  actually checking barely adds anything.
+- **Studying for a test:** the questions worth spending time on are the
+  ones you're genuinely unsure about (high entropy) — re-reading material
+  you can already answer confidently teaches you close to nothing, no
+  matter how many times you do it.
+
+If you go further into computer science, this exact idea reappears as *why*
+file compression works (predictable, low-entropy patterns compress; random,
+high-entropy data doesn't), as the rule a decision tree uses to pick which
+question to ask first, and as the "cross-entropy loss" that grades how
+surprised a machine-learning model is by the right answer.
 
 ---
 
