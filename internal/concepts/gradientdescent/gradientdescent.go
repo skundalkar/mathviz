@@ -31,6 +31,43 @@ func init() {
 	})
 }
 
+// StartX is the fixed starting position of the "ball" — off-center so its
+// path toward (or away from) the minimum at x=0 is visible.
+const StartX = 4.5
+
+// F is the "valley" the ball rolls down: a simple bowl with its minimum at
+// x=0, f(0)=0.
+func F(x float64) float64 {
+	return x * x
+}
+
+// Grad is the derivative of F, i.e. the slope gradient descent follows.
+func Grad(x float64) float64 {
+	return 2 * x
+}
+
+// Descend runs `steps` iterations of gradient descent on F starting from x0
+// with the given learning rate, returning the position at every step
+// including the start: [x0, x1, ..., x_steps]. Pure math — same inputs
+// always produce the same path.
+//
+// Because F(x)=x^2 has Grad(x)=2x, each step is x_{t+1} = x_t - lr*2*x_t =
+// x_t*(1-2*lr): the path is a geometric sequence, |1-2*lr| < 1 converges,
+// |1-2*lr| > 1 diverges. That closed form is what the tests check against.
+func Descend(x0, lr float64, steps int) []float64 {
+	if steps < 0 {
+		steps = 0
+	}
+	path := make([]float64, steps+1)
+	path[0] = x0
+	x := x0
+	for i := 1; i <= steps; i++ {
+		x = x - lr*Grad(x)
+		path[i] = x
+	}
+	return path
+}
+
 func render(p map[string]float64) string {
 	_ = p
 	return viz.New(680, 340, -1, 1, -1, 1).String()
