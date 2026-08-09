@@ -821,26 +821,40 @@ itself — standard deviation is the ruler that turns a raw distance from
 average into a number that means the same thing no matter what you're
 measuring.
 
-Two students each score 10 points above the class average on their tests.
-Student A: sounds impressive — until you learn everyone in class A scored
-within 2 points of the mean, so being 10 points up puts them off the charts,
-practically alone at the top. Student B scored 10 points up too, but that
-class's scores were scattered across a 40-point range — 10 points above
-average there barely clears the middle of the pack. Same raw number, wildly
-different meaning, because "10 points" only means something relative to how
-spread out everyone else is.
+Two students each score 10 points above their class average. Same number,
+"10 points above average" — but do they deserve equal bragging rights?
+To answer that you need one more fact about each class: how far scores
+*typically* land from the average there, high or low. That's the piece the
+raw "+10" is missing, and once you have it, watch what it does to each
+student's result:
 
-**So what is standard deviation, concretely?** Take every score, measure how
-far it sits from the average, and boil all of those distances down to one
-typical, representative distance — that's it. That single number is called
-standard deviation, written σ (sigma is just the Greek letter used as its
-label, nothing more). A small σ means everyone bunches close to the average,
-like class A. A large σ means scores are scattered wide, like class B. Once
-a class has that one number, you can describe any individual score by *how
-many σ's away from average it sits* — that count is called a **z-score**,
-and it's the actual portable ruler: student A's +10 points works out to
-about +5σ, student B's +10 points is only about +0.5σ. Same raw gap,
-translated into numbers that finally mean comparable things.
+- **Class A:** scores typically land only about 2 points from the average
+  in either direction — this is a tightly bunched class, nobody strays far.
+  Student A's +10 is 10 ÷ 2 = 5 times further from average than it's normal
+  to land here. That's not a little above average, that's off the charts —
+  practically nobody else in the class gets anywhere near that far out.
+- **Class B:** scores typically land about 20 points from the average in
+  either direction — a much more spread-out class, where landing far from
+  average is routine. Student B's +10 is only 10 ÷ 20 = 0.5, half of how
+  far it's completely normal to land here. Plenty of classmates routinely
+  score further from average than that.
+
+Same "+10 points," same raw number — but one student is a genuine outlier
+and the other is barely above the middle of the pack, and the only reason
+you can tell them apart is that one extra fact: how far a typical score in
+each class lands from that class's average.
+
+**So what is standard deviation, concretely?** It's exactly that fact,
+made precise: take every score in a class, measure how far it sits from the
+average, and boil all of those distances down to one typical, representative
+distance. That's standard deviation — written σ (sigma is just the Greek
+letter used as its label, nothing more). Class A's σ is about 2; class B's σ
+is about 20 — the exact two numbers used above. Once a class has that one
+number, you can describe any individual score by *how many σ's away from
+average it sits* — that count is called a **z-score**, and it's the same
+division just done above, given a name: student A's +10 points is +5σ,
+student B's +10 points is +0.5σ. Same raw gap, translated into numbers that
+finally mean comparable things.
 
 **Here's the part that makes σ more than just a label — a fixed rule you
 can lean on.** For data piled up in the classic bell shape (most values near

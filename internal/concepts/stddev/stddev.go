@@ -16,17 +16,18 @@ func init() {
 	concept.Register(concept.Concept{
 		ID:    "standard-deviation",
 		Title: "Standard deviation (σ)",
-		Blurb: "Two students each score '10 points above average' — sound equally impressive? " +
-			"Not necessarily: if class A's scores all huddled within 2 points of the mean, +10 " +
-			"is off the charts; if class B's scores were scattered across 40 points, +10 barely " +
-			"clears the middle. Standard deviation (σ) is what fixes that: measure how far every " +
-			"score sits from the average, boil those distances down to one typical distance, and " +
-			"that's σ — a small σ means everyone bunches close together, a large σ means scores " +
-			"are scattered wide. For a bell-shaped curve this comes with a fixed rule, not a " +
-			"coincidence: mean ± 1σ always covers about 68% of everyone, ±2σ covers about 95%, " +
-			"±3σ covers about 99.7% — narrow curve or wide, it doesn't matter. Drag σ and watch " +
-			"the band stretch or shrink while always holding that same 68% — that's what makes " +
-			"'2 sigma above average' a portable, comparable rarity instead of just a raw number.",
+		Blurb: "Two students each score '10 points above average' — equally impressive? Depends " +
+			"how far scores typically land from average in each class. In class A, scores " +
+			"typically land only 2 points from average, so +10 is 5 times further out than normal " +
+			"— off the charts. In class B, scores typically land 20 points from average, so +10 is " +
+			"just half of how far it's normal to land there — unremarkable. Standard deviation (σ) " +
+			"IS that 'typically lands X points from average' number: measure how far every score " +
+			"sits from the mean, boil those distances down to one typical distance, and that's σ. " +
+			"For a bell-shaped curve it comes with a fixed rule too: mean ± 1σ always covers about " +
+			"68% of everyone, ±2σ about 95%, ±3σ about 99.7% — narrow curve or wide, doesn't " +
+			"matter. Drag σ and watch the band stretch or shrink while always holding that same " +
+			"68% — that's what makes '2 sigma above average' a portable, comparable rarity instead " +
+			"of just a raw number.",
 		Params: []concept.ParamSpec{
 			{Key: "mu", Label: "Mean (μ)", Min: -4, Max: 4, Step: 0.1, Def: 0},
 			{Key: "sigma", Label: "Std dev (σ)", Min: 0.4, Max: 3, Step: 0.05, Def: 1, Unit: "σ"},
