@@ -6,6 +6,42 @@ code. Newest entries go at the top.
 
 ---
 
+## entropy — surprise, averaged
+**The idea in one line:** rare outcomes carry more information than common
+ones, and entropy is just the expected amount of that information across a
+whole distribution.
+
+A weather app that says "50% chance of rain" is telling you something
+genuinely uncertain — either outcome would be news to you. One that says
+"99% chance of rain" has basically already told you the answer; if it then
+actually rains, that's barely surprising at all. Shannon formalized that
+feeling: the "surprise" (information content) of an outcome with probability
+p is -log2(p), measured in bits. A guaranteed outcome (p=1) carries zero
+surprise. An outcome half as likely carries exactly one more bit of
+surprise than one twice as likely — surprise doesn't grow smoothly with
+rarity, it compounds.
+
+Entropy is what you get when you average that surprise across every
+possible outcome, weighted by how often each one actually occurs. For a
+coin with P(heads) = p, entropy H(p) = -p·log2(p) - (1-p)·log2(1-p) traces a
+curve that peaks at exactly 1 bit when p = 0.5 (a fair coin — maximally
+unpredictable) and falls toward 0 as p slides toward 0 or 1 (a coin that's
+almost certainly going to land one particular way, so watching it land
+barely teaches you anything). The two bars underneath make the asymmetry
+concrete: at p = 0.1, the rare "heads" outcome is worth 3.32 bits of
+surprise if it happens, while the routine "tails" outcome is worth barely
+0.15 — entropy is the probability-weighted blend of those two very different
+numbers.
+
+**Where it bites in real life:** entropy is the backbone of data
+compression (rarer symbols get longer codes, common ones get shorter — you
+can't beat the entropy bound), decision-tree splits in machine learning
+(pick the split that reduces entropy the most, i.e. the one that tells you
+the most), and cross-entropy loss for classifiers (penalizing a model in
+proportion to how "surprised" it is by the true label).
+
+---
+
 ## gradient-descent — why "learning rate" is the knob that can break everything
 **The idea in one line:** gradient descent always knows which way is
 downhill, but the learning rate decides whether it walks there or vaults

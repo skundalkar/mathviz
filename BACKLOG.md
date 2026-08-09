@@ -23,9 +23,9 @@ Format: `- [ ] <id> — <one-line description of the concept to visualize>`
 - [x] confusion-matrix — TP/FP/FN/TN as an interactive grid
 - [x] overfitting — a wiggly curve chasing noise vs. a smooth fit
 - [x] gradient-descent — a ball rolling downhill with an adjustable learning rate
+- [x] entropy — how surprise/information changes with probability
 
 ## Up next (statistics & ML intuition)
-- [ ] entropy — how surprise/information changes with probability
 - [ ] sigmoid-softmax — squashing logits into probabilities
 
 ## Up next (math foundations)
