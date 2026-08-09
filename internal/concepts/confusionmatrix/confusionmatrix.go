@@ -18,17 +18,21 @@ func init() {
 	concept.Register(concept.Concept{
 		ID:    "confusion-matrix",
 		Title: "Confusion matrix",
-		Blurb: "A hospital brags that its new test for a rare disease is '99% accurate.' " +
-			"Sounds great — until you check a test that just says 'healthy' for literally " +
-			"everyone: 100 patients, 1 actually sick. That do-nothing test scores TP=0, FN=1 " +
-			"(the 1 real case, missed), FP=0, TN=99 — accuracy = 99/100 = 99%, identical to a " +
-			"genuinely good test, while catching zero real cases. Accuracy alone can't tell " +
-			"these apart because it lumps four very different outcomes into one number. The " +
-			"confusion matrix refuses to lump them: the literal 2x2 breakdown of every outcome " +
-			"— true positive, false positive, false negative, true negative — for a population " +
-			"classified positive whenever its score clears the threshold. Darker cells hold " +
-			"more of the population. Slide the threshold or separation and watch the four " +
-			"counts — and the accuracy/precision/recall/F1 built from them — shift.",
+		Blurb: "A hospital brags its new test is '99% accurate.' Meaningless on its own: a " +
+			"do-nothing test that says 'healthy' for all 100 patients (1 actually sick) scores " +
+			"TP=0, FN=1, FP=0, TN=99 — accuracy 99%, identical to a genuinely good test, while " +
+			"catching zero real cases. Underneath the grid, every example gets a score: real " +
+			"negatives cluster around 0, real positives cluster around whatever 'class " +
+			"separation' is set to (small = heavily overlapping, hard to tell apart; large = " +
+			"barely overlapping, easy). 'Threshold' is just where you draw the line — score " +
+			"above it, called positive. Try threshold=1.5, separation=2.1, n=200 (100/100 " +
+			"split): 73 of 100 real positives clear 1.5 and get caught (TP=73, FN=27 missed), " +
+			"7 of 100 real negatives clear it too by chance (FP=7, TN=93). That's accuracy=83%, " +
+			"precision=73/80=91%, recall=73/100=73%, F1≈81%. Don't stop at 'all pretty high' — " +
+			"the 91-vs-73 gap says this setting is conservative: trustworthy when it flags " +
+			"something, but missing over a quarter of real positives. Whether that's fine " +
+			"depends entirely on what you're screening for. Slide threshold or separation and " +
+			"watch all four counts — and the metrics built from them — shift.",
 		Params: []concept.ParamSpec{
 			{Key: "thresh", Label: "Threshold", Min: -3, Max: 6, Step: 0.1, Def: 1.5},
 			{Key: "sep", Label: "Class separation", Min: 1, Max: 5, Step: 0.1, Def: 3},

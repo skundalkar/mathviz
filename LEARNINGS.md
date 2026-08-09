@@ -231,11 +231,52 @@ that catches literally zero real cases.
 Look at the grid instead of the headline number and the do-nothing test is
 exposed instantly: its TP cell (real cases actually caught) sits at zero, no
 matter how green its TN cell looks. The picture shades each cell by its
-share of the population so this is visible at a glance, and lets you watch
-the four counts — and the accuracy/precision/recall/F1 built from them —
-shift as the threshold or class separation change: raising the threshold
-shrinks both "predicted positive" cells and grows both "predicted negative"
-cells, because fewer examples clear a higher bar.
+share of the population so this is visible at a glance.
+
+**What "threshold" and "class separation" actually control.** Underneath
+the grid, every example gets a score — some raw number the classifier
+computes for it. Real negatives cluster around a baseline score; real
+positives cluster around a higher score, offset from that baseline by
+however far **class separation** is set. Small separation means the two
+groups' scores overlap heavily — genuinely hard to tell apart no matter
+where you draw the line. Large separation means they barely overlap — easy
+to tell apart. It's a property of how good the underlying signal is, not
+something a threshold can fix. **Threshold** is simply where you draw the
+line: anyone scoring above it gets called positive. Raise it and fewer
+examples clear the bar (both "predicted positive" cells shrink); lower it
+and more do.
+
+**A realistic setting, not the degenerate do-nothing case:** threshold =
+1.5, separation = 2.1, population = 200 (always split 100 real positive /
+100 real negative). Positives cluster around 2.1, negatives around 0, so a
+threshold of 1.5 sits between them, closer to the positive side. Working
+through the same two score distributions the do-nothing test skipped
+entirely: about 73 of the 100 real positives score above 1.5 and get caught
+(TP=73), the other 27 score lower and get missed (FN=27); about 7 of the
+100 real negatives happen to score above 1.5 anyway (FP=7, false alarms),
+the other 93 correctly clear (TN=93). From those four counts:
+
+- **Accuracy** = (73+93) ÷ 200 = **83%**
+- **Precision** = 73 ÷ (73+7) = 73/80 = **91%**
+- **Recall** = 73 ÷ (73+27) = 73/100 = **73%**
+- **F1** = 2×0.91×0.73 ÷ (0.91+0.73) ≈ **81%**
+
+**What to actually read off those four numbers together — don't stop at
+"they're all pretty high."** The gap between precision (91%) and recall
+(73%) is the real information: this threshold is *conservative* — when it
+flags something, trust it (only 7 wrong out of 80 flags) — but it's
+leaving over a quarter of real positives, 27 of 100, uncaught. Whether
+that's good news depends entirely on what's being screened for, not on the
+numbers alone: for a spam filter, missing 27% of spam while almost never
+flagging real mail might be exactly the tradeoff you want; for a cancer
+screen or fraud alert, missing 27% of real cases is a serious problem even
+at 83% accuracy, and you'd lower the threshold, trading away some of that
+91% precision for higher recall. F1 (81%) blends the two into one
+comparison-friendly number, but it *hides* this asymmetry — a cautious
+classifier and a trigger-happy one can land on the identical F1 while
+making completely different mistakes. Precision and recall have to be read
+side by side, not replaced by one number, to know which one you're
+actually looking at.
 
 **Where it bites in real life:** fraud detection, rare-disease screening,
 security alerting — anywhere the thing you're trying to catch is rare, a
