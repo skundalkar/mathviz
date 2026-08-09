@@ -72,17 +72,18 @@ func init() {
 	concept.Register(concept.Concept{
 		ID:    "variance-vs-stddev",
 		Title: "Variance vs. standard deviation",
-		Blurb: "A friend hands you two lists of dart-throw distances from the bullseye and " +
-			"asks which thrower is more consistent. Obvious plan: average how far off each " +
-			"throw was. Do that and — for BOTH throwers, however wild or tight their throws " +
-			"actually were — the average comes out to roughly zero, because deviations from " +
-			"the mean always cancel: positives and negatives sum to nothing, every time. " +
-			"Squaring each deviation first stops the cancellation (a throw twice as far off " +
-			"counts four times as much) — the average of those squares is variance. Its one " +
-			"flaw: squaring the data also squares the units (inches become inches²), so we " +
-			"square-root back down to standard deviation, an answer in the units you started " +
-			"with. Drag spread to see stddev scale linearly while variance scales with the " +
-			"square; drag the outlier to see how much one extreme point inflates both.",
+		Blurb: "Two dart throwers, 4 throws each, distance from bullseye in inches (left = " +
+			"negative, right = positive). Thrower 1: -2,-1,+1,+2. Thrower 2: -8,-4,+4,+8 — " +
+			"visibly 4x wilder. Try the obvious fix: average the raw distances. Thrower 1: " +
+			"(-2-1+1+2)/4 = 0. Thrower 2: (-8-4+4+8)/4 = 0. BOTH average to exactly zero, even " +
+			"though one is clearly way more scattered — deviations from the mean always cancel, " +
+			"every time, for any data. Square each deviation first (erases the sign, and punishes " +
+			"far misses harder) and average THOSE: Thrower 1 gets variance 2.5, Thrower 2 gets " +
+			"variance 40 — finally distinguishable. But 'inches squared' isn't a real unit anyone " +
+			"uses, so square-root back down: stddev 1.58 vs. 6.32, in real inches again — the same " +
+			"4x gap the raw numbers showed. Drag spread to watch stddev scale linearly while " +
+			"variance scales with the square; drag the outlier to see how much one extreme point " +
+			"inflates both.",
 		Params: []concept.ParamSpec{
 			{Key: "spread", Label: "Spread", Min: 0.3, Max: 2.5, Step: 0.1, Def: 1},
 			{Key: "outlier", Label: "Outlier push", Min: 0, Max: 10, Step: 0.5, Def: 0},

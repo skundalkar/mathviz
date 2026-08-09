@@ -561,35 +561,81 @@ each point is from the mean — always gives exactly zero, so variance squares
 first (to stop the cancellation) and standard deviation square-roots back (to
 undo the squared units).
 
-A friend hands you two lists of dart-throw distances from the bullseye and
-asks which thrower is more consistent. The obvious plan: for each throw,
-measure how far off it was (left is negative, right is positive, say), then
-average those numbers across all the throws. Try it and something strange
-happens — for *both* throwers, no matter how wild or tight their throws
-actually were, the average comes out to roughly zero. That's not telling you
-both throwers are equally consistent; it's a property of the mean itself.
-Deviations from the mean always sum to zero by definition — the positive
-ones and negative ones cancel exactly, every time — so "average raw
-deviation" can never distinguish a tight thrower from a scattered one.
+Two dart throwers each take 4 throws. You measure how far each throw landed
+from the bullseye, in inches — call it negative if the throw landed left of
+the bullseye, positive if it landed right, the same way you'd count steps
+left or right of home base:
 
-The fix is to stop the cancellation before it happens: square each deviation
-first. A throw 4 inches left becomes +16, a throw 4 inches right also
-becomes +16 — nothing cancels anymore, and a throw twice as far off
-contributes *four times* the squared deviation, so wild outliers get
-punished harder than close misses. Average those squared deviations and you
-get **variance** — a real, non-zero number that grows the wilder the throws
-get. Its one wrinkle: squaring the data also squares the units, so if throws
-are measured in inches, variance comes out in inches² — awkward to interpret
-("this thrower's variance is 9 square inches" isn't a natural sentence).
-Taking the square root of variance lands back in the original units, and
-that's the **standard deviation**.
+```
+Thrower 1 (tight):     -2   -1        +1   +2
+                         •    •   |    •    •
+                                bullseye
 
-The picture makes the asymmetry concrete: scale every point away from the
-mean by a factor k, and variance scales by k² while standard deviation only
-scales by k — drag the spread slider and watch the variance bar shoot up far
-faster than intuition expects. Push one point out as an outlier and variance
-jumps disproportionately too, because that squaring step punishes the single
-far-out point hardest of all.
+Thrower 2 (wild):  -8        -4        +4        +8
+                     •         •   |    •         •
+                                bullseye
+```
+
+Just looking at the two lines, Thrower 2 is obviously the wilder, less
+consistent one — those throws are spread almost 4 times as wide as
+Thrower 1's. Now try to turn that visible difference into one number the
+"obvious" way: average how far off each throw was.
+
+- **Thrower 1:** (−2) + (−1) + (+1) + (+2) = 0, average = 0 ÷ 4 = **0**
+- **Thrower 2:** (−8) + (−4) + (+4) + (+8) = 0, average = 0 ÷ 4 = **0**
+
+Both throwers come out to exactly the same number — zero — even though the
+picture above makes it obvious they're nothing alike. That's not bad luck
+with these particular throws; it's guaranteed to happen for *any* set of
+throws, every time. It's baked into what "average" means: the throws above
+the average and the throws below it are, by definition, balanced to cancel
+out exactly. "Average raw deviation" is therefore useless here — it can't
+tell a tight thrower from a wild one no matter how different they actually
+are, because it always lands on zero before it gets the chance to.
+
+**The fix: square each deviation before averaging it.** Squaring erases the
+minus sign (−2 and +2 both become 4), so nothing cancels anymore — and as a
+bonus, a throw twice as far off ends up counting *four times* as much, not
+twice, so wild misses get punished harder than close ones:
+
+| Thrower 1 throw | squared | Thrower 2 throw | squared |
+|---|---|---|---|
+| −2 | 4 | −8 | 64 |
+| −1 | 1 | −4 | 16 |
+| +1 | 1 | +4 | 16 |
+| +2 | 4 | +8 | 64 |
+| **sum** | **10** | **sum** | **160** |
+
+Average those squared numbers and you get **variance**:
+
+- Thrower 1: 10 ÷ 4 = **2.5** square inches
+- Thrower 2: 160 ÷ 4 = **40** square inches
+
+Now the two throwers are finally distinguishable — 40 is a lot bigger than
+2.5, which matches what your eyes already told you from the number lines.
+But look at the units: "2.5 square inches" isn't a sentence anyone actually
+says about how consistent a dart thrower is. That's the one wrinkle
+squaring introduces — it squares the units too. Taking the square root
+undoes exactly that and lands back in ordinary inches:
+
+- Thrower 1: √2.5 ≈ **1.58 inches** — this is the standard deviation
+- Thrower 2: √40 ≈ **6.32 inches** — this is the standard deviation
+
+That's standard deviation: the "how far off is a typical throw" question
+the raw average was trying and failing to answer, now actually answered in
+real inches — Thrower 2's typical miss is about 4 times further from the
+bullseye than Thrower 1's, the same 4x gap the number lines showed at a
+glance. (Thrower 2's throws here are literally each of Thrower 1's throws
+×4 — which is exactly why variance came out ×16 [4²] and standard deviation
+came out ×4: variance scales with the *square* of how far you stretch the
+data, standard deviation scales with the stretch itself. The app's
+interactive picture shows this same k-and-k² relationship directly — drag
+its spread slider and watch the variance number shoot up far faster than
+the standard deviation does.)
+
+Push one point out as an outlier in the interactive picture and variance
+jumps disproportionately too, for the identical reason: that squaring step
+punishes the single far-out point hardest of all.
 
 **Where it bites in real life:** why one wild outlier can wreck a
 variance-based estimate more than you'd guess (median/IQR are more robust
