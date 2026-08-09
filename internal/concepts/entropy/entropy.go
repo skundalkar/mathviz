@@ -5,6 +5,7 @@
 package entropy
 
 import (
+	"fmt"
 	"math"
 
 	"mathviz/internal/concept"
@@ -60,7 +61,54 @@ func BinaryEntropy(p float64) float64 {
 	return term(p) + term(1-p)
 }
 
-func render(p map[string]float64) string {
-	_ = p
-	return viz.New(680, 340, -1, 1, -1, 1).String()
+// surpriseCap bounds how tall a surprise bar can grow. The p slider stops at
+// 0.01, whose surprise is -log2(0.01) ≈ 6.64 bits, so 7 comfortably covers
+// the slider's full range without a bar ever clipping.
+const surpriseCap = 7.0
+
+func render(params map[string]float64) string {
+	pHeads := params["p"]
+	pTails := 1 - pHeads
+
+	c := viz.New(680, 420, 0, 1, 0, 1.1)
+	// Push the curve down from the top (room for the header text) and
+	// compress it away from the bottom (room for the surprise bars below,
+	// drawn in raw pixel coordinates so they're unaffected by this).
+	c.PadT = 70
+	c.PadB = 230
+	c.Axes()
+	for x := 0.0; x <= 1.0; x += 0.25 {
+		c.Tick(x, fmt.Sprintf("%.2g", x))
+	}
+
+	curve := viz.Sample(0, 1, 200, BinaryEntropy)
+	c.Path(curve, viz.Accent, 2.5)
+	c.VLine(pHeads, viz.Warm, true)
+
+	hpx, hpy := c.X(pHeads), c.Y(BinaryEntropy(pHeads))
+	c.Rect(hpx-4, hpy-4, 8, 8, viz.Warm, 0.9)
+
+	c.Text(20, 24, fmt.Sprintf("P(heads) = %.2f    entropy H(p) ≈ %.3f bits", pHeads, BinaryEntropy(pHeads)),
+		14, viz.Ink, "start")
+	c.Text(20, 44, "entropy peaks at 1 bit when p = 0.5 — that's when the outcome is least predictable",
+		12, viz.Muted, "start")
+
+	// Below the curve: the surprise (-log2 p) of each outcome, if it happens.
+	const barBase, barMaxH, barW = 372.0, 120.0, 70.0
+	c.Text(20, 234, "surprise if that outcome actually happens: -log2(p)", 12, viz.Muted, "start")
+
+	drawBar := func(x float64, prob float64, label string, color string) {
+		s := Surprise(prob)
+		h := s / surpriseCap * barMaxH
+		if h > barMaxH {
+			h = barMaxH
+		}
+		c.Rect(x, barBase-h, barW, h, color, 0.75)
+		c.Text(x+barW/2, barBase-h-8, fmt.Sprintf("%.2f bits", s), 12, viz.Ink, "middle")
+		c.Text(x+barW/2, barBase+18, fmt.Sprintf("%s (p=%.2f)", label, prob), 12, viz.Muted, "middle")
+	}
+	drawBar(180, pHeads, "heads", viz.Accent)
+	drawBar(420, pTails, "tails", viz.Warm)
+
+	return c.String()
 }
