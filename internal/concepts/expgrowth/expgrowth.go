@@ -19,19 +19,91 @@ func init() {
 		ID:    "exponential-growth",
 		Seq:   19,
 		Title: "Exponential growth & doubling time",
-		Blurb: "A lily pad patch doubles in size every day, and takes 30 days to cover an " +
-			"entire pond. On what day is the pond half covered? Almost everyone's gut answer " +
-			"is 'day 15' — the halfway mark. The real answer is day 29: doubling from half-full " +
-			"to full only takes one more day, because each day's growth is a multiple of " +
-			"whatever's already there, not a fixed amount. For the first 25 days the pond looks " +
-			"basically empty (under 10%) — anyone watching would swear nothing much is " +
-			"happening — then the last handful of days it explodes, because 'a little more than " +
-			"before' becomes a much bigger absolute number once the base is already large. " +
-			"That's compounding: value(t) = (1+rate)^t. Doubling time isn't a fixed number of " +
-			"periods you add, it's driven by the rate itself: doubling time = ln(2)/ln(1+rate) " +
-			"— higher rate, shorter doubling time, and the doublings just keep stacking. Compare " +
-			"the curve to the dashed straight line (same starting slope) and watch how close " +
-			"they track at first, then how fast the gap opens up.",
+		Sections: []concept.Section{
+			{
+				Heading: "Why would you need this?",
+				Body: []string{
+					"A lily pad patch doubles in size every day, and takes 30 days to cover an " +
+						"entire pond. On what day is the pond half covered?",
+					"Almost everyone's gut answer is 'day 15' — the halfway mark. That instinct " +
+						"treats growth as a fixed amount added every day, so half the days should " +
+						"give half the coverage.",
+					"But the patch isn't adding a fixed amount each day — it's doubling whatever's " +
+						"already there. Is 'day 15' actually right, or does doubling change the " +
+						"answer?",
+				},
+			},
+			{
+				Heading: "How does it actually work?",
+				Body: []string{
+					"The real answer is day 29: doubling from half-full to full only takes one " +
+						"more day, because each day's growth is a multiple of whatever's already " +
+						"there, not a fixed amount.",
+					"• For the first 25 days the pond looks basically empty (under 10% covered) — " +
+						"anyone watching would swear nothing much is happening.",
+					"• In the last handful of days it explodes, because 'a little more than " +
+						"before' becomes a much bigger absolute number once the base is already " +
+						"large.",
+					"• Day 29: half covered. Day 30: fully covered — one more doubling is all it " +
+						"takes.",
+					"That's compounding: value(t) = (1+rate)^t. Doubling time isn't a fixed " +
+						"number of periods you add, it's driven by the rate itself: doubling time " +
+						"= ln(2)/ln(1+rate) — higher rate, shorter doubling time, and the " +
+						"doublings just keep stacking.",
+				},
+			},
+			{
+				Heading: "What does the picture show?",
+				Body: []string{
+					"Compare the curve to the dashed straight line (same starting slope) and " +
+						"watch how close they track at first, then how fast the gap opens up — the " +
+						"same 'looks flat, then explodes' shape from the lily-pad puzzle.",
+					"The growth-rate slider is the whole story: it sets the doubling time " +
+						"(ln(2)/ln(1+rate)), so a small rate bump buys a surprisingly large speedup " +
+						"in how often the value doubles. The periods slider just widens the window " +
+						"so slower rates get enough runway to show the same eventual pattern a fast " +
+						"rate shows quickly. The orange dots mark each doubling — watch how tightly " +
+						"they bunch together at high rates and how far apart they spread at low " +
+						"ones.",
+				},
+			},
+			{
+				Heading: "What can you do now that you couldn't before?",
+				Body: []string{
+					"Now you can tell when a flat-looking trend is actually about to take off, " +
+						"instead of being blindsided by it: doubling time = ln(2)/ln(1+rate) tells " +
+						"you directly how many periods each doubling takes, so you know how close " +
+						"the 'sudden' acceleration really is even while the trend still looks tame " +
+						"— the lily pond is exactly as far from full on day 25 as this math says, " +
+						"not whenever it happens to 'feel' close.",
+				},
+			},
+			{
+				Heading: "Where does this show up in real life?",
+				Body: []string{
+					"Compound interest, population growth, viral spread, Moore's-law-style tech " +
+						"scaling, unchecked technical debt — anywhere a quantity's growth is " +
+						"proportional to its current size rather than a fixed amount per period.",
+					"The practical trap this concept is built around: judging an exponential " +
+						"trend by its early, unremarkable-looking segment (like the first 25 days " +
+						"of the pond) systematically underestimates how close the 'sudden' " +
+						"acceleration actually is.",
+				},
+			},
+			{
+				Heading: "What's the common mistake here?",
+				Body: []string{
+					"Say it like this: 'It still looks flat, but the days remaining until it's " +
+						"full keeps halving — this is going to accelerate fast.' That trusts the " +
+						"doubling-time math over how the trend currently looks.",
+					"Not like this: 'It's grown about the same amount for 25 days straight, so I " +
+						"can just extend that line.' That's the straight-line guess plotted as the " +
+						"dashed comparison line in the picture — it matches the real curve near " +
+						"the start and diverges from it badly by the end, which is exactly the " +
+						"trap the lily-pad puzzle sets.",
+				},
+			},
+		},
 		Params: []concept.ParamSpec{
 			{Key: "rate", Label: "Growth rate per period (%)", Min: 1, Max: 50, Step: 1, Def: 10},
 			{Key: "periods", Label: "Periods shown", Min: 5, Max: 40, Step: 1, Def: 20},

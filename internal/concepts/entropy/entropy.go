@@ -17,19 +17,95 @@ func init() {
 		ID:    "entropy",
 		Seq:   16,
 		Title: "Entropy",
-		Blurb: "Forget the math for a second: 'entropy' just means how mixed-up or hard-to-call " +
-			"something is. A messy room has high entropy; a tidy one has low entropy. 'This " +
-			"password has high entropy' means it's got no guessable pattern. 'The model's " +
-			"predictions have high entropy' means it's genuinely unsure, spreading its confidence " +
-			"across several answers instead of committing to one. A coin is the simplest version of " +
-			"that same idea: a fair coin (p=0.5) is the ultimate toss-up — nobody has a good guess in " +
-			"advance, so it's high-entropy. A trick coin that lands heads 90% of the time (p=0.9) is " +
-			"low-entropy — you can already guess 'probably heads' and mostly be right, so watching it " +
-			"land barely tells you anything new. Drag p and watch the curve trace exactly that: " +
-			"entropy peaks at p=0.5 (true toss-up) and falls toward 0 as p nears 0 or 1 (the outcome " +
-			"is basically already decided). The two bars below show why: the rare outcome would " +
-			"genuinely surprise you if it happened, the common one wouldn't — entropy blends those " +
-			"two by how often each actually occurs.",
+		Sections: []concept.Section{
+			{
+				Heading: "Why would you need this?",
+				Body: []string{
+					"You've probably heard 'entropy' used loosely outside math — 'this password " +
+						"has high entropy,' 'there's a lot of entropy in this org chart,' 'the " +
+						"model's predictions have high entropy.' All of those point at the same " +
+						"shape of thing: could this go a lot of different ways, with no clear " +
+						"favorite, or is it pretty much locked in on one obvious answer?",
+					"A coin is the simplest place to check that intuition. A fair coin (p=0.5) is " +
+						"the ultimate toss-up — nobody has a good guess in advance. A trick coin " +
+						"that lands heads 90% of the time (p=0.9) is nearly locked in — you can " +
+						"already guess 'probably heads' and mostly be right. Is there a way to say " +
+						"precisely how much more 'toss-up' the fair coin is than the trick coin, " +
+						"instead of just eyeballing it?",
+				},
+			},
+			{
+				Heading: "How does it actually work?",
+				Body: []string{
+					"A fair coin (p=0.5) is high-entropy: nobody has a good guess in advance, so " +
+						"watching it land genuinely tells you something. A trick coin at p=0.9 is " +
+						"low-entropy: you can already guess 'probably heads' and mostly be right, " +
+						"so watching it land barely tells you anything new.",
+					"Entropy is the average of how surprising each outcome would be, weighted by " +
+						"how often it actually happens: the rare outcome would genuinely surprise " +
+						"you if it happened, the common one wouldn't, and entropy blends those two " +
+						"together by how often each actually occurs.",
+				},
+			},
+			{
+				Heading: "What does the picture show?",
+				Body: []string{
+					"Drag p and watch the curve trace exactly that pattern: entropy peaks at 1 " +
+						"bit when p = 0.5 (true toss-up) and falls toward 0 as p nears 0 or 1 (the " +
+						"outcome is basically already decided).",
+					"The two bars below the curve show why: the rarer outcome's bar (how " +
+						"surprising it would be if it happened) is taller, the common outcome's " +
+						"bar is short since it barely tells you anything new, and entropy is the " +
+						"probability-weighted blend of those two bars.",
+				},
+			},
+			{
+				Heading: "What can you do now that you couldn't before?",
+				Body: []string{
+					"'This password has high entropy' or 'the model's predictions have high " +
+						"entropy' isn't just a vibe anymore — it's a specific, computable number " +
+						"(in bits) you can use to actually compare how mixed-up two passwords, " +
+						"models, or coins are, instead of eyeballing which one feels more locked " +
+						"in.",
+				},
+			},
+			{
+				Heading: "Where does this show up in real life?",
+				Body: []string{
+					"• 'This password has high entropy' — there's no discernible pattern to " +
+						"exploit; a guesser has no shortcut, every character genuinely could've " +
+						"been anything. A low-entropy password ('password123') is the opposite — " +
+						"heavily concentrated on a small, guessable set of likely choices.",
+					"• 'There's a lot of entropy in this org chart right now' — nobody's really " +
+						"sure who owns what; responsibilities are scattered, not concentrated on " +
+						"clear owners.",
+					"• 'Left alone, codebases/garages/inboxes tend toward entropy' — the physics " +
+						"metaphor directly: things drift toward disorganized unless someone spends " +
+						"effort keeping them organized.",
+					"• 'The model's predictions have high entropy here' — the model is genuinely " +
+						"unsure on this input, spreading its confidence across several possible " +
+						"answers instead of piling it onto one.",
+					"If you've heard 'cross-entropy loss' in an AI context, it's the same core " +
+						"idea extended one step further: how well a model's stated confidence " +
+						"matches what actually turned out to be true.",
+				},
+			},
+			{
+				Heading: "What's the common mistake here?",
+				Body: []string{
+					"Say it like this: 'That rigged coin that always lands heads is extremely " +
+						"low-entropy — utterly predictable, even though it's unfair.' Entropy is " +
+						"about how spread-out the possibilities are, not about whether something " +
+						"is right, fair, or good.",
+					"Not like this: 'That's so biased, it must have high entropy' — if something " +
+						"is just wrong, or leans hard in one predictable direction, that's " +
+						"actually the opposite of entropy: it's low entropy, just low entropy " +
+						"pointed at the wrong answer. Reach for 'entropy' specifically when the " +
+						"honest description is 'spread out, could go several ways' — not just " +
+						"'off' or 'biased.'",
+				},
+			},
+		},
 		Params: []concept.ParamSpec{
 			{Key: "p", Label: "P(heads)", Min: 0.01, Max: 0.99, Step: 0.01, Def: 0.5},
 		},

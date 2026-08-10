@@ -19,20 +19,90 @@ func init() {
 		ID:    "sigmoid-softmax",
 		Seq:   18,
 		Title: "Sigmoid & softmax",
-		Blurb: "A model doesn't output probabilities directly — it outputs 'logits', raw " +
-			"scores that can be any real number, positive or negative, with no built-in upper " +
-			"limit. Something has to turn '2.3 for cat, -0.5 for dog' into numbers that behave " +
-			"like probabilities: between 0 and 1, summing to 1 across every option. For two " +
-			"classes, sigmoid does it: sigmoid(z) = 1/(1+e^-z) squashes any logit into (0,1), " +
-			"crossing 0.5 exactly at z=0, saturating toward 0 or 1 out at the extremes. For " +
-			"three classes, say logits (2, 0.5, -1) for cat/dog/fox, softmax exponentiates " +
-			"each one (e^2≈7.39, e^0.5≈1.65, e^-1≈0.37) and divides by their sum (≈9.41): " +
-			"probabilities ≈78%, 18%, 4% — every logit contributes, and they add to 100%. " +
-			"Sigmoid is exactly softmax's two-class case: run softmax on (z, 0) and the first " +
-			"slot works out to 1/(1+e^-z), the same formula. The temperature knob divides every " +
-			"logit before exponentiating: below 1 it sharpens the distribution toward a single " +
-			"winner, above 1 it flattens the probabilities toward uniform even when the logits " +
-			"disagree.",
+		Sections: []concept.Section{
+			{
+				Heading: "Why would you need this?",
+				Body: []string{
+					"A model doesn't output probabilities directly — it outputs 'logits', raw " +
+						"scores that can be any real number, positive or negative, with no " +
+						"built-in upper limit. Nothing stops a logit from being 1000 or -1000; " +
+						"it's just a score, bigger meaning 'more likely' and nothing more.",
+					"Something has to turn '2.3 for cat, -0.5 for dog' into numbers that " +
+						"actually behave like probabilities: between 0 and 1, summing to 1 " +
+						"across every option. How do you get from an unbounded score to " +
+						"something you can read as a probability?",
+				},
+			},
+			{
+				Heading: "How does it actually work?",
+				Body: []string{
+					"For two classes, sigmoid does it: sigmoid(z) = 1/(1+e^-z) squashes any " +
+						"logit into (0,1), crossing 0.5 exactly at z=0, saturating toward 0 or 1 " +
+						"out at the extremes. Past about z=±5 the output barely moves even " +
+						"though the logit is still changing a lot.",
+					"For three classes, say logits (2, 0.5, -1) for cat/dog/fox:",
+					"• exponentiate each one: e^2≈7.39, e^0.5≈1.65, e^-1≈0.37",
+					"• sum them: ≈9.41",
+					"• divide each by that sum: probabilities ≈78%, 18%, 4% — every logit " +
+						"contributes, and they add to 100%",
+					"Sigmoid is exactly softmax's two-class case: run softmax on (z, 0) and " +
+						"the first slot works out to 1/(1+e^-z), the same formula.",
+				},
+			},
+			{
+				Heading: "What does the picture show?",
+				Body: []string{
+					"The 'Logit A' slider drives both panels with the same z, so you can watch " +
+						"the sigmoid curve's point and class A's softmax bar move together. " +
+						"'Logit B' only affects the softmax panel, giving class A a second " +
+						"competitor against class C, pinned at logit 0 as a fixed reference — " +
+						"the same three-way competition as the cat/dog/fox example above.",
+					"The temperature knob divides every logit before exponentiating: below 1 " +
+						"it sharpens the distribution toward whichever class has the highest " +
+						"logit, pulling it toward 100%; above 1 it flattens the probabilities " +
+						"toward uniform (33/33/33%) even when the logits clearly disagree.",
+				},
+			},
+			{
+				Heading: "What can you do now that you couldn't before?",
+				Body: []string{
+					"Now any raw model output — however large, negative, or unbounded — can be " +
+						"read directly as a calibrated probability: sigmoid for a yes/no call, " +
+						"softmax for a call across any number of classes, with temperature to " +
+						"dial the model's stated confidence up or down without touching the " +
+						"underlying logits.",
+				},
+			},
+			{
+				Heading: "Where does this show up in real life?",
+				Body: []string{
+					"This squashing step is the last mile of essentially every classifier — " +
+						"binary logistic regression, multi-class neural nets, attention weights, " +
+						"next-token prediction in language models. Temperature is exactly the " +
+						"knob systems expose as 'more creative / more conservative' sampling in " +
+						"language models — same math, just applied to a much bigger softmax.",
+					"The failure mode worth knowing: softmax outputs always sum to 1 and are " +
+						"always positive, so a model that's never seen anything like the " +
+						"current input still has to hand back some full distribution — softmax " +
+						"can't express 'I have no idea,' only 'here's how my confidence splits " +
+						"across the classes I know about.' Low-confidence-looking outputs " +
+						"(probabilities close to uniform) are the closest softmax gets to saying " +
+						"that.",
+				},
+			},
+			{
+				Heading: "What's the common mistake here?",
+				Body: []string{
+					"Say it like this: 'The model's probabilities look almost uniform here, so " +
+						"it doesn't have a strong signal on this input' — reading a flat softmax " +
+						"output as genuine low confidence, which is exactly right.",
+					"Not like this: 'The model said 2.3 for cat, so it's confident about cat' — " +
+						"treating a raw logit as if it were already a probability. Logits have " +
+						"no fixed reference point; only after softmax or sigmoid squashes them " +
+						"do the numbers mean anything as a probability.",
+				},
+			},
+		},
 		Params: []concept.ParamSpec{
 			{Key: "z", Label: "Logit A (sigmoid & softmax)", Min: -6, Max: 6, Step: 0.1, Def: 1},
 			{Key: "logitB", Label: "Logit B (softmax only)", Min: -6, Max: 6, Step: 0.1, Def: -1},
