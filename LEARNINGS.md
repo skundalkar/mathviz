@@ -1050,6 +1050,30 @@ held-out data. Good on training, poor on held-out is overfitting (fix:
 simplify or regularize, not enlarge — see the overfitting concept). Poor on
 both is a genuine signal shortage, and the table above applies.
 
+**Can precision, recall, F1, and AUC themselves tell you which cause it
+is?** No — and it's worth being honest about that instead of pretending
+otherwise. Those four numbers, computed once from one trained model, can
+only tell you *that* there's a separation ceiling. A low AUC looks
+identical whether the cause is missing features, noisy labels, too little
+data, or too weak a model — same symptom, different diseases. Telling them
+apart takes a few extra, cheap moves beyond the base metrics, cheapest
+first:
+
+| Diagnostic | What you do | What it tells you |
+|---|---|---|
+| Manual error review | Pull 20–30 false positives and false negatives, look at them by hand | A large chunk are actually mislabeled ground truth → noisy labels. Correctly labeled but genuinely look like the other class → a features or capacity problem, not labels |
+| Train-vs-validation gap | Compare the same metric on training data vs. held-out data | Train high, val low → overfitting, not a signal shortage. Train low too → the model can't fit data it's already seen — underfitting: features lack signal, or the model needs more capacity |
+| Learning curve | Retrain on 25%, 50%, 100% of the data, plot held-out performance against training-set size | Still climbing at 100% → genuinely data-limited, more of the hard class will likely help. Flat/plateaued → more of the same kind of data won't move it |
+| Feature ablation | Add one candidate feature you suspect carries signal, retrain | Meaningful jump → the original features were the bottleneck. No change → keep looking |
+
+The train-low-too row hides one more fork: "features lack signal" and
+"model too weak" produce the *identical* symptom (low training
+performance). The test that splits them: try a substantially more powerful
+model on the exact same features. Still can't fit the training data → the
+features are the ceiling. Suddenly fits well → it was capacity all along.
+The aggregate metrics tell you *whether* to investigate; they don't do the
+investigating for you.
+
 **Where it bites in real life:** cancer screening (a false negative means
 missed disease — worth tolerating more false positives to avoid), spam
 filters (a false positive means a lost important email), fraud detection,
