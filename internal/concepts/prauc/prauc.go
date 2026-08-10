@@ -22,27 +22,83 @@ func init() {
 		ID:    "pr-auc",
 		Seq:   17,
 		Title: "Precision-Recall curve & PR-AUC",
-		Blurb: "The precision-recall lesson showed you how to read precision and recall at ONE " +
-			"threshold. But which threshold do you compare two candidate filters at? Pick a " +
-			"setting that favors filter A and it wins; pick one that favors filter B and the " +
-			"verdict flips. And even for a single filter, you don't yet know where to SET the " +
-			"threshold before shipping it — one arbitrary guess doesn't tell you if a nearby " +
-			"setting would trade a little precision for a lot more recall. What you actually " +
-			"need is a way to judge a classifier's raw ability to separate the classes, before " +
-			"you've committed to any one threshold: sweep every possible threshold and watch " +
-			"how precision and recall move together. Same 1,000-email inbox, 20 really spam: " +
-			"flag only the 8 most obvious → recall = 8/20 = 40%, precision = 8/8 = 100%. Loosen " +
-			"to flag 22 → recall = 18/20 = 90%, precision = 18/22 = 82%. Loosen all the way to " +
-			"flag 200, catching every last spam email → recall = 100%, but precision craters to " +
-			"20/200 = 10%. Plot each (recall, precision) pair and connect them: that's the PR " +
-			"curve, and now you can see the whole tradeoff at once instead of guessing blind. " +
-			"Sweep EVERY threshold instead of just these 3 and the curve becomes continuous; " +
-			"the area under it (PR-AUC) summarizes that raw separating power in one number, " +
-			"letting you compare entire MODELS without agreeing on a threshold for either one " +
-			"first — the same way ROC-AUC does, except PR-AUC doesn't get fooled when positives " +
-			"are rare: ROC-AUC can look great even when precision is terrible, diluted by a huge " +
-			"pool of easy true negatives. PR-AUC has nowhere to hide from false positives piling " +
-			"up.",
+		Sections: []concept.Section{
+			{
+				Heading: "Why would you need this?",
+				Body: []string{
+					"The precision-recall lesson showed how to read precision and recall at ONE " +
+						"threshold you pick. That's fine once you've already decided where to draw the " +
+						"line — but two real questions sit upstream of that decision.",
+					"• If you have two candidate spam filters and need to ship one, which threshold " +
+						"do you even compare them at? Pick a setting that favors filter A and it wins; " +
+						"pick one that favors filter B and the verdict flips — you haven't learned " +
+						"which filter is better, only which one you happened to flatter.",
+					"• Even for a single filter, how do you know where to set the threshold in the " +
+						"first place? Precision and recall at one arbitrary guess don't tell you " +
+						"whether a nearby setting would trade a little precision for a lot more recall.",
+					"Both questions need the same fix: stop looking at one point and look at the " +
+						"classifier's entire tradeoff at once.",
+				},
+			},
+			{
+				Heading: "How does it actually work?",
+				Body: []string{
+					"Same 1,000-email inbox, 20 really spam. Instead of picking one threshold, walk " +
+						"it from strict to loose and watch (recall, precision) move:",
+					"• Flag only the 8 most obvious spam emails: recall = 8/20 = 40%, precision = " +
+						"8/8 = 100%.",
+					"• Loosen it to flag 22: recall = 18/20 = 90%, precision = 18/22 ≈ 82%.",
+					"• Loosen it all the way to flag 200, catching every last spam email: recall = " +
+						"100%, but precision craters to 20/200 = 10%.",
+					"Plot each (recall, precision) pair and connect them: that's the PR curve. Sweep " +
+						"EVERY threshold instead of just these 3 and it becomes continuous; the area " +
+						"under it (PR-AUC) is one number summarizing the classifier across every " +
+						"threshold at once.",
+				},
+			},
+			{
+				Heading: "What does the picture show?",
+				Body: []string{
+					"The threshold slider sweeps the same marker along the curve: drag it right " +
+						"(stricter) and it climbs toward the top-left (high precision, low recall); drag " +
+						"it left (looser) and it slides toward the bottom-right. The separation slider " +
+						"makes the two classes easier or harder to tell apart — more separation bows " +
+						"the curve up and to the right and raises PR-AUC. The flat grey line at 0.5 is " +
+						"the floor: a classifier that ranks completely at random still lands its flags " +
+						"right about as often as positives occur in the data.",
+				},
+			},
+			{
+				Heading: "What can you do now that you couldn't before?",
+				Body: []string{
+					"Choosing where to set the threshold is now a matter of pointing at whichever " +
+						"spot on the curve matches what you need, instead of guessing blind. Comparing " +
+						"two candidate filters no longer requires agreeing on a threshold for either " +
+						"one first: the area under the whole curve (PR-AUC) is a single number " +
+						"summarizing a classifier's raw separating power — whichever model has the " +
+						"bigger area is better no matter where either of you eventually sets the dial.",
+				},
+			},
+			{
+				Heading: "Why not just use ROC-AUC?",
+				Body: []string{
+					"ROC-AUC can look great even when precision is terrible, because it's diluted by " +
+						"a huge pool of easy true negatives. PR-AUC has nowhere to hide from false " +
+						"positives piling up, so it's the sharper read whenever positives are rare — " +
+						"fraud, disease screening, security alerts.",
+				},
+			},
+			{
+				Heading: "What's the common mistake here?",
+				Body: []string{
+					"Treating ROC-AUC and PR-AUC as basically interchangeable. They agree when the " +
+						"classes are roughly balanced and diverge exactly when it matters most: on the " +
+						"rare-positive problems PR-AUC exists for. A model can post a great ROC-AUC and " +
+						"still flood you with false alarms — check PR-AUC before shipping anything " +
+						"where positives are rare.",
+				},
+			},
+		},
 		Params: []concept.ParamSpec{
 			{Key: "thresh", Label: "Threshold", Min: -3, Max: 6, Step: 0.1, Def: 1.5},
 			{Key: "sep", Label: "Class separation", Min: 1, Max: 5, Step: 0.1, Def: 3},

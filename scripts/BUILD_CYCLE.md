@@ -30,9 +30,10 @@ big commit. After each step, `make check` must pass before you commit.
 
 1. `feat(<id>): scaffold concept + register in gallery`
    - Create `internal/concepts/<id>/<id>.go` with the package doc comment, an
-     `init()` that calls `concept.Register(...)` with the ID, Title, a clear
-     plain-language Blurb, and the Params (sliders). Render may return an empty
-     `viz.New(...).String()` placeholder for now.
+     `init()` that calls `concept.Register(...)` with the ID, Title, `Sections`
+     (see the writing bar under step 5 — populate this, not the legacy
+     `Blurb` field, for every new concept), and the Params (sliders). Render
+     may return an empty `viz.New(...).String()` placeholder for now.
    - Set `Seq` to one more than the highest `Seq` currently registered (grep
      `Seq:` across `internal/concepts/*/*.go` to find it, or use
      `concept.Count()+1`). This is what keeps the gallery sidebar sorted
@@ -53,6 +54,19 @@ big commit. After each step, `make check` must pass before you commit.
    - Prepend a new section to `LEARNINGS.md` (newest on top) explaining the
      concept in plain language.
    - Check off the item in `BACKLOG.md` (move it under `## Done`).
+   - **The in-app explanation is `concept.Section` blocks, not one Blurb
+     paragraph.** `Concept.Sections []Section` (each a `Heading` and a
+     `Body []string`) renders in the browser as separate headed blocks
+     instead of one wall of text — the WASM front-end only falls back to
+     the old single-paragraph `Blurb` when `Sections` is empty, which is a
+     compatibility path for concepts built before this existed, not
+     something a new concept should use. A `Body` entry prefixed with
+     `"• "` renders as a bullet-list item instead of a paragraph — use it
+     for a short worked sequence (e.g. sweeping a threshold through a few
+     settings) so it reads as steps rather than a run-on sentence. See
+     `internal/concepts/prauc/prauc.go` for a full worked example, and
+     load `web/index.html` after `make build && make serve` to see how it
+     actually renders.
    - **Writing bar for the explanation.** The specific bullets below were
      reverse-engineered from a long series of docs-only fixup commits
      across nearly every existing concept (`git log --oneline -- LEARNINGS.md`
@@ -103,61 +117,74 @@ big commit. After each step, `make check` must pass before you commit.
          (spam filter, "turn the dial all the way up," which visibly
          fails before precision/recall are even named) — use it as the
          model, not just `bayes-theorem`.
-     - **The standard shape most entries now follow** (deviate only when a
-       concept genuinely doesn't need a piece of it):
-       1. `**The idea in one line:**` — one sentence, held to the
-          motivation-before-mechanism gate above.
-       2. A relatable real-world scenario, pitched at a first-time learner
-          with no assumed background — not a formula, not jargon, not a
-          niche-domain setup, and shaped as situation → complication → open
-          question per the gate above. If people commonly get this concept
-          wrong on first instinct, say the wrong instinctive answer out
-          loud in the reader's own likely words, *then* show why it's
-          wrong — don't just state the correct version next to it
-          unlabeled (model: `bayes-theorem`'s "gut instinct says 99%...
-          that instinct is wrong" opening).
-       3. **Derive any formula or constant from that scenario before stating
-          it formally** — walk a small, concrete, hands-on case (a guessing
-          game, a hand-counted example) that makes the formula feel
-          inevitable, *then* generalize to the notation and the interactive
-          curve/picture. Don't open with the equation and explain it
-          afterward; entropy needed three separate rewrites specifically
-          because early passes kept leading with `-log2(p)` and bits before
-          the reader had any reason to care (`docs(entropy)`'s three-commit
-          chain — "20 questions" → "first-time learner" → "drop the math,
-          explain the word itself" — is the cautionary example, not just a
-          model to copy from).
-       4. `**With real numbers:**` a full worked example computed step by
-          step to concrete figures, not formulas left abstract. If a
-          degenerate/trivial case would expose the concept's core trap (like
-          a "do-nothing" classifier scoring 99% accuracy), work through that
-          *first*, then follow with a realistic, non-degenerate worked case
-          (model: `confusion-matrix`).
-       5. What the interactive picture/knobs show, tied back to the same
-          concrete numbers from step 4, not a separate abstract description.
-       6. When the example produces several related numbers, say explicitly
-          what to read off them *together* — don't stop at "here are the
-          numbers, they're all fine" (model: `confusion-matrix`'s precision-
-          vs-recall-gap paragraph).
-       7. `**Where it bites in real life:**` real domains, but calibrated to
-          what a generalist reader already has context for as the *primary*
-          examples (Wordle, sports upsets, weather forecasts, studying for a
-          test — not decision trees or cross-entropy loss as the lead
-          example unless the concept itself is inherently an ML concept for
-          an ML audience, like `sigmoid-softmax`). Specialist/niche
-          applications are fine as a brief closing pointer ("if you want to
-          go further...") but shouldn't carry the main explanation.
-       8. If the concept's name is also an everyday English word people
-          already use loosely outside math (entropy, variance, significant,
-          confidence, bias), quote a few real sentences using it that way,
-          unpack each into what it actually means, and say when the word
-          does *not* apply (model: `entropy`'s "this password has high
-          entropy" / "the market's been really entropic" list, and its
+     - **The standard shape most entries now follow: six Sections, each
+       heading a literal question, in this order** (deviate only when a
+       concept genuinely doesn't need one — don't force a square peg in,
+       but don't skip one just because it's easier not to write):
+       1. **`"Why would you need this?"`** — held to the motivation-before-
+          mechanism gate above: situation → complication → open question,
+          pitched at a first-time learner with no assumed background, not a
+          formula or niche-domain setup. If people commonly get this
+          concept wrong on first instinct, say the wrong instinctive answer
+          out loud in the reader's own likely words, *then* show why it's
+          wrong — don't just state the correct version next to it unlabeled
+          (model: `bayes-theorem`'s "gut instinct says 99%... that instinct
+          is wrong"; `pr-auc`'s "which threshold do you even compare two
+          filters at?" for a gallery-internal complication instead of a
+          misconception).
+       2. **`"How does it actually work?"`** — derive any formula or
+          constant from the scenario in section 1 *before* stating it
+          formally: walk a small, concrete, hands-on case (a guessing game,
+          a hand-counted example, a short `"• "`-bulleted sequence of
+          steps) that makes it feel inevitable, computed to real plugged-in
+          figures, not left abstract. Don't open with the equation and
+          explain it afterward; entropy needed three separate rewrites
+          specifically because early passes kept leading with `-log2(p)`
+          and bits before the reader had any reason to care
+          (`docs(entropy)`'s three-commit chain — "20 questions" →
+          "first-time learner" → "drop the math, explain the word itself"
+          — is the cautionary example, not just a model to copy from). If a
+          degenerate/trivial case would expose the concept's core trap
+          (like a "do-nothing" classifier scoring 99% accuracy), work
+          through that *first*, then a realistic, non-degenerate case
+          (model: `confusion-matrix`). If the example produces several
+          related numbers, say explicitly what to read off them *together*
+          — don't stop at "here are the numbers, they're all fine" (model:
+          `confusion-matrix`'s precision-vs-recall-gap paragraph).
+       3. **`"What does the picture show?"`** — tied back to the exact same
+          concrete numbers from section 2, not a separate abstract
+          description; say what each Param/knob visibly does to the same
+          worked example.
+       4. **`"What can you do now that you couldn't before?"`** — the
+          payoff, explicitly closing the loop section 1 opened. This is
+          the section most likely to get skipped because sections 1-3 feel
+          like "enough" — it's the one that turns "here's a mechanism" back
+          into "here's why that mechanism mattered." (model: `pr-auc`'s
+          rewrite — section 1 asks how to compare two models or pick a
+          threshold; section 4 answers both explicitly, by name.)
+       5. **`"Where does this show up in real life?"`** — real domains, but
+          calibrated to what a generalist reader already has context for as
+          the *primary* examples (Wordle, sports upsets, weather forecasts,
+          studying for a test — not decision trees or cross-entropy loss as
+          the lead example unless the concept itself is inherently an ML
+          concept for an ML audience, like `sigmoid-softmax`).
+          Specialist/niche applications are fine as a brief closing pointer
+          ("if you want to go further...") but shouldn't carry the main
+          explanation. If the concept's name is also an everyday English
+          word people already use loosely outside math (entropy, variance,
+          significant, confidence, bias), this is also where to quote a few
+          real sentences using it that way, unpack each into what it
+          actually means, and say when the word does *not* apply (model:
+          `entropy`'s "this password has high entropy" list and its
           explicit "when the word doesn't fit" callout).
-       9. `**Say it like this:** / **Not like this:**` — a closing block
-          contrasting correct phrasing against the natural-sounding wrong
-          phrasing. This is now standard on essentially every entry; include
-          it every time, not just when a mistake feels obvious.
+       6. **`"What's the common mistake here?"`** — the Say-it-like-this /
+          Not-like-this contrast, now as its own headed section instead of
+          a closing paragraph. This is standard on essentially every entry;
+          include it every time, not just when a mistake feels obvious.
+     - `LEARNINGS.md` keeps its existing free-form markdown structure (bold
+       labels, not literal `Section`s) — the six-question shape above still
+       applies there, just written as `**Why would you need this?**` etc.
+       instead of Go struct literals.
      - Ground it in one concrete, worked numeric example with actual
        plugged-in numbers — a reader should be able to follow the
        arithmetic, not just the shape of the idea. Never assert a number or
@@ -199,10 +226,12 @@ big commit. After each step, `make check` must pass before you commit.
        share the same threshold/separation setup), say so and point at it
        by name instead of re-explaining it from scratch or leaving the
        connection implicit.
-     - **Keep the in-app `Blurb` (in `<id>.go`) and the `LEARNINGS.md` entry
-       numerically consistent** — same worked example, same numbers, in
-       both places. If you improve one, mirror the fix in the other in the
-       same commit (or immediately after) rather than letting them drift.
+     - **Keep the in-app `Sections` (in `<id>.go`) and the `LEARNINGS.md`
+       entry numerically consistent** — same worked example, same numbers,
+       in both places. `LEARNINGS.md` can go deeper (extra rows in a table,
+       a footnote), but never contradict the shorter in-app version. If you
+       improve one, mirror the fix in the other in the same commit (or
+       immediately after) rather than letting them drift.
    - If a later real conversation surfaces a fix or a gap in how an already-
      shipped concept is explained, apply it immediately as its own commit
      (`docs(<id>): ...`) rather than letting the gap sit — see the
