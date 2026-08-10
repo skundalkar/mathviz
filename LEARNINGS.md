@@ -116,14 +116,29 @@ sliders' effects legible while still showing genuine three-way competition.
 ---
 
 ## pr-auc — the metric that doesn't get fooled by imbalance
-**The idea in one line:** instead of judging a classifier at one threshold,
-sweep every threshold from strictest to loosest, plot (recall, precision) at
-each one, and connect the dots — the area under that curve (PR-AUC) grades
-the classifier across every setting at once, without ROC-AUC's blind spot
-for rare positives.
+**The idea in one line:** a single precision/recall reading only tells you
+how one threshold performs — it can't tell you whether a different
+threshold, or a different model entirely, would actually serve you better;
+PR-AUC is what lets you judge a classifier's raw ability to separate the
+classes before you've committed to any one operating point.
 
-**With real numbers — building the curve one point at a time, before
-looking at it as a continuous shape:** same 1,000-email inbox as the
+The precision-recall lesson showed how to read precision and recall at ONE
+threshold you pick. That's fine once you've already decided where to draw
+the line — but two real questions sit upstream of that decision, and one
+threshold's numbers can't answer either of them. First: if you have two
+candidate spam filters and need to ship one, which threshold do you even
+compare them at? Pick a setting that happens to favor filter A and it wins;
+pick one that favors filter B and the verdict flips — you haven't actually
+learned which filter is better, only which one you happened to flatter.
+Second: even for a *single* filter, how do you know where to set the
+threshold in the first place? Precision and recall at one arbitrary guess
+don't tell you whether a nearby setting would trade a little precision for
+a lot more recall, or whether you're already sitting in the best spot
+available. Both questions need the same fix: stop looking at one point and
+look at the classifier's entire tradeoff at once.
+
+**With real numbers — building that whole tradeoff one point at a time,
+before looking at it as a continuous shape:** same 1,000-email inbox as the
 precision-recall lesson, 20 really spam, 980 legit. Instead of picking one
 threshold, walk it from strict to loose and watch (recall, precision) move:
 
@@ -142,9 +157,18 @@ false alarm — recall didn't move at all, precision just kept falling. That
 flat stretch is a real feature of PR curves, not a fluke of this example: it
 happens whenever a run of non-spam sits, score-wise, between one real spam
 email and the next. Sweep *every* threshold instead of just these 4 and the
-jagged 4-point line becomes the smooth, continuous curve in the picture; the
-area under it (PR-AUC) is what grades the classifier across all of them at
-once, the same way ROC-AUC does for the ROC curve.
+jagged 4-point line becomes the smooth, continuous curve in the picture.
+
+That curve is the payoff for both questions from the top. Choosing where to
+set the threshold is now a matter of pointing at whichever spot on the curve
+actually matches what you need (row 1's zero-false-alarm certainty? row 2's
+balance? something in between?) instead of guessing blind and hoping.
+Comparing two candidate filters no longer requires agreeing on a threshold
+for either one first: the area under the whole curve (PR-AUC) is a single
+number summarizing a classifier's raw separating power across every
+threshold at once — whichever model has the bigger area is better *no
+matter where either of you eventually sets the dial* — the same way
+ROC-AUC does for the ROC curve.
 
 **Why not just use ROC-AUC?** Look at row 3 through ROC's axes instead of
 PR's. ROC plots false-positive rate against true-positive rate, and FPR is

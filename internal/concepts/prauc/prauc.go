@@ -1,10 +1,11 @@
-// Package prauc visualizes the precision-recall curve: sweep a classifier's
-// decision threshold from "call nothing positive" to "call everything
-// positive" and trace out (recall, precision) at every setting. Unlike ROC,
-// which stays optimistic when negatives vastly outnumber positives, the PR
-// curve reacts directly to false positives piling up against a small
-// positive class — the area under it (PR-AUC) is the metric to reach for on
-// imbalanced problems.
+// Package prauc answers a question the precision-recall concept leaves open:
+// how do you judge a classifier, or compare two of them, before you've
+// committed to any one threshold? Sweep the decision threshold from "call
+// nothing positive" to "call everything positive" and trace out (recall,
+// precision) at every setting. Unlike ROC, which stays optimistic when
+// negatives vastly outnumber positives, the PR curve reacts directly to
+// false positives piling up against a small positive class — the area under
+// it (PR-AUC) is the metric to reach for on imbalanced problems.
 package prauc
 
 import (
@@ -21,21 +22,27 @@ func init() {
 		ID:    "pr-auc",
 		Seq:   17,
 		Title: "Precision-Recall curve & PR-AUC",
-		Blurb: "Same spam filter as the precision-recall lesson, but instead of picking one " +
-			"threshold, try three, strictest to loosest, and watch (recall, precision) move: " +
-			"Flag only the 8 most obvious spam emails: all 8 really are spam, so recall = " +
-			"8/20 = 40%, precision = 8/8 = 100%. Loosen it to flag 22: 18 are real spam, 4 are " +
-			"false alarms, so recall = 18/20 = 90%, precision = 18/22 = 82%. Loosen it all the " +
-			"way to flag 200, catching every last spam email: recall = 20/20 = 100%, but " +
-			"precision craters to 20/200 = 10% — 9 of every 10 flagged emails are now false " +
-			"alarms. Plot each (recall, precision) pair as a point and connect them: that's the " +
-			"PR curve. Sweep EVERY threshold instead of just these 3 and the curve becomes " +
-			"continuous; the area under it (PR-AUC) grades the classifier across every " +
-			"threshold at once, the same way ROC-AUC does for the ROC curve. The difference " +
-			"matters when positives are rare: ROC-AUC can look great even when precision is " +
-			"terrible, because it's diluted by a huge pool of easy true negatives. PR-AUC has " +
-			"nowhere to hide from false positives piling up, so it's the sharper read when the " +
-			"classes are imbalanced.",
+		Blurb: "The precision-recall lesson showed you how to read precision and recall at ONE " +
+			"threshold. But which threshold do you compare two candidate filters at? Pick a " +
+			"setting that favors filter A and it wins; pick one that favors filter B and the " +
+			"verdict flips. And even for a single filter, you don't yet know where to SET the " +
+			"threshold before shipping it — one arbitrary guess doesn't tell you if a nearby " +
+			"setting would trade a little precision for a lot more recall. What you actually " +
+			"need is a way to judge a classifier's raw ability to separate the classes, before " +
+			"you've committed to any one threshold: sweep every possible threshold and watch " +
+			"how precision and recall move together. Same 1,000-email inbox, 20 really spam: " +
+			"flag only the 8 most obvious → recall = 8/20 = 40%, precision = 8/8 = 100%. Loosen " +
+			"to flag 22 → recall = 18/20 = 90%, precision = 18/22 = 82%. Loosen all the way to " +
+			"flag 200, catching every last spam email → recall = 100%, but precision craters to " +
+			"20/200 = 10%. Plot each (recall, precision) pair and connect them: that's the PR " +
+			"curve, and now you can see the whole tradeoff at once instead of guessing blind. " +
+			"Sweep EVERY threshold instead of just these 3 and the curve becomes continuous; " +
+			"the area under it (PR-AUC) summarizes that raw separating power in one number, " +
+			"letting you compare entire MODELS without agreeing on a threshold for either one " +
+			"first — the same way ROC-AUC does, except PR-AUC doesn't get fooled when positives " +
+			"are rare: ROC-AUC can look great even when precision is terrible, diluted by a huge " +
+			"pool of easy true negatives. PR-AUC has nowhere to hide from false positives piling " +
+			"up.",
 		Params: []concept.ParamSpec{
 			{Key: "thresh", Label: "Threshold", Min: -3, Max: 6, Step: 0.1, Def: 1.5},
 			{Key: "sep", Label: "Class separation", Min: 1, Max: 5, Step: 0.1, Def: 3},
