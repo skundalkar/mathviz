@@ -20,18 +20,89 @@ func init() {
 		ID:    "roc-auc",
 		Seq:   12,
 		Title: "ROC & AUC",
-		Blurb: "Two doctors review the same X-rays. Doctor A flags almost everything " +
-			"'suspicious'; Doctor B is conservative. Whose judgment is better, independent of " +
-			"how cautious each happens to be? You can't tell from accuracy at their current " +
-			"habits alone. With real scores — 4 sick patients at 9,7,6,4; 4 healthy at 8,5,3,1 " +
-			"— a 'flag ≥6' threshold catches 3 of 4 sick (TPR=75%) while wrongly flagging 1 of " +
-			"4 healthy (FPR=25%): one point on the curve. Sweep the threshold from 'flag " +
-			"nothing' to 'flag everything' and trace every such point: x is the false-positive " +
-			"rate, y is the true-positive rate. The diagonal is what a coin-flip achieves; real " +
-			"skill bows the curve toward the top-left. AUC is the area under it — computed " +
-			"directly from the same 4x4 dataset, 12 of 16 sick-vs-healthy pairs have the sick " +
-			"score higher, so AUC=12/16=0.75: the probability a random positive scores higher " +
-			"than a random negative, across every threshold at once.",
+		Sections: []concept.Section{
+			{
+				Heading: "Why would you need this?",
+				Body: []string{
+					"Two doctors review the same X-rays for a rare condition. Doctor A flags " +
+						"almost everything 'suspicious'; Doctor B is conservative, only flagging " +
+						"the clearest cases. Whose judgment is better, independent of how cautious " +
+						"each happens to be?",
+					"You can't tell from accuracy at their current habits alone — their thresholds " +
+						"for 'suspicious enough to flag' are personal styles, not a measure of how " +
+						"well they can actually tell a real case from a healthy one when they look " +
+						"at the same scan.",
+				},
+			},
+			{
+				Heading: "How does it actually work?",
+				Body: []string{
+					"With real scores — 4 sick patients at 9,7,6,4; 4 healthy at 8,5,3,1 (some " +
+						"overlap — this doctor isn't perfect) — flag anyone scoring 6 or higher as " +
+						"'suspicious':",
+					"• Sick patients ≥6: 9, 7, 6 → caught 3 of 4 → TPR = 75%.",
+					"• Healthy patients ≥6: 8 → 1 false alarm out of 4 → FPR = 25%.",
+					"That's one point, (25% FPR, 75% TPR), on the curve. Sweep the threshold from " +
+						"'flag nothing' to 'flag everything' and trace every such point: x is the " +
+						"false-positive rate, y is the true-positive rate. AUC is the area under " +
+						"that curve — computed directly from the same 4x4 dataset, 12 of 16 " +
+						"sick-vs-healthy pairs have the sick score higher, so AUC=12/16=0.75: the " +
+						"probability a random positive scores higher than a random negative, across " +
+						"every threshold at once.",
+				},
+			},
+			{
+				Heading: "What does the picture show?",
+				Body: []string{
+					"The threshold slider sweeps a marker along the same curve: at each setting it " +
+						"sits at whatever (FPR, TPR) that cutoff produces, the same way the 'flag " +
+						"≥6' cutoff above produced (25%, 75%). The diagonal is what a coin-flip " +
+						"achieves — at any cutoff, whatever fraction of healthy scans get wrongly " +
+						"flagged, that same fraction of real cases gets caught too, no separation, " +
+						"no skill. The separation slider controls how cleanly the two classes' " +
+						"scores are separated, the same kind of overlap the sick/healthy scores show " +
+						"above; more separation bows the curve toward the top-left and raises AUC " +
+						"toward 1.0.",
+				},
+			},
+			{
+				Heading: "What can you do now that you couldn't before?",
+				Body: []string{
+					"You can now compare two classifiers — or two doctors — by their underlying " +
+						"separating power at every possible threshold at once, instead of by " +
+						"whichever cutoff each happens to be using today. AUC gives a single number " +
+						"for that comparison, and it never requires either one to have picked the " +
+						"same threshold, or any threshold at all, first.",
+				},
+			},
+			{
+				Heading: "Where does this show up in real life?",
+				Body: []string{
+					"Comparing spam filters, fraud detectors, medical screening tests, or any other " +
+						"classifier before deciding where to set its threshold in production. Two " +
+						"models can post identical accuracy at their default settings and have very " +
+						"different AUCs — the higher-AUC one has more headroom no matter where you " +
+						"eventually set the operating threshold, which is why AUC is the standard " +
+						"way to compare models before deployment.",
+					"It's a poor substitute for precision/recall once you've actually picked one " +
+						"operating threshold and have to live with its specific false-positive rate, " +
+						"though — AUC grades potential, not the one decision you're actually stuck " +
+						"with in production.",
+				},
+			},
+			{
+				Heading: "What's the common mistake here?",
+				Body: []string{
+					"Say it like this: 'Model A has a higher AUC than Model B' means A has more " +
+						"underlying skill at telling the two classes apart, at every possible cutoff " +
+						"— not just at whatever threshold happens to be in use today.",
+					"Not like this: 'Model A is more accurate right now, so it's the better model' " +
+						"— that's comparing today's threshold setting, a tunable choice, not either " +
+						"model's real separating power; a lower-AUC model can still look better at " +
+						"one specific cutoff while being the weaker model overall.",
+				},
+			},
+		},
 		Params: []concept.ParamSpec{
 			{Key: "thresh", Label: "Threshold", Min: -4, Max: 4, Step: 0.1, Def: 0},
 			{Key: "sep", Label: "Class separation", Min: 0.5, Max: 5, Step: 0.1, Def: 2.5},

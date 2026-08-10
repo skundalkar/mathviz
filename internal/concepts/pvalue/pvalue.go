@@ -21,17 +21,85 @@ func init() {
 		ID:    "p-value",
 		Seq:   10,
 		Title: "P-value",
-		Blurb: "Your friend hands you a coin and claims it's fair. You flip it 10 times and " +
-			"get 8 heads. Suspicious — but is it PROOF the coin is rigged, or could a fair " +
-			"coin just get lucky? There are 2^10=1,024 equally likely head/tail sequences from " +
-			"10 flips. Count how many land on 8+ heads: 45+10+1=56. By symmetry, another 56 " +
-			"land on 8+ tails. That's 112 of 1,024 sequences this lopsided or worse in either " +
-			"direction: 112/1024 = 10.9%, about 11% — no simulation, just counting equally " +
-			"likely outcomes. That 11% is the p-value. The curve is that 'null' distribution: " +
-			"what a test statistic looks like if there's truly no effect. The vertical line is " +
-			"what you actually observed; the shaded area — everything at least as extreme — IS " +
-			"the p-value. The dashed lines mark the critical boundary for your chosen " +
-			"significance level α — cross it and the result is 'statistically significant'.",
+		Sections: []concept.Section{
+			{
+				Heading: "Why would you need this?",
+				Body: []string{
+					"Your friend hands you a coin and claims it's fair. You flip it 10 times and " +
+						"get 8 heads. Suspicious — but is it PROOF the coin is rigged, or could a fair " +
+						"coin just get lucky?",
+					"A fair coin doesn't land on exactly 5 heads every single time either; sometimes " +
+						"it runs hot by pure chance. So the real question isn't whether 8 heads sounds " +
+						"like a lot in isolation — it's: if the coin really were fair, how often would " +
+						"10 flips produce a result this lopsided just from ordinary luck?",
+				},
+			},
+			{
+				Heading: "How does it actually work?",
+				Body: []string{
+					"Flip a fair coin 10 times and there are 2^10=1,024 equally likely head/tail " +
+						"sequences. Count how many land on 8 or more heads:",
+					"• 45 sequences give exactly 8 heads, 10 give exactly 9, and 1 gives all 10 — " +
+						"56 out of 1,024.",
+					"• By symmetry, another 56 sequences land on 8 or more tails.",
+					"• That's 112 of 1,024 sequences this lopsided or worse in either direction: " +
+						"112/1024 = 10.9%, about 11% — no simulation, just counting equally likely " +
+						"outcomes.",
+					"That 11% is the p-value: start from a 'null' distribution — what results would " +
+						"look like if nothing suspicious were going on — run the actual test, and ask " +
+						"how much of that distribution's probability lies at least as far out as what " +
+						"you actually observed, in either direction. That's the whole definition, " +
+						"nothing more.",
+				},
+			},
+			{
+				Heading: "What does the picture show?",
+				Body: []string{
+					"The picture generalizes the coin-counting idea to a continuous test statistic " +
+						"instead of discrete sequences. The curve is that same 'null' distribution: " +
+						"what a test statistic looks like if there's truly no effect. The vertical " +
+						"line is what you actually observed (z); the shaded area — everything at " +
+						"least as extreme — IS the p-value, the same idea as counting 112 of 1,024 " +
+						"sequences, just computed as an area instead of a count. The dashed lines mark " +
+						"the critical boundary implied by your chosen significance level α: push the " +
+						"observed statistic past a dashed line and the shaded area drops below α, " +
+						"flipping the verdict from 'fail to reject H₀' to 'reject H₀'.",
+				},
+			},
+			{
+				Heading: "What can you do now that you couldn't before?",
+				Body: []string{
+					"You can now put a number on how surprising a result would be if nothing real " +
+						"were going on, instead of eyeballing whether '8 heads' feels suspicious. " +
+						"Picking α in advance turns that number into a repeatable, agreed-upon " +
+						"yes/no call — 'statistically significant' — rather than a post-hoc gut " +
+						"decision about whether the result looks impressive.",
+				},
+			},
+			{
+				Heading: "Where does this show up in real life?",
+				Body: []string{
+					"Clinical trials, A/B tests, and scientific studies all lean on this same logic " +
+						"to decide whether an observed effect is worth taking seriously or could " +
+						"plausibly be noise. It's also why running enough different tests, subgroups, " +
+						"or thresholds against the same data — 'p-hacking' — is a real problem: ask " +
+						"enough different questions of the same data and a suspicious-looking result " +
+						"shows up eventually even when nothing real is going on.",
+				},
+			},
+			{
+				Heading: "What's the common mistake here?",
+				Body: []string{
+					"Say it like this: 'the result was statistically significant' means that if " +
+						"nothing real were going on, a result this extreme would have been unlikely " +
+						"to show up by chance alone (below an agreed-on threshold, usually 5%) — " +
+						"nothing more, and nothing about how big or important the effect is.",
+					"Not like this: 'p < 0.05, so there's a 95% chance the effect is real' — a " +
+						"p-value is not the probability your hypothesis is true; it's the probability " +
+						"of seeing data this extreme if your hypothesis were false.",
+				},
+			},
+		},
 		Params: []concept.ParamSpec{
 			{Key: "z", Label: "Observed statistic (z)", Min: -4, Max: 4, Step: 0.1, Def: 2.0},
 			{Key: "alpha", Label: "Significance level (α)", Min: 0.01, Max: 0.20, Step: 0.01, Def: 0.05},

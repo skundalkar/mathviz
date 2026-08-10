@@ -19,16 +19,83 @@ func init() {
 		ID:    "bayes-theorem",
 		Seq:   11,
 		Title: "Bayes' theorem",
-		Blurb: "A test for a rare disease is 99% accurate, and you just tested positive. " +
-			"What's the chance you actually have it? Most people's gut answer is '99%.' It's " +
-			"wrong: with 100 people and only 1 actually sick, the test almost certainly catches " +
-			"that 1 (99% sensitivity) but also wrongly flags about 5% of the 99 healthy people " +
-			"— roughly 5 false alarms. That's 6 positive results total, only 1 real: about 17%, " +
-			"not 99%. The formula gives the same answer directly: (0.99x0.01) / (0.99x0.01 + " +
-			"0.05x0.99) = 0.0099/0.0594 = 16.7% — two routes, same number. Below, a population " +
-			"of 100 is regrouped by test result: green squares in 'tested positive' are real " +
-			"cases, red squares are false alarms — and red usually outnumbers green when the " +
-			"condition is rare, even for a pretty accurate test.",
+		Sections: []concept.Section{
+			{
+				Heading: "Why would you need this?",
+				Body: []string{
+					"A test for a rare disease is 99% accurate, and you just tested positive. " +
+						"What's the chance you actually have it?",
+					"Most people's gut answer is '99%' — the test is 99% accurate, after all, what " +
+						"else would it mean? That instinct is wrong, often dramatically so, and the " +
+						"gap between the gut answer and the real one is exactly what Bayes' theorem " +
+						"measures.",
+				},
+			},
+			{
+				Heading: "How does it actually work?",
+				Body: []string{
+					"Imagine 100 people take the test, and the disease is rare — say only 1 person " +
+						"actually has it:",
+					"• The test almost certainly catches that 1 true case (99% sensitivity).",
+					"• But it also wrongly flags about 5% of the 99 healthy people — roughly 5 " +
+						"false alarms.",
+					"• Count everyone who tested positive: 1 real case plus roughly 5 false alarms " +
+						"— 6 positive results total, only 1 of which is real: about 17%, not 99%.",
+					"The formula gives the same answer directly, computed independently of the " +
+						"counting story: P(condition | positive) = (sensitivity x prior) / " +
+						"(sensitivity x prior + false-positive-rate x (1 - prior)) = (0.99x0.01) / " +
+						"(0.99x0.01 + 0.05x0.99) = 0.0099/0.0594 = 16.7% — two different routes, " +
+						"same number.",
+				},
+			},
+			{
+				Heading: "What does the picture show?",
+				Body: []string{
+					"Below, a population of 100 is regrouped by test result instead of true status, " +
+						"at the prior/sensitivity/specificity you set. In the 'tested positive' strip, " +
+						"green squares are true positives and red squares are false alarms — at the " +
+						"default numbers (1% base rate, 99% sensitivity, 95% specificity) the strip " +
+						"is mostly red: about 5 false alarms for every true positive, matching the " +
+						"1-real-out-of-6 count above. Raise the base rate (prior) slider and green " +
+						"takes over the strip; raise specificity and the false alarms vanish, because " +
+						"specificity directly controls how many healthy people get swept into a " +
+						"positive result in the first place.",
+				},
+			},
+			{
+				Heading: "What can you do now that you couldn't before?",
+				Body: []string{
+					"You can now correct the gut-instinct '99% accurate means 99% likely' reasoning " +
+						"by actually accounting for how rare the condition is before trusting a " +
+						"positive result — updating your belief from a positive test now requires the " +
+						"base rate, not just the test's accuracy.",
+				},
+			},
+			{
+				Heading: "Where does this show up in real life?",
+				Body: []string{
+					"Screening for a rare disease, a rare fraud pattern, or a rare security alert: a " +
+						"'99% accurate' flag sounds like a near-certainty, but if the thing being " +
+						"flagged is rare, most flags are still noise. It's why doctors order a " +
+						"second, more specific test before acting on one positive screen, and why " +
+						"'the model flagged it' needs a base rate attached before anyone should trust " +
+						"the flag.",
+				},
+			},
+			{
+				Heading: "What's the common mistake here?",
+				Body: []string{
+					"Say it like this: 'don't ignore the base rate' — before updating your belief " +
+						"off one new piece of evidence, remember how rare or common the thing was to " +
+						"begin with; a positive test for a rare condition means far less than gut " +
+						"instinct suggests.",
+					"Not like this: 'the test is 99% accurate, so a positive result means a 99% " +
+						"chance I have it' — that skips the base rate entirely, and for a rare " +
+						"enough condition, the base rate is often most of what determines the real " +
+						"answer.",
+				},
+			},
+		},
 		Params: []concept.ParamSpec{
 			{Key: "prior", Label: "Base rate (prior)", Min: 0.001, Max: 0.5, Step: 0.001, Def: 0.01},
 			{Key: "sensitivity", Label: "Sensitivity (catches true cases)", Min: 0.5, Max: 0.999, Step: 0.001, Def: 0.99},
