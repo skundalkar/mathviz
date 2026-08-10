@@ -21,18 +21,83 @@ func init() {
 		ID:    "central-limit-theorem",
 		Seq:   8,
 		Title: "Central limit theorem",
-		Blurb: "At a school fair, a jar of jellybeans sits on a table and everyone guesses " +
-			"how many are inside. Say the jar holds 620, and five kids guess 50, 900, 1000, " +
-			"300, 750 — wildly scattered, off by up to 570. Average those five: " +
-			"(50+900+1000+300+750)/5 = 3000/5 = 600, only 20 off from the truth — closer than " +
-			"four of the five individual guesses. That's the 'wisdom of crowds,' and it isn't " +
-			"magic — it's the central limit theorem: no matter how skewed the population of " +
-			"individual values is, the distribution of the AVERAGE of many draws from it " +
-			"tightens around the true mean and turns bell-shaped as you average more of them. " +
-			"The population here (n=1) is deliberately about as far from normal as it gets: an " +
-			"exponential distribution, sharply peaked at zero with a long right tail. Raise the " +
-			"sample size n and watch the sample-mean distribution reshape into a normal curve " +
-			"(the thin reference line) regardless.",
+		Sections: []concept.Section{
+			{
+				Heading: "Why would you need this?",
+				Body: []string{
+					"At a school fair, a jar of jellybeans sits on a table and everyone guesses how " +
+						"many are inside. Look at any one guess and it's basically useless — kids " +
+						"guess 50, guess 900, guess a suspiciously round 1,000; individually, wildly " +
+						"scattered. Is there any way to turn a pile of unreliable individual guesses " +
+						"into something you can actually trust?",
+				},
+			},
+			{
+				Heading: "How does it actually work?",
+				Body: []string{
+					"There is: average them. Say the jar actually holds 620 jellybeans:",
+					"• Five kids guess 50, 900, 1000, 300, and 750 — wildly scattered, off by as much " +
+						"as 570 in either direction.",
+					"• Average those five guesses: (50+900+1000+300+750)/5 = 3000/5 = 600, only 20 " +
+						"off from the true 620 — closer than four of the five individual guesses, even " +
+						"though every guess going into it looked like noise.",
+					"That's the 'wisdom of crowds,' and it isn't magic — it's the central limit " +
+						"theorem: no matter how skewed the population of individual values is, the " +
+						"distribution of the AVERAGE of many draws from it tightens around the true " +
+						"mean and turns bell-shaped as you average more of them. The population here " +
+						"(n=1) is deliberately about as far from normal as it gets: an exponential " +
+						"distribution, sharply peaked at zero with a long right tail — think 'the " +
+						"population of guesses, with a few extreme overestimates.'",
+				},
+			},
+			{
+				Heading: "What does the picture show?",
+				Body: []string{
+					"Raise the sample size slider n and watch the sample-mean distribution (thick " +
+						"curve) visibly tighten and reshape into a normal curve (the thin reference " +
+						"line), regardless of the population rate λ. At n=1 the picture shows the " +
+						"skewed exponential population itself — as far from normal as the jellybean " +
+						"guesses were scattered; raise n and it converges toward normal exactly the " +
+						"way averaging the five guesses landed closer to 620 than almost any one guess " +
+						"did. Because the sum of n exponential draws has an exact closed form (a Gamma " +
+						"distribution), this is the true shape at every n, not a simulation with " +
+						"sampling noise of its own.",
+				},
+			},
+			{
+				Heading: "What can you do now that you couldn't before?",
+				Body: []string{
+					"You can now trust an average built from individually unreliable, skewed inputs " +
+						"— treating it as approximately normal and applying standard normal-based " +
+						"statistical tools to it — as long as you're averaging enough independent " +
+						"draws, no matter how weird any one input looked on its own.",
+				},
+			},
+			{
+				Heading: "Where does this show up in real life?",
+				Body: []string{
+					"Polling averages, A/B test metrics, and quality-control sample means can be " +
+						"treated as roughly normal — and standard statistical tests applied — even " +
+						"when individual data points are skewed or weird, as long as the sample is big " +
+						"enough. It's also why 'the sample size is too small' is a real objection: " +
+						"with just a handful of draws from a skewed population, the average is still " +
+						"skewed too, and normal-based confidence intervals can quietly mislead.",
+				},
+			},
+			{
+				Heading: "What's the common mistake here?",
+				Body: []string{
+					"Say it like this: 'Let's average a bunch of independent estimates, the noise " +
+						"should wash out' — individual guesses can be wildly off, but averaging enough " +
+						"of them (the 'wisdom of crowds') reliably lands close to the truth, " +
+						"regardless of how weird any one guess looked.",
+					"Not like this: 'One really confident estimate beats an average of many rough " +
+						"ones' — often false when the rough estimates are independent; the average's " +
+						"error shrinks as you add more of them, while one confident-but-biased guess " +
+						"never self-corrects at all.",
+				},
+			},
+		},
 		Params: []concept.ParamSpec{
 			{Key: "n", Label: "Sample size (n)", Min: 1, Max: 30, Step: 1, Def: 1},
 			{Key: "lambda", Label: "Population rate (λ)", Min: 0.3, Max: 3, Step: 0.1, Def: 1},
