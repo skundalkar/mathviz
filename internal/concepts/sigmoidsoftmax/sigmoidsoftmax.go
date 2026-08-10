@@ -7,6 +7,7 @@
 package sigmoidsoftmax
 
 import (
+	"fmt"
 	"math"
 
 	"mathviz/internal/concept"
@@ -83,6 +84,56 @@ func Softmax(logits []float64, temp float64) []float64 {
 }
 
 func render(p map[string]float64) string {
-	_ = p
-	return viz.New(680, 440, 0, 1, 0, 1).String()
+	z, logitB, temp := p["z"], p["logitB"], p["temp"]
+	if temp < 0.05 {
+		temp = 0.05
+	}
+
+	c := viz.New(680, 520, -6, 6, 0, 1)
+	// Push the curve down from the top (room for the header text) and
+	// compress it away from the bottom (room for the softmax bars below,
+	// drawn in raw pixel coordinates so they're unaffected by this).
+	c.PadT = 60
+	c.PadB = 250
+	c.Axes()
+	for x := -6.0; x <= 6.0; x += 2 {
+		c.Tick(x, fmt.Sprintf("%g", x))
+	}
+
+	curve := viz.Sample(-6, 6, 240, Sigmoid)
+	c.Path(curve, viz.Accent, 2.5)
+	c.VLine(z, viz.Warm, true)
+
+	zpx, zpy := c.X(z), c.Y(Sigmoid(z))
+	c.Rect(zpx-4, zpy-4, 8, 8, viz.Warm, 0.9)
+
+	c.Text(20, 24, fmt.Sprintf("sigmoid(z) = 1/(1+e^-z)    z = %.1f    sigmoid(z) = %.3f", z, Sigmoid(z)),
+		14, viz.Ink, "start")
+	c.Text(20, 44, "crosses 0.5 at z=0, saturates toward 0 or 1 at the extremes",
+		12, viz.Muted, "start")
+
+	// Below the curve: softmax over three classes. Class A shares the
+	// sigmoid's logit z, class C is pinned at 0 as a reference, so this
+	// panel and the curve above are the same z telling two related stories.
+	probs := Softmax([]float64{z, logitB, 0}, temp)
+	labels := []string{"A", "B", "C"}
+	logits := []float64{z, logitB, 0}
+	colors := []string{viz.Warm, viz.Accent, viz.Muted}
+
+	const barBase, barMaxH, barW, gap = 460.0, 100.0, 110.0, 60.0
+	const firstX = 130.0
+	c.Text(20, 312, fmt.Sprintf("softmax over 3 logits (A=%.1f, B=%.1f, C=0), temperature = %.1f", z, logitB, temp),
+		13, viz.Ink, "start")
+	c.Text(20, 330, "each bar's height is that class's probability — all three add to 100%",
+		12, viz.Muted, "start")
+
+	for i, label := range labels {
+		x := firstX + float64(i)*(barW+gap)
+		h := probs[i] * barMaxH
+		c.Rect(x, barBase-h, barW, h, colors[i], 0.75)
+		c.Text(x+barW/2, barBase-h-10, fmt.Sprintf("%.0f%%", probs[i]*100), 13, viz.Ink, "middle")
+		c.Text(x+barW/2, barBase+20, fmt.Sprintf("%s  (logit=%.1f)", label, logits[i]), 12, viz.Muted, "middle")
+	}
+
+	return c.String()
 }
