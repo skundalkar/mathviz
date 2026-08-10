@@ -17,6 +17,7 @@ import (
 func init() {
 	concept.Register(concept.Concept{
 		ID:    "bayes-theorem",
+		Seq:   11,
 		Title: "Bayes' theorem",
 		Blurb: "A test for a rare disease is 99% accurate, and you just tested positive. " +
 			"What's the chance you actually have it? Most people's gut answer is '99%.' It's " +

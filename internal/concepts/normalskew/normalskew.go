@@ -16,6 +16,7 @@ import (
 func init() {
 	concept.Register(concept.Concept{
 		ID:    "normal-vs-skew",
+		Seq:   7,
 		Title: "Normal vs. skewed & fat-tailed",
 		Blurb: "Two neighborhoods report the exact same average home price and the exact " +
 			"same standard deviation — interchangeable, right? With real numbers: Neighborhood " +

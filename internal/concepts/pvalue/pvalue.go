@@ -19,6 +19,7 @@ import (
 func init() {
 	concept.Register(concept.Concept{
 		ID:    "p-value",
+		Seq:   10,
 		Title: "P-value",
 		Blurb: "Your friend hands you a coin and claims it's fair. You flip it 10 times and " +
 			"get 8 heads. Suspicious — but is it PROOF the coin is rigged, or could a fair " +

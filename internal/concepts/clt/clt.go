@@ -19,6 +19,7 @@ import (
 func init() {
 	concept.Register(concept.Concept{
 		ID:    "central-limit-theorem",
+		Seq:   8,
 		Title: "Central limit theorem",
 		Blurb: "At a school fair, a jar of jellybeans sits on a table and everyone guesses " +
 			"how many are inside. Say the jar holds 620, and five kids guess 50, 900, 1000, " +

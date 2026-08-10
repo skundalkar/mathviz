@@ -15,6 +15,7 @@ import (
 func init() {
 	concept.Register(concept.Concept{
 		ID:    "logarithms",
+		Seq:   2,
 		Title: "What a logarithm means",
 		Blurb: "Fold a 0.1mm-thick sheet of paper in half, over and over — each fold doubles " +
 			"whatever thickness you already have (0.1 → 0.2 → 0.4 → 0.8mm …). How many folds " +

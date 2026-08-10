@@ -15,6 +15,7 @@ import (
 func init() {
 	concept.Register(concept.Concept{
 		ID:    "standard-deviation",
+		Seq:   1,
 		Title: "Standard deviation (σ)",
 		Blurb: "Two students each score '10 points above average' — equally impressive? Depends " +
 			"how far scores typically land from average in each class. In class A, scores " +

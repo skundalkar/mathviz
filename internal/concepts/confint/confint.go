@@ -31,6 +31,7 @@ const (
 func init() {
 	concept.Register(concept.Concept{
 		ID:    "confidence-interval",
+		Seq:   9,
 		Title: "Confidence interval",
 		Blurb: "A fish hides somewhere in a lake, sitting perfectly still. You get an " +
 			"imperfect reading of roughly where it is and cast a net centered on that reading. " +

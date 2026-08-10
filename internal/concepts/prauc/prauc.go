@@ -19,6 +19,7 @@ import (
 func init() {
 	concept.Register(concept.Concept{
 		ID:    "pr-auc",
+		Seq:   17,
 		Title: "Precision-Recall curve & PR-AUC",
 		Blurb: "Same spam filter, same two classes, but now we sweep every possible " +
 			"threshold instead of eyeballing one. At each threshold, plot (recall, " +

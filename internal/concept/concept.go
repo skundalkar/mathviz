@@ -7,7 +7,10 @@
 // Nothing here imports syscall/js, so `go test ./...` exercises every concept.
 package concept
 
-import "sort"
+import (
+	"sort"
+	"strconv"
+)
 
 // ParamSpec describes one interactive slider for a concept.
 type ParamSpec struct {
@@ -27,6 +30,13 @@ type Concept struct {
 	Title  string      // gallery title
 	Blurb  string      // one-paragraph plain-language explanation
 	Params []ParamSpec // interactive controls
+	// Seq is the build sequence number: 1 for the first concept ever built,
+	// incrementing by one for each concept after it, never reused or
+	// renumbered. It exists purely to order the gallery sidebar newest-first
+	// (see All()) so a freshly built concept is easy to find instead of
+	// buried alphabetically. Set it explicitly in the Register call to
+	// concept.Count()+1 at the time the concept is scaffolded.
+	Seq int
 	// Render maps the current parameter values to a complete <svg> string.
 	// It must be pure: same input -> same output, no globals, no time, no rand.
 	Render func(p map[string]float64) string
@@ -46,25 +56,42 @@ var registry = map[string]Concept{}
 
 // Register adds a concept to the global registry. Concepts call this from an
 // init() func; the cmd/wasm and cmd/build binaries blank-import the concepts
-// package so every init runs. Registering a duplicate ID panics loudly — that
-// is a programming error the build should never ship.
+// package so every init runs. Registering a duplicate ID, or one missing a
+// positive Seq, panics loudly — those are programming errors the build
+// should never ship.
 func Register(c Concept) {
 	if c.ID == "" {
 		panic("concept: Register called with empty ID")
 	}
+	if c.Seq <= 0 {
+		panic("concept: Register called with no Seq for ID " + c.ID)
+	}
 	if _, dup := registry[c.ID]; dup {
 		panic("concept: duplicate ID " + c.ID)
+	}
+	for _, existing := range registry {
+		if existing.Seq == c.Seq {
+			panic("concept: duplicate Seq " + strconv.Itoa(c.Seq) + " (" + existing.ID + " and " + c.ID + ")")
+		}
 	}
 	registry[c.ID] = c
 }
 
-// All returns every registered concept, sorted by ID for a stable gallery order.
+// All returns every registered concept, newest first (highest Seq first) so
+// the gallery surfaces whatever was just built instead of burying it
+// alphabetically. Ties (which Register prevents) fall back to ID for a
+// deterministic order.
 func All() []Concept {
 	out := make([]Concept, 0, len(registry))
 	for _, c := range registry {
 		out = append(out, c)
 	}
-	sort.Slice(out, func(i, j int) bool { return out[i].ID < out[j].ID })
+	sort.Slice(out, func(i, j int) bool {
+		if out[i].Seq != out[j].Seq {
+			return out[i].Seq > out[j].Seq
+		}
+		return out[i].ID < out[j].ID
+	})
 	return out
 }
 

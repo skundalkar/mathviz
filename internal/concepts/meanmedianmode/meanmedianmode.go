@@ -17,6 +17,7 @@ import (
 func init() {
 	concept.Register(concept.Concept{
 		ID:    "mean-median-mode",
+		Seq:   5,
 		Title: "Mean, median & mode",
 		Blurb: "Bill Gates walks into a small bar with 20 regulars, $80K net worth each: total " +
 			"$1.6M, mean = $80K. He sits down with his real ~$100 billion: new total ≈ " +

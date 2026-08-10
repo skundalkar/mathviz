@@ -17,6 +17,7 @@ import (
 func init() {
 	concept.Register(concept.Concept{
 		ID:    "overfitting",
+		Seq:   14,
 		Title: "Overfitting",
 		Blurb: "Give a student twelve practice problems and their answers, then ask them to " +
 			"explain the pattern. One student writes down a short, general rule that gets most " +

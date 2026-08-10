@@ -15,6 +15,7 @@ import (
 func init() {
 	concept.Register(concept.Concept{
 		ID:    "entropy",
+		Seq:   16,
 		Title: "Entropy",
 		Blurb: "Forget the math for a second: 'entropy' just means how mixed-up or hard-to-call " +
 			"something is. A messy room has high entropy; a tidy one has low entropy. 'This " +

@@ -71,6 +71,7 @@ func StdDev(xs []float64) float64 {
 func init() {
 	concept.Register(concept.Concept{
 		ID:    "variance-vs-stddev",
+		Seq:   6,
 		Title: "Variance vs. standard deviation",
 		Blurb: "Two dart throwers, 4 throws each, distance from bullseye in inches (left = " +
 			"negative, right = positive). Thrower 1: -2,-1,+1,+2. Thrower 2: -8,-4,+4,+8 — " +

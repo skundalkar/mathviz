@@ -17,6 +17,7 @@ import (
 func init() {
 	concept.Register(concept.Concept{
 		ID:    "confusion-matrix",
+		Seq:   13,
 		Title: "Confusion matrix",
 		Blurb: "A hospital brags its new test is '99% accurate.' Meaningless on its own: a " +
 			"do-nothing test that says 'healthy' for all 100 patients (1 actually sick) scores " +

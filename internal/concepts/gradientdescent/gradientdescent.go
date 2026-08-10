@@ -15,6 +15,7 @@ import (
 func init() {
 	concept.Register(concept.Concept{
 		ID:    "gradient-descent",
+		Seq:   15,
 		Title: "Gradient descent",
 		Blurb: "Drop a ball on the side of a bowl-shaped valley and let physics take over: " +
 			"it rolls toward the bottom, guided at every instant by which way is downhill. " +

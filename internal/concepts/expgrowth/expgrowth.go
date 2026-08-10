@@ -17,6 +17,7 @@ import (
 func init() {
 	concept.Register(concept.Concept{
 		ID:    "exponential-growth",
+		Seq:   19,
 		Title: "Exponential growth & doubling time",
 		Blurb: "A lily pad patch doubles in size every day, and takes 30 days to cover an " +
 			"entire pond. On what day is the pond half covered? Almost everyone's gut answer " +

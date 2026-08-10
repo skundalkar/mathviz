@@ -18,6 +18,7 @@ import (
 func init() {
 	concept.Register(concept.Concept{
 		ID:    "precision-recall",
+		Seq:   3,
 		Title: "Precision vs. recall",
 		Blurb: "You're building a spam filter. 100 emails arrive, 20 really are spam. At " +
 			"one threshold it flags 25: 18 truly spam (caught), 7 legit mail wrongly flagged, " +

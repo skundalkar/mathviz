@@ -16,6 +16,7 @@ import (
 func init() {
 	concept.Register(concept.Concept{
 		ID:    "correlation",
+		Seq:   4,
 		Title: "Correlation (r)",
 		Blurb: "Hours studied 1,2,3,4 vs. test score 60,70,80,90 — each extra hour is worth " +
 			"exactly +10 points, points sit dead on a straight uphill line: that's r = +1. " +

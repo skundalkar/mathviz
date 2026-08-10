@@ -18,6 +18,7 @@ import (
 func init() {
 	concept.Register(concept.Concept{
 		ID:    "roc-auc",
+		Seq:   12,
 		Title: "ROC & AUC",
 		Blurb: "Two doctors review the same X-rays. Doctor A flags almost everything " +
 			"'suspicious'; Doctor B is conservative. Whose judgment is better, independent of " +

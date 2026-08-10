@@ -17,6 +17,7 @@ import (
 func init() {
 	concept.Register(concept.Concept{
 		ID:    "sigmoid-softmax",
+		Seq:   18,
 		Title: "Sigmoid & softmax",
 		Blurb: "A model doesn't output probabilities directly — it outputs 'logits', raw " +
 			"scores that can be any real number, positive or negative, with no built-in upper " +
