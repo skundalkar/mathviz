@@ -6,6 +6,54 @@ code. Newest entries go at the top.
 
 ---
 
+## exponential-growth — why compounding looks boring right up until it isn't
+**The idea in one line:** exponential growth compounds off of whatever's
+already there, so a fixed *rate* produces an accelerating *amount* — the
+curve looks tame for a long stretch and then rockets, catching straight-line
+intuition off guard every time.
+
+The lily-pad puzzle makes the trap concrete: a patch that doubles every day
+covers a whole pond on day 30. What day is it half-covered? The honest
+answer is day 29 — one day before full, because doubling from half to whole
+is exactly one more doubling, full stop. Nothing about "halfway through 30
+days" enters into it. For roughly the first 25 of those 30 days the pond
+looks nearly empty (under 10% covered) — plausible to write off as "not
+much happening" — then the last handful of days it visibly explodes,
+because the same percentage growth applied to a much bigger base produces a
+much bigger absolute jump. Nothing about the *rate* changed; only the base
+it's compounding off of did.
+
+**What the knobs show:** the growth-rate slider is the entire story —
+doubling time = ln(2)/ln(1+rate) falls as the rate climbs
+(`TestDoublingTimeShrinksAsRateGrows`), so a small rate bump buys a
+surprisingly large speedup in how often the value doubles. The periods
+slider just widens the window so slower rates get enough runway to show the
+same eventual pattern a fast rate shows quickly. The thin gray line is the
+straight-line guess sharing the curve's exact starting slope — near t=0 the
+two are nearly indistinguishable (`TestLinearMatchesValueNearZero`), and
+that overlap is exactly why "it's growing about the same amount each
+period" feels true right up until the exponential curve visibly pulls away.
+The orange dots mark each doubling; watch how tightly they bunch together
+at high rates and how far apart they spread at low ones.
+
+**Where it matters:** compound interest, population growth, viral spread,
+Moore's-law-style tech scaling, unchecked technical debt — anywhere a
+quantity's growth is proportional to its current size rather than a fixed
+amount per period. The practical trap this concept is built around: judging
+an exponential trend by its early, unremarkable-looking segment (like the
+first 25 days of the pond) systematically underestimates how close the
+"sudden" acceleration actually is.
+
+**A design choice worth flagging:** `Rule70` (70 ÷ rate) is included as a
+mental-math cross-check next to the exact `DoublingTime`, since it's the
+shortcut most people reach for outside a calculator. `TestRule70ApproximatesDoublingTime`
+only asserts it stays within 10% for modest rates (≤10%); the concept's
+slider goes up to 50%, where the approximation visibly drifts further off
+from the exact value — shown side by side in the render rather than hidden,
+since watching a mental-math shortcut degrade is itself part of the lesson.
+
+---
+
 ## sigmoid-softmax — turning raw scores into numbers that behave like probabilities
 **The idea in one line:** sigmoid and softmax are the same operation at
 different scales — sigmoid squashes one logit into a single probability for

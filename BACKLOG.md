@@ -26,11 +26,11 @@ Format: `- [ ] <id> — <one-line description of the concept to visualize>`
 - [x] entropy — how surprise/information changes with probability
 - [x] pr-auc — sweeping the threshold to trace a precision-recall curve, and why it beats ROC-AUC on imbalanced classes
 - [x] sigmoid-softmax — squashing logits into probabilities
+- [x] exponential-growth — doubling time and why it sneaks up on you
 
 ## Up next (statistics & ML intuition)
 
 ## Up next (math foundations)
-- [ ] exponential-growth — doubling time and why it sneaks up on you
 - [ ] derivative — slope of a tangent line as you shrink the interval
 - [ ] integral — area under a curve as a sum of shrinking slabs
 - [ ] sine-cosine — the unit circle unrolled into waves
