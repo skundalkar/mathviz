@@ -19,16 +19,92 @@ func init() {
 		ID:    "overfitting",
 		Seq:   14,
 		Title: "Overfitting",
-		Blurb: "Give a student twelve practice problems and their answers, then ask them to " +
-			"explain the pattern. One student writes down a short, general rule that gets most " +
-			"of the twelve right and should generalize to problem thirteen. Another memorizes " +
-			"all twelve exact answers, including the quirks and typos in the answer key — zero " +
-			"mistakes on practice, but no idea what to do with a new problem. That second " +
-			"student has overfit. Here a handful of noisy data points are the practice " +
-			"problems, and a polynomial curve is the 'rule' fit to them. A low-degree curve " +
-			"stays smooth and roughly tracks the true pattern (dashed). Push the degree up and " +
-			"training error keeps dropping — the curve now passes near every dot — but it does " +
-			"so by wildly overshooting between them, chasing noise instead of signal.",
+		Sections: []concept.Section{
+			{
+				Heading: "Why would you need this?",
+				Body: []string{
+					"Give a student twelve practice problems and their answers, then ask them to " +
+						"explain the pattern. One student writes down a short, general rule that " +
+						"gets most of the twelve right and should generalize to problem thirteen. " +
+						"Another memorizes all twelve exact answers, including the quirks and " +
+						"typos in the answer key — zero mistakes on practice, but no idea what to " +
+						"do with a new problem.",
+					"That second student has overfit: their 'model' fits the specific data they " +
+						"saw, not the underlying pattern that generated it. If a model can score " +
+						"perfectly on the data it was trained on, how do you know whether it " +
+						"actually learned the pattern, or just memorized the answer key?",
+				},
+			},
+			{
+				Heading: "How does it actually work?",
+				Body: []string{
+					"Here a handful of noisy data points are the practice problems, and a " +
+						"polynomial curve is the 'rule' fit to them by least squares; its degree " +
+						"is the 'model complexity' knob.",
+					"• At low degree the curve can't bend much, so it stays smooth and roughly " +
+						"tracks the true pattern (dashed) instead of chasing the noise.",
+					"• Push the degree up and training error keeps dropping — the curve now " +
+						"passes near every dot, all the way to zero error once the degree reaches " +
+						"eleven (one fewer than the number of points, so an exact fit always " +
+						"exists).",
+					"• But look at the curve between the dots: it doesn't glide smoothly along " +
+						"the true pattern anymore, it swings wildly, overshooting in both " +
+						"directions to thread each noisy point precisely. That's 'true error' " +
+						"climbing even as 'training error' falls to zero — the model is now " +
+						"excellent at reproducing the twelve answers it memorized and worse at " +
+						"the actual underlying rule.",
+				},
+			},
+			{
+				Heading: "What does the picture show?",
+				Body: []string{
+					"The dots are the twelve noisy practice problems; the grey dashed curve is " +
+						"the true pattern a good model would recover; the blue curve is the " +
+						"polynomial actually fit to the dots. Dragging the degree slider up is " +
+						"pushing that second student's memorization further: the blue curve bends " +
+						"to pass closer to every dot, training error drops, but it swings further " +
+						"off the grey curve in between them, and true error climbs. The noise " +
+						"slider controls how far the practice problems themselves scatter from " +
+						"the true pattern in the first place.",
+				},
+			},
+			{
+				Heading: "What can you do now that you couldn't before?",
+				Body: []string{
+					"You can tell apart a model that generalizes from one that merely memorized, " +
+						"by comparing training error against error on data it hasn't seen instead " +
+						"of judging it by training performance alone — exactly the read the " +
+						"do-nothing 'training error only' view can't give you.",
+				},
+			},
+			{
+				Heading: "Where does this show up in real life?",
+				Body: []string{
+					"Any model complex enough to memorize its training set — a deep enough " +
+						"decision tree, a large enough neural net, a high-enough-degree " +
+						"regression — will show this exact split: training accuracy that looks " +
+						"fantastic and real-world performance that's worse than a simpler model's. " +
+						"The fix is never 'make the model even more powerful'; it's validating on " +
+						"data the model never saw, and choosing complexity by how well it does " +
+						"there, not on the practice set.",
+				},
+			},
+			{
+				Heading: "What's the common mistake here?",
+				Body: []string{
+					"Say it like this: 'You're overfitting to one bad interview' — treating the " +
+						"specifics of a single, possibly-unrepresentative experience as if it " +
+						"were the general rule. 'This strategy is overfit to last quarter' — it " +
+						"was tuned to fit exactly what just happened, not to what tends to " +
+						"happen.",
+					"Not like this: 'It just needs more data to fix the overfitting' — not " +
+						"automatically true. More of the same noisy data can let an already " +
+						"too-flexible model memorize even more precisely; the usual fix is " +
+						"simplifying the model or checking it against data it hasn't seen, not " +
+						"volume alone.",
+				},
+			},
+		},
 		Params: []concept.ParamSpec{
 			{Key: "degree", Label: "Model complexity (degree)", Min: 1, Max: 11, Step: 1, Def: 3},
 			{Key: "noise", Label: "Noise", Min: 0, Max: 1, Step: 0.05, Def: 0.4},
