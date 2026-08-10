@@ -33,6 +33,12 @@ big commit. After each step, `make check` must pass before you commit.
      `init()` that calls `concept.Register(...)` with the ID, Title, a clear
      plain-language Blurb, and the Params (sliders). Render may return an empty
      `viz.New(...).String()` placeholder for now.
+   - Set `Seq` to one more than the highest `Seq` currently registered (grep
+     `Seq:` across `internal/concepts/*/*.go` to find it, or use
+     `concept.Count()+1`). This is what keeps the gallery sidebar sorted
+     newest-first — `Register` panics if `Seq` is missing or reused, so a
+     forgotten or duplicate value fails loudly at `make check` rather than
+     silently burying the new concept in the list.
    - Add the blank import line to `internal/concepts/all/all.go`.
 2. `feat(<id>): pure math for <concept>`
    - Add the exported, side-effect-free math functions this concept needs.
