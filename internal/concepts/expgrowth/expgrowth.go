@@ -7,6 +7,8 @@
 package expgrowth
 
 import (
+	"math"
+
 	"mathviz/internal/concept"
 	"mathviz/internal/viz"
 )
@@ -34,6 +36,44 @@ func init() {
 		},
 		Render: render,
 	})
+}
+
+// Value returns the compounded value at period t, starting from 1, growing
+// ratePct percent every period: (1 + ratePct/100)^t. Pure math — t need not
+// be an integer, so the curve can be sampled anywhere along it.
+func Value(t, ratePct float64) float64 {
+	return math.Pow(1+ratePct/100, t)
+}
+
+// Linear returns the straight-line projection that starts at the same point
+// (1) and matches the curve's initial slope: 1 + rate*t. It's the naive
+// "extend the current trend" guess intuition tends to reach for, and it
+// only agrees with Value near t=0.
+func Linear(t, ratePct float64) float64 {
+	return 1 + (ratePct/100)*t
+}
+
+// DoublingTime returns how many periods it takes the compounding value to
+// double: ln(2)/ln(1+rate). Returns +Inf for a non-positive rate, since a
+// value that never grows never doubles.
+func DoublingTime(ratePct float64) float64 {
+	rate := ratePct / 100
+	if rate <= 0 {
+		return math.Inf(1)
+	}
+	return math.Log(2) / math.Log(1+rate)
+}
+
+// Rule70 is the classic mental-math shortcut for doubling time: 70 divided
+// by the growth rate as a whole number (e.g. 7% growth ≈ 70/7 = 10 periods
+// to double). It's an approximation of DoublingTime, accurate to within a
+// few percent for rates under about 15%, and drifts further off at higher
+// rates. Returns +Inf for a non-positive rate.
+func Rule70(ratePct float64) float64 {
+	if ratePct <= 0 {
+		return math.Inf(1)
+	}
+	return 70 / ratePct
 }
 
 func render(p map[string]float64) string {
