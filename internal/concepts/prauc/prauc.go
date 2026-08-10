@@ -21,18 +21,21 @@ func init() {
 		ID:    "pr-auc",
 		Seq:   17,
 		Title: "Precision-Recall curve & PR-AUC",
-		Blurb: "Same spam filter, same two classes, but now we sweep every possible " +
-			"threshold instead of eyeballing one. At each threshold, plot (recall, " +
-			"precision) as a single point: recall on the x-axis, precision on the y-axis. " +
-			"Flag almost nothing and recall sits near 0 while precision is high (whatever you " +
-			"do flag is probably right); flag almost everything and recall climbs toward 1 " +
-			"while precision collapses toward the positive class's share of the data. Trace " +
-			"every threshold in between and you get the PR curve; the area under it (PR-AUC) " +
-			"summarizes the classifier across every threshold at once, the same way ROC-AUC " +
-			"does for the ROC curve. The difference matters when positives are rare: ROC-AUC " +
-			"can look great even when precision is terrible, because it's diluted by a huge " +
-			"pool of true negatives. PR-AUC has nowhere to hide from false positives, so it's " +
-			"the sharper read when the classes are imbalanced.",
+		Blurb: "Same spam filter as the precision-recall lesson, but instead of picking one " +
+			"threshold, try three, strictest to loosest, and watch (recall, precision) move: " +
+			"Flag only the 8 most obvious spam emails: all 8 really are spam, so recall = " +
+			"8/20 = 40%, precision = 8/8 = 100%. Loosen it to flag 22: 18 are real spam, 4 are " +
+			"false alarms, so recall = 18/20 = 90%, precision = 18/22 = 82%. Loosen it all the " +
+			"way to flag 200, catching every last spam email: recall = 20/20 = 100%, but " +
+			"precision craters to 20/200 = 10% — 9 of every 10 flagged emails are now false " +
+			"alarms. Plot each (recall, precision) pair as a point and connect them: that's the " +
+			"PR curve. Sweep EVERY threshold instead of just these 3 and the curve becomes " +
+			"continuous; the area under it (PR-AUC) grades the classifier across every " +
+			"threshold at once, the same way ROC-AUC does for the ROC curve. The difference " +
+			"matters when positives are rare: ROC-AUC can look great even when precision is " +
+			"terrible, because it's diluted by a huge pool of easy true negatives. PR-AUC has " +
+			"nowhere to hide from false positives piling up, so it's the sharper read when the " +
+			"classes are imbalanced.",
 		Params: []concept.ParamSpec{
 			{Key: "thresh", Label: "Threshold", Min: -3, Max: 6, Step: 0.1, Def: 1.5},
 			{Key: "sep", Label: "Class separation", Min: 1, Max: 5, Step: 0.1, Def: 3},
@@ -75,9 +78,19 @@ func CurvePoints(sep float64, steps int) [][2]float64 {
 	if steps < 2 {
 		steps = 2
 	}
+	// The sweep has to run comfortably above the positive class's mean
+	// (sep) so recall actually reaches ~0 at the strict end. A fixed
+	// window that ignored sep left recall stuck around 0.16 (not 0) at the
+	// top of the allowed separation range, silently truncating the
+	// high-precision tip of the curve and undercounting PR-AUC for exactly
+	// the classifiers that should score best. tLow=-6 is already far below
+	// every allowed sep (negative class is fixed at 0), so only the high
+	// end needs to track sep.
+	tHigh := sep + 6
+	const tLow = -6.0
 	pts := make([][2]float64, 0, steps+1)
 	for i := 0; i <= steps; i++ {
-		t := 6 - 12*float64(i)/float64(steps) // threshold sweeps +6 down to -6
+		t := tHigh - (tHigh-tLow)*float64(i)/float64(steps)
 		pts = append(pts, [2]float64{Recall(t, sep), Precision(t, sep)})
 	}
 	sort.Slice(pts, func(i, j int) bool { return pts[i][0] < pts[j][0] })
@@ -108,7 +121,11 @@ func render(p map[string]float64) string {
 	pts := CurvePoints(sep, 300)
 	auc := TrapezoidalPRAUC(pts)
 
-	c := viz.New(680, 380, 0, 1, 0, 1)
+	c := viz.New(680, 420, 0, 1, 0, 1)
+	// Extra headroom for three lines of header text — with good separation
+	// the curve itself hugs y=1 (precision near 100%) across most of the
+	// plot, which would otherwise run straight through the caption text.
+	c.PadT = 70
 	c.Axes()
 	for x := 0.0; x <= 1.0; x += 0.2 {
 		c.Tick(x, fmt.Sprintf("%.1f", x))
@@ -133,8 +150,8 @@ func render(p map[string]float64) string {
 		14, viz.Ink, "start")
 	c.Text(20, 44, fmt.Sprintf("at threshold t=%.1f: recall = %.2f, precision = %.2f", t, curRec, curPrec),
 		13, viz.Muted, "start")
-	c.Text(20, 62, "x = recall, y = precision   flat line = a classifier that ranks randomly",
-		12, viz.Muted, "start")
+	c.Text(20, 62, "x = recall, y = precision    grey flat line = a classifier that ranks "+
+		"randomly (always lands right ~half the time)", 12, viz.Muted, "start")
 
 	return c.String()
 }
