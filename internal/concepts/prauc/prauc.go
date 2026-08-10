@@ -8,6 +8,7 @@
 package prauc
 
 import (
+	"fmt"
 	"math"
 	"sort"
 
@@ -98,6 +99,41 @@ func TrapezoidalPRAUC(pts [][2]float64) float64 {
 }
 
 func render(p map[string]float64) string {
-	_ = p
-	return viz.New(680, 380, 0, 1, 0, 1).String()
+	t, sep := p["thresh"], p["sep"]
+	if sep < 0.01 {
+		sep = 0.01
+	}
+
+	pts := CurvePoints(sep, 300)
+	auc := TrapezoidalPRAUC(pts)
+
+	c := viz.New(680, 380, 0, 1, 0, 1)
+	c.Axes()
+	for x := 0.0; x <= 1.0; x += 0.2 {
+		c.Tick(x, fmt.Sprintf("%.1f", x))
+	}
+
+	// The area under the curve IS the PR-AUC — shade it directly.
+	c.Area(pts, 0, 1, viz.Accent, 0.15)
+	// A classifier that ranks randomly still lands every flagged item right
+	// about `prevalence` of the time regardless of how many it flags — a flat
+	// line at the positive class's share (0.5 with our equal-sized classes),
+	// unlike the ROC diagonal.
+	c.Path([][2]float64{{0, 0.5}, {1, 0.5}}, viz.Muted, 1.5)
+	c.Path(pts, viz.Ink, 2.5)
+
+	// Mark where the current threshold sits on the curve.
+	curRec, curPrec := Recall(t, sep), Precision(t, sep)
+	c.VLine(curRec, viz.Warm, true)
+	mx, my := c.X(curRec), c.Y(curPrec)
+	c.Rect(mx-4, my-4, 8, 8, viz.Warm, 1)
+
+	c.Text(20, 24, fmt.Sprintf("PR-AUC ≈ %.3f    separation = %.1f", auc, sep),
+		14, viz.Ink, "start")
+	c.Text(20, 44, fmt.Sprintf("at threshold t=%.1f: recall = %.2f, precision = %.2f", t, curRec, curPrec),
+		13, viz.Muted, "start")
+	c.Text(20, 62, "x = recall, y = precision   flat line = a classifier that ranks randomly",
+		12, viz.Muted, "start")
+
+	return c.String()
 }
