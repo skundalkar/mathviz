@@ -6,6 +6,67 @@ code. Newest entries go at the top.
 
 ---
 
+## sigmoid-softmax — turning raw scores into numbers that behave like probabilities
+**The idea in one line:** sigmoid and softmax are the same operation at
+different scales — sigmoid squashes one logit into a single probability for
+two classes, softmax squashes any number of logits into a full probability
+distribution that sums to 1, and running softmax on two logits recovers
+sigmoid exactly.
+
+A model's last layer hands back logits — raw, unbounded real numbers like
+2.3 or -0.5 — not probabilities. Nothing stops a logit from being 1000 or
+-1000; it's just a score, bigger meaning "more likely" and nothing more.
+Sigmoid is the two-class fix: sigmoid(z) = 1/(1+e^-z) takes any real z and
+returns something in (0,1), crossing exactly 0.5 at z=0 (a coin-flip logit),
+and flattening out — saturating — toward 0 or 1 as z runs to the extremes.
+That flattening is worth noticing on the curve: past about z=±5 the output
+barely moves even though the logit is still changing a lot, which is exactly
+why very confident (very large-magnitude) logits stop giving useful gradient
+signal during training.
+
+Softmax generalizes the same trick to any number of classes at once. Given
+logits (2, 0.5, -1) for cat/dog/fox: exponentiate each one (e^2≈7.39,
+e^0.5≈1.65, e^-1≈0.37), sum them (≈9.41), divide each by that sum —
+probabilities ≈78%, 18%, 4%, adding to 100%. Every logit pulls probability
+mass away from every other one; that's the mechanism that makes it a genuine
+probability distribution over classes rather than three independent
+squashed numbers. And the connection to sigmoid isn't just an analogy — it's
+exact: run softmax on (z, 0) and its first output is algebraically
+1/(1+e^-z), the same formula as `Sigmoid(z)`. `TestSoftmaxTwoClassMatchesSigmoid`
+checks exactly this.
+
+**What the knobs show:** the "Logit A" slider drives both panels with the
+same z, so you can watch the sigmoid curve's point and class A's softmax bar
+move together — the shared logit is the thread connecting the two pictures.
+"Logit B" only affects the softmax panel, giving a third class (C, pinned at
+logit 0 as a fixed reference) to compete against. Temperature divides every
+logit before exponentiating: push it below 1 and whichever class has the
+highest logit gets pulled toward 100% (the model "commits" harder than its
+raw logit gap would suggest); push it above 1 and even a clear logit lead
+gets pulled back toward a uniform 33/33/33% (the model hedges even when it
+has a real signal). Temperature is exactly the knob systems expose as "more
+creative / more conservative" sampling in language models — same math, just
+applied to a much bigger softmax.
+
+**Where it matters:** this squashing step is the last mile of essentially
+every classifier — binary logistic regression, multi-class neural nets,
+attention weights, next-token prediction in language models. The failure
+mode worth internalizing: softmax outputs always sum to 1 and are always
+positive, so a model that's never seen anything like the current input
+still has to hand back some full distribution — softmax can't express
+"I have no idea," only "here's how my confidence splits across the classes
+I know about." Low-confidence-looking outputs (probabilities close to
+uniform) are the closest softmax gets to saying that.
+
+**A scope choice worth flagging:** the softmax panel fixes class C's logit
+at 0 rather than exposing a third slider — three independent logit sliders
+would clutter the interaction without adding a new idea, since softmax is
+shift-invariant (`TestSoftmaxShiftInvariant`) and only the *differences*
+between logits matter. Pinning one class as a zero reference keeps the two
+sliders' effects legible while still showing genuine three-way competition.
+
+---
+
 ## pr-auc — the metric that doesn't get fooled by imbalance
 **The idea in one line:** sweep the classifier's threshold from strictest to
 loosest, plot (recall, precision) at every setting, and the area under that

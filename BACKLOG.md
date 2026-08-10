@@ -25,9 +25,9 @@ Format: `- [ ] <id> — <one-line description of the concept to visualize>`
 - [x] gradient-descent — a ball rolling downhill with an adjustable learning rate
 - [x] entropy — how surprise/information changes with probability
 - [x] pr-auc — sweeping the threshold to trace a precision-recall curve, and why it beats ROC-AUC on imbalanced classes
+- [x] sigmoid-softmax — squashing logits into probabilities
 
 ## Up next (statistics & ML intuition)
-- [ ] sigmoid-softmax — squashing logits into probabilities
 
 ## Up next (math foundations)
 - [ ] exponential-growth — doubling time and why it sneaks up on you
