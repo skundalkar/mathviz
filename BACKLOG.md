@@ -26,6 +26,7 @@ Format: `- [ ] <id> — <one-line description of the concept to visualize>`
 - [x] entropy — how surprise/information changes with probability
 
 ## Up next (statistics & ML intuition)
+- [ ] pr-auc — sweeping the threshold to trace a precision-recall curve, and why it beats ROC-AUC on imbalanced classes
 - [ ] sigmoid-softmax — squashing logits into probabilities
 
 ## Up next (math foundations)
