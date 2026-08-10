@@ -33,21 +33,29 @@ func init() {
 		ID:    "confidence-interval",
 		Seq:   9,
 		Title: "Confidence interval",
-		Blurb: "A fish hides somewhere in a lake, sitting perfectly still. You get an " +
-			"imperfect reading of roughly where it is and cast a net centered on that reading. " +
-			"With real numbers: a sample of n=25 has mean 50, stddev 10. The 95% margin is " +
-			"1.96 x (10/sqrt(25)) = 1.96 x 2 = 3.92, so the interval is 50 +/- 3.92, about " +
-			"[46.1, 53.9]. Quadruple the sample to n=100 and the margin only shrinks to 1.96 " +
-			"— 4x the data buys 2x the precision, since standard error falls as 1/sqrt(n). " +
-			"Once you've thrown one specific net, it's tempting to say 'there's a 95% chance " +
-			"the fish is in this net' — but the fish never moved and the net already landed; " +
-			"it either caught it or it didn't. What 95% actually describes is the METHOD: " +
-			"repeat this cast-around-your-guess process many times and about 95% of the nets " +
-			"you throw capture the fish. The dashed line here is the true mean, which in real " +
-			"life you never get to see. Each row is one hypothetical 'cast' — green if its " +
-			"interval captured the true mean, red if it missed. Raise the confidence level and " +
-			"every interval widens (fewer misses); raise the sample size and every interval " +
-			"narrows (more precision).",
+		Blurb: "You want the average commute time across an entire city of 100,000 commuters — " +
+			"the true population mean — but you can't measure everyone, so you survey a random " +
+			"n=64 of them. Their average comes out to 32 minutes; individual commute times vary " +
+			"by stddev=8 minutes (that's spread among PEOPLE, not uncertainty about the average). " +
+			"Divide by sqrt(n): standard error = 8/sqrt(64) = 1 minute — how much the SAMPLE " +
+			"MEAN itself would wobble if you resurveyed a different random 64 people. For 95% " +
+			"confidence, scale that wobble by z=1.96 (the width, in standard errors, that " +
+			"captures the middle 95% of a normal curve): margin = 1.96x1 ~= 2, so the interval " +
+			"is 32 +/- 2, about [30, 34]. This isn't 'maybe 32 is wrong' — 32 is exactly your 64 " +
+			"people's average, no doubt about it. The uncertainty is about a different, bigger " +
+			"number: the true citywide average you never directly measured, which your one " +
+			"sample only estimates. Quadruple n to 256 and standard error only drops to 0.5 — 4x " +
+			"the data buys 2x the precision (1/sqrt(n)). Crucially, this guarantee only holds if " +
+			"the 64 people were genuinely randomly selected — sampling bias (e.g. only surveying " +
+			"one train platform) breaks it in a way no formula can detect or fix. And once one " +
+			"specific interval is drawn, resist saying 'there's a 95% chance the truth is in " +
+			"here' — the true mean already sits wherever it sits; the interval either reaches it " +
+			"or it doesn't. What 95% describes is the METHOD: repeat this sample-and-build " +
+			"process many times and about 95% of the intervals you get will contain the truth. " +
+			"The dashed line below is that true mean, which in real life you never get to see. " +
+			"Each row is one hypothetical repeat — green if its interval captured the true mean, " +
+			"red if it missed. Raise the confidence level and every interval widens (fewer " +
+			"misses); raise the sample size and every interval narrows (more precision).",
 		Params: []concept.ParamSpec{
 			{Key: "confidence", Label: "Confidence level", Min: 50, Max: 99, Step: 1, Def: 90, Unit: "%"},
 			{Key: "n", Label: "Sample size (n)", Min: 2, Max: 100, Step: 1, Def: 20},
@@ -153,7 +161,10 @@ func render(p map[string]float64) string {
 	}
 	xlim *= 1.15
 
-	c := viz.New(680, 460, -xlim, xlim, 0, NumSamples+1)
+	c := viz.New(680, 480, -xlim, xlim, 0, NumSamples+1)
+	// Extra headroom for four lines of header/legend text, kept entirely
+	// above the plot so it never crowds the top row of intervals.
+	c.PadT = 96
 	c.Axes()
 	step := xlim / 4
 	for x := -xlim + step; x < xlim; x += step {
@@ -165,6 +176,8 @@ func render(p map[string]float64) string {
 	}
 
 	// True mean, dashed — the thing a real experimenter never gets to see.
+	// It never moves row to row: it's one fixed, hidden target every
+	// hypothetical repeat is aiming at.
 	c.VLine(TrueMean, viz.Ink, true)
 
 	covered := 0
@@ -187,6 +200,10 @@ func render(p map[string]float64) string {
 	c.Text(20, 44, fmt.Sprintf("%d of %d intervals capture the true mean (dashed line) — "+
 		"close to the %.0f%% you'd expect over many repeats", covered, NumSamples, confidence*100),
 		12, viz.Muted, "start")
+	c.Text(20, 64, "each row = one hypothetical repeat: a fresh sample, its own mean, its own net "+
+		"cast around that mean", 12, viz.Muted, "start")
+	c.Text(20, 84, "■ = a sample's mean (a different draw every row)    dashed | = true mean "+
+		"(one fixed target, hidden in real life)", 12, viz.Muted, "start")
 
 	return c.String()
 }

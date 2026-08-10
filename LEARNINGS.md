@@ -679,55 +679,180 @@ probability of seeing data this extreme *if your hypothesis were false*.
 **The idea in one line:** "95% confidence" doesn't mean this one interval has
 a 95% chance of containing the truth — it means that if you repeated the
 whole procedure many times, about 95% of the intervals you built this way
-would contain it.
+would contain it. And the number you computed from your own data isn't
+"uncertain" at all — the uncertainty is entirely about a *different, bigger*
+number you're using it to estimate.
 
-Imagine a fish hiding somewhere in a lake, sitting perfectly still. You can't
-see it, but you get an imperfect reading of roughly where it is, and you cast
-a net centered on that reading. Cast a generously wide net and you'll
-capture the fish almost every time, even with a rough guess. Cast a narrow
-net and you'll only succeed when your guess happens to land close to the
-truth. Now here's where intuition goes wrong: once you've thrown one
-specific net, it's tempting to say "there's a 95% chance the fish is in this
-net." But the fish was never moving, and the net has already landed — it
-either caught the fish or it didn't. There's no more randomness left to
-attach a probability to; you just don't know which case you're in.
+### The setup: a question you can't answer directly
 
-What the 95% actually describes is the *casting method*, not any single
-cast: draw a sample, compute its mean, build an interval of mean ± z·(σ/√n)
-around it — do that many times, and about 95% of the resulting intervals
-will contain the true value, purely because 95% of sample means happen to
-land close enough to the truth for their interval to reach it. The
-confidence level is a statement about how often this whole process succeeds,
-made *before* you ever throw a net, not a probability you get to attach to
-the specific net sitting in front of you.
+You want the average commute time across an entire city of 100,000
+commuters — the **true population mean**. You can't survey everyone, so you
+survey a random **n = 64** people instead and average their answers. That
+average is your one shot at estimating a number you'll never get to measure
+directly.
 
-**With real numbers:** a sample of n = 25 has mean 50 and standard
-deviation σ = 10. The 95% margin is z × (σ/√n) = 1.96 × (10/√25) = 1.96 × 2
-= 3.92, so the interval is 50 ± 3.92, roughly **[46.1, 53.9]**. Quadruple
-the sample to n = 100 and the margin shrinks to 1.96 × (10/10) = **1.96** —
-a much tighter net — because standard error falls as 1/√n: 4× the sample
-only buys a 2× tighter interval (√4 = 2), not a 4× tighter one.
+### With real numbers: the full walkthrough
 
-The picture makes this concrete without leaning on actual randomness: 20
-"hypothetical repeated experiments" sit at evenly spaced quantiles of the
-sampling distribution — an exact, reproducible stand-in for "cast the net 20
-times" — each with its own interval, green if it captured the true mean
-(dashed line), red if it missed. Raise the confidence knob and every
-interval widens, turning red rows green, because a wider net catches more
-fish regardless of how good your guess was. Raise the sample size instead
-and every interval narrows around the same mean, because a bigger sample
-means a sharper reading of where the fish actually is — standard error
-shrinks as 1/√n. Notice what *doesn't* change coverage: n changes how tight
-the net is, never how often it's cast wide enough to succeed — that's the
-confidence level's job alone.
+Say your 64 people give:
+- **sample mean** x̄ = 32 minutes
+- **sample standard deviation** s = 8 minutes (how spread out *individual
+  people's* commutes are — some at 20 min, some at 45 min)
+- **n** = 64
 
-**Where it bites in real life:** "this poll has a ±3 point margin of error
-at 95% confidence" means 95% of polls run this way would bracket the true
-value — not that this specific poll has a 95% chance of being right. It's
-also why a narrower interval from a bigger sample is a genuine improvement
-(a tighter net, same success rate) while cherry-picking a higher confidence
-level just to get a cleaner-looking one-off result buys you nothing (it only
-pays off across many repeats, not on the one that matters to you).
+Two steps turn those three numbers into an interval:
+
+1. **Standard error** — how much the *average itself* would wobble if you
+   resurveyed a different random 64 people:
+   $$SE = \frac{s}{\sqrt n} = \frac{8}{\sqrt{64}} = 1 \text{ minute}$$
+2. **Margin of error** — scale that wobble by a multiplier for your chosen
+   confidence level (z = 1.96 for 95%, the width in standard errors that
+   captures the middle 95% of a normal curve):
+   $$\text{margin} = 1.96 \times SE = 1.96 \times 1 \approx 2 \text{ minutes}$$
+
+$$\text{interval} = 32 \pm 2 \approx [30.0,\ 34.0]$$
+
+**"We're 95% confident the true citywide average commute is between 30 and
+34 minutes."** Precisely: if you reran this 64-person survey many times and
+built an interval this way every time, about 95% of those intervals would
+bracket the real citywide average.
+
+Watch what n alone does, holding x̄ = 32 and s = 8 fixed:
+
+| n | SE = s/√n | margin = 1.96×SE | interval |
+|---|---|---|---|
+| 16 | 8/4 = 2.0 | ≈ 3.9 | [28.1, 35.9] |
+| 64 | 8/8 = 1.0 | ≈ 2.0 | [30.0, 34.0] |
+| 256 | 8/16 = 0.5 | ≈ 1.0 | [31.0, 33.0] |
+
+Quadrupling n each time only halves the margin — standard error falls as
+1/√n, so 4× the data buys 2× the precision, never 4×. Notice s = 8 never
+moves across the table: more people doesn't make individual commutes any
+less variable, it only makes you more certain about *where the average is*.
+
+### Standard deviation vs. standard error — the distinction that trips everyone up
+
+These are not the same quantity, and mixing them up is the single most
+common way to build a confidence interval wrong:
+
+| | measures | in this example | shrinks with bigger n? |
+|---|---|---|---|
+| **Standard deviation (s)** | spread of *individual* data points | 8 minutes | No — it's a property of the population, not of your sample size |
+| **Standard error (s/√n)** | spread of the *sample mean itself*, across hypothetical repeats | 1 minute | Yes — more data means a sharper read on the average |
+
+"±2 standard deviations covers 95%" is a true rule, but it answers "where do
+95% of *individual* commute times fall?" (roughly [16, 48] minutes here) —
+a totally different question from "how sure am I about the *average*?" A
+confidence interval always uses **standard error**, never the raw standard
+deviation directly. n never appears in the standard-deviation question at
+all; it's exactly the ingredient the standard-error question needs.
+
+### A dart, not a fish — "but I computed 32 exactly, how is it uncertain?"
+
+Good instinct to push back on: **32 is not uncertain.** It's the exact,
+arithmetic average of the 64 people you actually surveyed — no doubt about
+that, ever. The uncertainty is about a *different* number: the true
+citywide average, which you never measured and never will.
+
+Picture the true citywide average as a bullseye painted on a board, covered
+in fog — you can never see it directly. Every time you survey 64 random
+people, you throw one dart at that hidden bullseye. Your dart doesn't land
+exactly on the bullseye — it lands *somewhere near it*, nudged left or right
+by which 64 people happened to get picked. You know exactly where your dart
+landed (32 — zero doubt). You don't know where the bullseye is.
+
+```
+      hidden truth — the real citywide average (you never see this)
+                              |
+      possible sample means scatter around it, width = SE = 1 minute
+                    ┈┈┈┈┈┈┈▁▂▄▆█▆▄▂▁┈┈┈┈┈┈┈
+                              |
+                    your one real survey landed at:
+                              ▼
+                             32     ← exact, no doubt — really is your 64 people's average
+                    [ 30 ────■──── 34 ]   ← the net: 32 ± 1.96×SE, hoping it reaches the truth above
+```
+
+"How sure am I about 32" really means: *given that my dart landed at 32, and
+darts like this typically scatter by about ±1 minute around wherever the
+real bullseye is, how far away could the real bullseye plausibly be from my
+one throw?* That's the entire confidence interval, in one sentence.
+
+### Why can't my next sample just give me 50? Sampling luck vs. sampling bias
+
+If you resurveyed a different random 64 people, you would *not* get exactly
+32 again — maybe 33.4, maybe 30.1 — small wobble driven by who happened to
+get picked. But **50 is a different story.** 50 is 18 minutes from 32;
+divide by SE = 1 and that's **18 standard errors away**. Under the bell-curve
+model this whole method rests on, that's not "unlucky," it's essentially
+impossible from random sampling alone. If a resurvey genuinely produced 50,
+the right conclusion is "something is wrong with my assumptions," not "I got
+unlucky" — and it points at a completely different failure mode:
+
+- **Sampling luck** — ordinary randomness in who got picked. This is exactly
+  what standard error quantifies, and it's small and predictable.
+- **Sampling bias** — the 64 people weren't a genuinely random cross-section
+  to begin with (e.g. surveying only one train platform, or only people who
+  opted into an app). **No formula catches this** — the confidence interval
+  can be tight and confidently wrong at the same time. A jump as big as
+  32→50 is far more likely to be bias than luck.
+
+**Getting the random part right, in practice:**
+- **Simple random sampling** — a complete list of the population, then a
+  random-number draw from it, so every person has an equal shot.
+- **Systematic sampling** — a random start, then every kth name off the
+  list; easier to execute, works as long as the list has no hidden pattern.
+- **Stratified sampling** — split into known subgroups first (borough, age
+  bracket), then randomly sample within each; not required for validity,
+  but tightens the interval further by removing one more source of wobble.
+- **Cluster / multistage sampling** — randomly pick whole groups (blocks,
+  offices) when no full list of individuals exists, then sample within them.
+
+**And the traps that quietly break "random" without anyone noticing:**
+*coverage bias* (your list itself excludes people — a phone book missing
+cell-only households), *non-response bias* (the kind of person who bothers
+to answer differs from the kind who doesn't), and *self-selection* (a
+"click here to take our survey" link only reaches people who saw it and
+cared enough to click). All three can sit underneath a perfectly-executed
+random draw and invalidate it anyway.
+
+### What the picture shows
+
+20 "hypothetical repeated experiments" sit at evenly spaced quantiles of the
+sampling distribution — an exact, reproducible stand-in for "run this survey
+20 times" — each with its own interval, green if it captured the true mean
+(dashed line), red if it missed. Every row's marker sits at a *different* x
+position — a different sample, a different dart-throw — while the dashed
+true-mean line never moves; it's the one fixed, hidden target every row is
+aiming at. Raise the confidence knob and every interval widens, turning red
+rows green, because a wider net is more likely to reach the true mean
+regardless of how good any one guess was. Raise the sample size instead and
+every interval narrows around its own mean, because a bigger sample
+sharpens the reading — standard error shrinks as 1/√n. Notice what *doesn't*
+change coverage: n changes how tight the net is, never how often it's cast
+wide enough to succeed — that's the confidence level's job alone.
+
+### Where it bites in real life
+
+"This poll has a ±3 point margin of error at 95% confidence" means 95% of
+polls run this way would bracket the true value — not that this specific
+poll has a 95% chance of being right. It's also why a narrower interval from
+a bigger sample is a genuine improvement (a tighter net, same success rate)
+while cherry-picking a higher confidence level just to get a cleaner-looking
+one-off result buys you nothing (it only pays off across many repeats, not
+on the one that matters to you). And per the section above: no sample size,
+however large, rescues a survey drawn from the wrong list or answered only
+by whoever felt like responding.
+
+**Two footnotes worth knowing, without needing to build a mental model
+around them:** for small samples (rule of thumb: n below ~30) with an
+estimated s, the correct multiplier isn't 1.96 — it's a slightly wider one
+from the **t-distribution**, hedging against not fully trusting an s
+estimated from so little data; it converges to 1.96 as n grows. And if your
+sample is a large *fraction* of the population (not the case here — 64 out
+of 100,000 is tiny) rather than a small slice, a **finite population
+correction** shrinks the standard error further, since sampling a big chunk
+of the population means you're genuinely closer to just knowing the answer
+outright.
 
 **Say it like this:** "This poll has a 3-point margin of error at 95%
 confidence" means the polling *method*, repeated many times, would bracket
@@ -736,6 +861,10 @@ the true number about 95% of the time.
 interval" — once the interval is drawn, it either contains the true value
 or it doesn't; the 95% describes the method's long-run success rate, not
 this one instance sitting in front of you.
+**Also not like this:** "My sample mean might be wrong." Your sample mean is
+an exact fact about your sample. What might be "wrong" — really, what you
+don't know — is how close that exact fact landed to the true population
+value it's standing in for.
 
 ---
 
