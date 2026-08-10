@@ -54,6 +54,36 @@ big commit. After each step, `make check` must pass before you commit.
      concept in plain language: the one-line idea, what the knobs show, and
      where it matters in real life.
    - Check off the item in `BACKLOG.md` (move it under `## Done`).
+   - **Writing bar for the explanation** — learned the hard way from a live
+     walkthrough that surfaced real confusion; see `LEARNINGS.md`'s
+     `confidence-interval` entry as the reference example of this bar:
+     - Ground it in one concrete, worked numeric example with actual
+       plugged-in numbers, computed step by step — not just the formula in
+       the abstract. A reader should be able to follow the arithmetic, not
+       just the shape of the idea.
+     - If you reach for a physical-world analogy, make sure its structure
+       actually matches the math (don't describe a 2D area/region for a
+       concept that's really a 1D range, etc.) — a mismatched analogy
+       actively misleads rather than helping.
+     - If the concept reuses one word for two different things (e.g. a
+       *sample* statistic vs. the *true/population* value it estimates;
+       standard deviation vs. standard error), name both explicitly and say
+       plainly why they differ — don't assume the reader tracks an implicit
+       swap.
+     - If the math leans on a constant that looks arbitrary (a threshold, a
+       critical value, a magic number), say in one sentence what question
+       it's the answer to, not just that it gets used.
+     - Anticipate the single most likely point of confusion for this
+       specific concept and address it head-on with an explicit sentence —
+       a correct definition sitting nearby isn't the same as naming the
+       misconception and knocking it down.
+     - Where a parameter's effect is easiest to see side by side (e.g. how
+       an answer shifts across a few settings of a knob), add a small
+       comparison table rather than only prose.
+   - If a later real conversation surfaces a fix or a gap in how an already-
+     shipped concept is explained, apply it immediately as its own commit
+     (`docs(<id>): ...`) rather than letting the gap sit — see the
+     `docs(confidence-interval)` commit history for the pattern.
 
 **Finish**
 - `make check` one final time. If anything fails, fix it before pushing; never
