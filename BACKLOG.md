@@ -24,9 +24,9 @@ Format: `- [ ] <id> — <one-line description of the concept to visualize>`
 - [x] overfitting — a wiggly curve chasing noise vs. a smooth fit
 - [x] gradient-descent — a ball rolling downhill with an adjustable learning rate
 - [x] entropy — how surprise/information changes with probability
+- [x] pr-auc — sweeping the threshold to trace a precision-recall curve, and why it beats ROC-AUC on imbalanced classes
 
 ## Up next (statistics & ML intuition)
-- [ ] pr-auc — sweeping the threshold to trace a precision-recall curve, and why it beats ROC-AUC on imbalanced classes
 - [ ] sigmoid-softmax — squashing logits into probabilities
 
 ## Up next (math foundations)

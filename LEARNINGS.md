@@ -6,6 +6,58 @@ code. Newest entries go at the top.
 
 ---
 
+## pr-auc — the metric that doesn't get fooled by imbalance
+**The idea in one line:** sweep the classifier's threshold from strictest to
+loosest, plot (recall, precision) at every setting, and the area under that
+curve — PR-AUC — grades the model across all thresholds at once, without
+ROC-AUC's blind spot for rare positives.
+
+Take the spam filter from the precision/recall lesson, but stretch it to a
+more realistic imbalance: 1,000 emails, only 20 really spam. A "flag ≥ t"
+threshold has two very different report cards depending on which curve you
+read. ROC's axes are false-positive rate and true-positive rate — both are
+computed *within* a class (FPR out of the 980 real hams, TPR out of the 20
+real spams), so a threshold that wrongly flags 50 of those 980 hams only
+nudges FPR to 50/980 ≈ 5%, and the ROC curve barely notices. But look at
+precision instead: out of everything flagged (18 real spam caught + 50 false
+alarms = 68 flagged), precision is only 18/68 ≈ 26% — the inbox is now
+*mostly* wrong flags, and PR-AUC feels that pain directly because precision
+is computed against everything flagged, not diluted by the 980 easy true
+negatives sitting in the background.
+
+**What the knobs show:** the threshold slider sweeps the same point across
+the curve that the precision/recall lesson fixed in place — dragging it
+right (stricter) climbs toward the top-left (high precision, low recall);
+dragging it left (looser) slides down toward the bottom-right. The
+separation slider makes the two classes' score distributions easier or
+harder to tell apart; more separation bows the curve up and to the right and
+raises PR-AUC, because a threshold can now catch more real positives without
+also catching more negatives. The flat line at y=0.5 (with equal-sized
+classes here) is the floor: a classifier that ranks completely at random
+still lands its flags right, on average, exactly as often as positives occur
+in the data.
+
+**Where it matters:** anywhere positives are rare — fraud detection, disease
+screening, defect detection, security alerts. In those settings ROC-AUC can
+report 0.95+ while the model is still unusable in practice, because it's
+graded on a sea of easy true negatives it isn't even trying hard to get
+right. PR-AUC is the metric that keeps the "how many of my alerts are real"
+question front and center, which is usually the question a human actually
+cares about.
+
+**A design choice worth flagging:** PR-AUC here is computed with a simple
+trapezoid rule over the sampled curve (`TrapezoidalPRAUC`), the same
+technique `roc-auc` uses for its curve. This is a close cousin of "average
+precision," which some libraries compute slightly differently (precision
+interpolated only at the points where a positive is added, avoiding
+double-counting jagged detail). On the smooth curve two Gaussian classes
+produce, trapezoidal integration tracks the true area well; on jagged
+real-world curves it can run a touch optimistic. Good enough for the
+intuition this concept is teaching, worth knowing if you reach for the exact
+number in a real evaluation.
+
+---
+
 ## entropy — what people actually mean when they say the word
 **The idea in one line:** "entropy" is just a fancy word for how mixed-up,
 spread-out, or hard-to-call something is — high entropy means "could go a
