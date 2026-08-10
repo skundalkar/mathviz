@@ -73,18 +73,85 @@ func init() {
 		ID:    "variance-vs-stddev",
 		Seq:   6,
 		Title: "Variance vs. standard deviation",
-		Blurb: "Two dart throwers, 4 throws each, distance from bullseye in inches (left = " +
-			"negative, right = positive). Thrower 1: -2,-1,+1,+2. Thrower 2: -8,-4,+4,+8 — " +
-			"visibly 4x wilder. Try the obvious fix: average the raw distances. Thrower 1: " +
-			"(-2-1+1+2)/4 = 0. Thrower 2: (-8-4+4+8)/4 = 0. BOTH average to exactly zero, even " +
-			"though one is clearly way more scattered — deviations from the mean always cancel, " +
-			"every time, for any data. Square each deviation first (erases the sign, and punishes " +
-			"far misses harder) and average THOSE: Thrower 1 gets variance 2.5, Thrower 2 gets " +
-			"variance 40 — finally distinguishable. But 'inches squared' isn't a real unit anyone " +
-			"uses, so square-root back down: stddev 1.58 vs. 6.32, in real inches again — the same " +
-			"4x gap the raw numbers showed. Drag spread to watch stddev scale linearly while " +
-			"variance scales with the square; drag the outlier to see how much one extreme point " +
-			"inflates both.",
+		Sections: []concept.Section{
+			{
+				Heading: "Why would you need this?",
+				Body: []string{
+					"Two dart throwers each take 4 throws. Measure how far each throw landed " +
+						"from the bullseye, in inches — negative if left, positive if right. " +
+						"Thrower 1: -2, -1, +1, +2. Thrower 2: -8, -4, +4, +8 — visibly about 4x " +
+						"wilder just from looking at the numbers.",
+					"Try the obvious way to turn that visible difference into one number: average " +
+						"how far off each throw was. Thrower 1: (-2-1+1+2)/4 = 0. Thrower 2: " +
+						"(-8-4+4+8)/4 = 0. Both average to exactly zero, even though one is clearly " +
+						"far more scattered — deviations from the mean always cancel, every time, " +
+						"for any data. So how do you actually turn 'more scattered' into a single " +
+						"number?",
+				},
+			},
+			{
+				Heading: "How does it actually work?",
+				Body: []string{
+					"Square each deviation before averaging it. Squaring erases the minus sign " +
+						"(both -2 and +2 become 4), so nothing cancels — and a throw twice as far " +
+						"off ends up counting four times as much, punishing wild misses harder than " +
+						"close ones:",
+					"• Thrower 1: squared deviations 4,1,1,4 sum to 10; average = 10/4 = 2.5 — " +
+						"that's the variance, in square inches.",
+					"• Thrower 2: squared deviations 64,16,16,64 sum to 160; average = 160/4 = " +
+						"40 — variance, in square inches.",
+					"Finally distinguishable: 40 is a lot bigger than 2.5. But 'square inches' " +
+						"isn't a unit anyone uses to describe a dart thrower, so square-root back " +
+						"down to undo exactly that: stddev 1.58 vs. 6.32, in real inches again — " +
+						"the same 4x gap the raw numbers showed at a glance.",
+				},
+			},
+			{
+				Heading: "What does the picture show?",
+				Body: []string{
+					"Each bar is one point's squared deviation from the mean (green if the point " +
+						"sits above the mean, red if below) — the same numbers computed above; a " +
+						"taller bar means the point is further from the mean. Drag spread to watch " +
+						"stddev scale linearly while variance scales with the square (this sample " +
+						"is literally Thrower 1's numbers × spread, so a 4x stretch is exactly the " +
+						"Thrower 1 → Thrower 2 comparison above); drag the outlier slider to see " +
+						"how much a single extreme point inflates both, since squaring punishes the " +
+						"far-out point hardest of all.",
+				},
+			},
+			{
+				Heading: "What can you do now that you couldn't before?",
+				Body: []string{
+					"You now have a single number that actually distinguishes a tight, consistent " +
+						"set of throws from a wild one — something the 'obvious' average-of-" +
+						"deviations approach couldn't do because it always lands on zero — plus a " +
+						"version of that number (standard deviation) back in the data's own units " +
+						"instead of squared ones.",
+				},
+			},
+			{
+				Heading: "Where does this show up in real life?",
+				Body: []string{
+					"Why one wild outlier can wreck a variance-based estimate more than you'd " +
+						"guess (median/IQR are more robust because they don't square anything), " +
+						"why error is usually reported as RMSE — root-mean-squared-error, 'square, " +
+						"average, then square-root back' — instead of raw MSE, and why standard " +
+						"deviation, not variance, is the number that actually gets quoted next to a " +
+						"mean.",
+				},
+			},
+			{
+				Heading: "What's the common mistake here?",
+				Body: []string{
+					"Say it like this: 'that's a high-variance strategy' (common in startups, " +
+						"poker, investing) means outcomes are spread wide — could go great, could " +
+						"go badly, hard to call which.",
+					"Not like this: 'high variance means it's worse' — variance measures spread, " +
+						"not direction; a high-variance bet can have a better average outcome than " +
+						"a safe one, just with far less certainty about any single try.",
+				},
+			},
+		},
 		Params: []concept.ParamSpec{
 			{Key: "spread", Label: "Spread", Min: 0.3, Max: 2.5, Step: 0.1, Def: 1},
 			{Key: "outlier", Label: "Outlier push", Min: 0, Max: 10, Step: 0.5, Def: 0},

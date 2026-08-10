@@ -18,19 +18,93 @@ func init() {
 		ID:    "correlation",
 		Seq:   4,
 		Title: "Correlation (r)",
-		Blurb: "Hours studied 1,2,3,4 vs. test score 60,70,80,90 — each extra hour is worth " +
-			"exactly +10 points, points sit dead on a straight uphill line: that's r = +1. " +
-			"Hours of sleep lost 0,1,2,3 vs. focus score 90,80,70,60 — same line, downhill: " +
-			"r = -1. Shoe size 8,9,10,11 vs. test score 72,58,81,65 — no pattern, r works out " +
-			"to about 0.03: essentially r = 0. That's the whole scale, in real numbers. Now: " +
-			"ice cream sales and drowning deaths both spike every summer, giving a strong " +
-			"positive r — same tight-line signature as the hours-studied example. Does ice " +
-			"cream cause drowning? Obviously not — both are pulled along by a third thing " +
-			"(hot weather: more swimming, more ice cream). r only ever measures how tightly " +
-			"points hug a straight line; it is blind to *why* the line is there. Slide r and " +
-			"watch the scatter cloud tighten into a line or spread into a shapeless blob; the " +
-			"orange line is the trend r implies. A strong r is a real, useful signal that " +
-			"something is going on — it just never tells you what.",
+		Sections: []concept.Section{
+			{
+				Heading: "Why would you need this?",
+				Body: []string{
+					"Every summer, ice cream sales climb — and every summer, drowning deaths " +
+						"climb too. Plot one against the other and you'd find a strong positive " +
+						"relationship: when one goes up, so does the other, reliably. It's tempting " +
+						"to read that as 'ice cream causes drowning' (or the reverse) — but neither " +
+						"is true. Both are being pulled along by a third thing entirely: hot weather " +
+						"means more swimming and more ice cream at the same time.",
+					"That raises two questions a gut reaction to a scatter of points can't answer " +
+						"on its own: how tightly do two variables actually move together — is it a " +
+						"strong, reliable pattern or just a handful of coincidental points — and, " +
+						"separately, does 'moving together' even mean one causes the other? You need " +
+						"a number that answers the first question precisely before you can even " +
+						"start on the second.",
+				},
+			},
+			{
+				Heading: "How does it actually work?",
+				Body: []string{
+					"That number is r, and here's the whole scale in real numbers. Four students, " +
+						"hours studied vs. test score:",
+					"• 1,2,3,4 hours vs. 60,70,80,90 — each extra hour is worth exactly +10 " +
+						"points, and the points sit dead on a straight uphill line: r = +1, perfect " +
+						"positive correlation.",
+					"• Hours of sleep lost vs. focus score: 0,1,2,3 vs. 90,80,70,60 — same " +
+						"perfectly straight line, only downhill: r = -1, perfect negative correlation.",
+					"• Shoe size vs. test score: 8,9,10,11 vs. 72,58,81,65 — no pattern at all; " +
+						"run the numbers and r comes out to about 0.03, essentially r = 0.",
+					"r isn't measuring whether some deep relationship exists — only how tightly " +
+						"the points hug a straight line. The ice-cream/drowning cloud from the " +
+						"opening sits up near +1 for exactly the same reason the hours-studied cloud " +
+						"does: real, tight, predictable co-movement. It just doesn't say why the " +
+						"line is there.",
+				},
+			},
+			{
+				Heading: "What does the picture show?",
+				Body: []string{
+					"Slide r and watch the scatter cloud tighten into a line or spread into a " +
+						"shapeless blob — the same landmarks as the worked examples above: near " +
+						"r = +1 it looks like the hours-studied cloud, near r = -1 like the " +
+						"sleep-lost cloud, near r = 0 like the shoe-size blob. The orange line is " +
+						"the trend r implies; both axes are standardized, so that line always runs " +
+						"through the origin with slope r, which is why it visibly steepens as r " +
+						"moves toward ±1. Sample size n controls how closely the plotted cloud " +
+						"matches the target: with a small n, the sample r printed above the plot " +
+						"visibly drifts from the target r, a reminder that a correlation measured " +
+						"from one sample is itself just an estimate of the true relationship, not " +
+						"the relationship.",
+				},
+			},
+			{
+				Heading: "What can you do now that you couldn't before?",
+				Body: []string{
+					"You can now put one precise number on how tightly two variables move " +
+						"together instead of eyeballing a scatterplot — and, just as importantly, " +
+						"you know exactly what that number does and doesn't tell you: a strong r " +
+						"(like the ice-cream/drowning cloud) is a real, useful signal that something " +
+						"is going on, but on its own it never tells you what — that still takes more " +
+						"information than the correlation itself can supply.",
+				},
+			},
+			{
+				Heading: "Where does this show up in real life?",
+				Body: []string{
+					"'Cities with more police have more crime' (both driven by population " +
+						"density), a stock-picking strategy that correlates with past returns " +
+						"purely by chance, or a feature in a machine-learning model that correlates " +
+						"with the label without causing it — swap it out in production and the " +
+						"correlation, having no causal footing, quietly disappears.",
+				},
+			},
+			{
+				Heading: "What's the common mistake here?",
+				Body: []string{
+					"Say it like this: 'X correlates with Y' is a purely descriptive claim — they " +
+						"tend to move together — and stops exactly there; it says nothing about " +
+						"which one, if either, is causing the other.",
+					"Not like this: 'it's just correlation' is said so reflexively it's become the " +
+						"opposite mistake just as often — dismissing a strong, useful signal as " +
+						"meaningless because no mechanism has been proven yet, when a strong " +
+						"correlation is usually worth investigating, not shrugging off.",
+				},
+			},
+		},
 		Params: []concept.ParamSpec{
 			{Key: "r", Label: "Target correlation (r)", Min: -1, Max: 1, Step: 0.05, Def: 0.6},
 			{Key: "n", Label: "Sample size (n)", Min: 20, Max: 300, Step: 10, Def: 150},
