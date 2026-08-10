@@ -17,18 +17,80 @@ func init() {
 		ID:    "standard-deviation",
 		Seq:   1,
 		Title: "Standard deviation (σ)",
-		Blurb: "Two students each score '10 points above average' — equally impressive? Depends " +
-			"how far scores typically land from average in each class. In class A, scores " +
-			"typically land only 2 points from average, so +10 is 5 times further out than normal " +
-			"— off the charts. In class B, scores typically land 20 points from average, so +10 is " +
-			"just half of how far it's normal to land there — unremarkable. Standard deviation (σ) " +
-			"IS that 'typically lands X points from average' number: measure how far every score " +
-			"sits from the mean, boil those distances down to one typical distance, and that's σ. " +
-			"For a bell-shaped curve it comes with a fixed rule too: mean ± 1σ always covers about " +
-			"68% of everyone, ±2σ about 95%, ±3σ about 99.7% — narrow curve or wide, doesn't " +
-			"matter. Drag σ and watch the band stretch or shrink while always holding that same " +
-			"68% — that's what makes '2 sigma above average' a portable, comparable rarity instead " +
-			"of just a raw number.",
+		Sections: []concept.Section{
+			{
+				Heading: "Why would you need this?",
+				Body: []string{
+					"Two students each score 10 points above their class average. Same number, " +
+						"'10 points above average' — but do they deserve equal bragging rights? To " +
+						"answer that you need one more fact about each class: how far scores " +
+						"typically land from the average there, high or low. That's the piece the " +
+						"raw '+10' is missing.",
+				},
+			},
+			{
+				Heading: "How does it actually work?",
+				Body: []string{
+					"Once you have that missing fact, watch what it does to each student's result:",
+					"• Class A: scores typically land only about 2 points from the average — a " +
+						"tightly bunched class. Student A's +10 is 10÷2 = 5 times further from " +
+						"average than it's normal to land here — off the charts.",
+					"• Class B: scores typically land about 20 points from the average — a much " +
+						"more spread-out class. Student B's +10 is only 10÷20 = 0.5, half of how " +
+						"far it's completely normal to land there — unremarkable.",
+					"That 'typically lands X points from average' number is standard deviation " +
+						"(σ): take every score, measure how far it sits from the mean, and boil " +
+						"those distances down to one typical distance. Class A's σ ≈ 2, class B's σ " +
+						"≈ 20 — the exact numbers used above. Counting how many σ's away a score " +
+						"sits gives it a z-score: student A's +10 is +5σ, student B's +10 is +0.5σ " +
+						"— same raw gap, now comparable.",
+				},
+			},
+			{
+				Heading: "What does the picture show?",
+				Body: []string{
+					"Drag σ and the bell curve gets fatter or skinnier while the shaded band — " +
+						"always mean ± 1σ — keeps covering about 68% of the area no matter how wide " +
+						"or narrow the curve is; ±2σ covers about 95%, ±3σ about 99.7%. Set σ small, " +
+						"like class A's ≈2, and the curve looks tightly bunched; set σ large, like " +
+						"class B's ≈20, and it spreads thin — the same two classes from the worked " +
+						"example, now literally narrow or wide on the page.",
+				},
+			},
+			{
+				Heading: "What can you do now that you couldn't before?",
+				Body: []string{
+					"'10 points above average' is no longer just a raw number you have to " +
+						"eyeball — you can convert it to a z-score and read off an actual rarity " +
+						"from the 68/95/99.7 rule, so a claim like '5 sigma out' means the same " +
+						"thing no matter what's being measured.",
+				},
+			},
+			{
+				Heading: "Where does this show up in real life?",
+				Body: []string{
+					"A 101°F fever is routine for some people and alarming for others depending " +
+						"on their normal baseline and its variability; manufacturing tolerances are " +
+						"set in sigmas, not raw units, because 'off by 2mm' means something " +
+						"different for a bolt than for a bridge; and '1-in-20' scientific thresholds " +
+						"(p < 0.05) are really a statement about how many sigmas out a result has to " +
+						"land before it counts as surprising.",
+				},
+			},
+			{
+				Heading: "What's the common mistake here?",
+				Body: []string{
+					"'That was a 3-sigma event' (said after market crashes, unusual test scores, " +
+						"quality-control failures) means this extreme should happen only about 3 " +
+						"times in 1,000 if the usual pattern of variation held — the 99.7% rule made " +
+						"concrete, not just a vague 'very rare.'",
+					"Calling a fixed number of points or dollars 'a lot' or 'a little' on its own, " +
+						"without asking relative to what, is the common mistake — the same 10-point " +
+						"gap can be unremarkable in one dataset and the single most extreme value in " +
+						"another.",
+				},
+			},
+		},
 		Params: []concept.ParamSpec{
 			{Key: "mu", Label: "Mean (μ)", Min: -4, Max: 4, Step: 0.1, Def: 0},
 			{Key: "sigma", Label: "Std dev (σ)", Min: 0.4, Max: 3, Step: 0.05, Def: 1, Unit: "σ"},

@@ -20,18 +20,84 @@ func init() {
 		ID:    "precision-recall",
 		Seq:   3,
 		Title: "Precision vs. recall",
-		Blurb: "You're building a spam filter. 100 emails arrive, 20 really are spam. At " +
-			"one threshold it flags 25: 18 truly spam (caught), 7 legit mail wrongly flagged, " +
-			"2 real spam missed. Recall = 18/20 = 90%, precision = 18/25 = 72%. Tighten the " +
-			"threshold to flag only 19: 17 caught, just 2 false alarms, but now 3 real spam " +
-			"emails slip through. Recall drops to 17/20 = 85%, precision climbs to 17/19 = 89% " +
-			"— precision up, recall down, from the exact same dial. Right of the threshold = " +
-			"predicted positive. Recall = of all the real positives (right curve), what " +
-			"fraction did we catch? Precision = of everything we flagged, what fraction was " +
-			"actually positive? Slide the threshold right and precision climbs while recall " +
-			"falls; slide it left and the opposite happens. Only a better model — more " +
-			"separation between the curves — improves both at once; the threshold alone just " +
-			"trades one for the other.",
+		Sections: []concept.Section{
+			{
+				Heading: "Why would you need this?",
+				Body: []string{
+					"You're building a spam filter. The obvious plan: make it aggressive, flag " +
+						"anything suspicious, catch every last piece of spam. Turn that dial all " +
+						"the way up and you do catch 100% of the spam — recall is perfect — but you " +
+						"also start flagging your boss's emails, meeting invites, and " +
+						"password-reset links, because 'suspicious' was cast too wide.",
+					"Loosen the dial to stop burying real mail and now actual spam slips through " +
+						"the net untouched. There's no setting of this one dial that avoids both " +
+						"problems — that's not a bug in your filter, it's structural.",
+				},
+			},
+			{
+				Heading: "How does it actually work?",
+				Body: []string{
+					"The picture makes the structure visible: real negatives (legitimate email) " +
+						"and real positives (spam) are two overlapping bell curves, and 'flag as " +
+						"spam' means 'score above the threshold.' Recall asks, of everything that " +
+						"really was spam, how much did you catch. Precision asks, of everything you " +
+						"flagged, how much was actually spam.",
+					"100 emails arrive, 20 really are spam, 80 are legit. At one threshold the " +
+						"filter flags 25 emails: 18 truly spam (caught), 7 legit mail wrongly " +
+						"flagged, 2 real spam missed. Recall = 18/20 = 90%, precision = 18/25 = 72%.",
+					"• Tighten the threshold to flag only 19 emails: 17 caught, just 2 false " +
+						"alarms, but now 3 real spam emails slip through instead of 2. Recall drops " +
+						"to 17/20 = 85%, precision climbs to 17/19 ≈ 89% — precision up, recall " +
+						"down, from the exact same dial.",
+					"The one thing that genuinely improves both at once is separating the two " +
+						"curves further apart — a better model that scores real spam and real mail " +
+						"more differently in the first place.",
+				},
+			},
+			{
+				Heading: "What does the picture show?",
+				Body: []string{
+					"Everything right of the threshold line counts as 'predicted positive.' " +
+						"Slide the threshold right and precision climbs while recall falls — the " +
+						"same move as tightening from flagging 25 emails down to 19 above. Slide it " +
+						"left and the opposite happens. The separation slider is that 'better " +
+						"model': push the two curves further apart and both precision and recall " +
+						"rise together, instead of just trading against each other.",
+				},
+			},
+			{
+				Heading: "What can you do now that you couldn't before?",
+				Body: []string{
+					"You can now tell which lever actually fixes a disappointing number: " +
+						"nudging the threshold trades precision for recall instantly with no " +
+						"retraining, while only separating the classes further — a genuinely " +
+						"better model — improves both at once. Section 1's 'no setting avoids " +
+						"both problems' is exactly the sign you've maxed out the threshold lever " +
+						"and need to reach for the other one.",
+				},
+			},
+			{
+				Heading: "Where does this show up in real life?",
+				Body: []string{
+					"Cancer screening (missing a real case is worse than a false alarm, so it's " +
+						"worth tolerating more false positives), spam filters (a false positive " +
+						"means a lost important email), fraud detection, and search ranking — " +
+						"anywhere 'how sensitive should this be' is really a business decision " +
+						"about which mistake costs more, dressed up as a slider.",
+				},
+			},
+			{
+				Heading: "What's the common mistake here?",
+				Body: []string{
+					"'We need higher recall here, even if precision drops' — for something " +
+						"like cancer screening, missing a real case is worse than a false alarm, " +
+						"so the tradeoff should be set on purpose, not left to a model's default.",
+					"'Just make the model more accurate' misses the point — accuracy alone " +
+						"hides which kind of mistake it's making; the actual decision is which " +
+						"type of error costs more in your specific situation.",
+				},
+			},
+		},
 		Params: []concept.ParamSpec{
 			{Key: "thresh", Label: "Threshold", Min: -3, Max: 6, Step: 0.1, Def: 1.5},
 			{Key: "sep", Label: "Class separation", Min: 1, Max: 5, Step: 0.1, Def: 3},
