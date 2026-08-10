@@ -65,26 +65,53 @@ big commit. After each step, `make check` must pass before you commit.
      - **The standard shape most entries now follow** (deviate only when a
        concept genuinely doesn't need a piece of it):
        1. `**The idea in one line:**` — one sentence.
-       2. A relatable real-world scenario. If people commonly get this
-          concept wrong on first instinct, say the wrong instinctive answer
-          out loud in the reader's own likely words, *then* show why it's
-          wrong — don't just state the correct version next to it unlabeled
-          (model: `bayes-theorem`'s "gut instinct says 99%... that instinct
-          is wrong" opening).
-       3. `**With real numbers:**` a full worked example computed step by
+       2. A relatable real-world scenario, pitched at a first-time learner
+          with no assumed background — not a formula, not jargon, not a
+          niche-domain setup. If people commonly get this concept wrong on
+          first instinct, say the wrong instinctive answer out loud in the
+          reader's own likely words, *then* show why it's wrong — don't just
+          state the correct version next to it unlabeled (model:
+          `bayes-theorem`'s "gut instinct says 99%... that instinct is
+          wrong" opening).
+       3. **Derive any formula or constant from that scenario before stating
+          it formally** — walk a small, concrete, hands-on case (a guessing
+          game, a hand-counted example) that makes the formula feel
+          inevitable, *then* generalize to the notation and the interactive
+          curve/picture. Don't open with the equation and explain it
+          afterward; entropy needed three separate rewrites specifically
+          because early passes kept leading with `-log2(p)` and bits before
+          the reader had any reason to care (`docs(entropy)`'s three-commit
+          chain — "20 questions" → "first-time learner" → "drop the math,
+          explain the word itself" — is the cautionary example, not just a
+          model to copy from).
+       4. `**With real numbers:**` a full worked example computed step by
           step to concrete figures, not formulas left abstract. If a
           degenerate/trivial case would expose the concept's core trap (like
           a "do-nothing" classifier scoring 99% accuracy), work through that
           *first*, then follow with a realistic, non-degenerate worked case
           (model: `confusion-matrix`).
-       4. What the interactive picture/knobs show, tied back to the same
-          concrete numbers from step 3, not a separate abstract description.
-       5. When the example produces several related numbers, say explicitly
+       5. What the interactive picture/knobs show, tied back to the same
+          concrete numbers from step 4, not a separate abstract description.
+       6. When the example produces several related numbers, say explicitly
           what to read off them *together* — don't stop at "here are the
           numbers, they're all fine" (model: `confusion-matrix`'s precision-
           vs-recall-gap paragraph).
-       6. `**Where it bites in real life:**` concrete domains/situations.
-       7. `**Say it like this:** / **Not like this:**` — a closing block
+       7. `**Where it bites in real life:**` real domains, but calibrated to
+          what a generalist reader already has context for as the *primary*
+          examples (Wordle, sports upsets, weather forecasts, studying for a
+          test — not decision trees or cross-entropy loss as the lead
+          example unless the concept itself is inherently an ML concept for
+          an ML audience, like `sigmoid-softmax`). Specialist/niche
+          applications are fine as a brief closing pointer ("if you want to
+          go further...") but shouldn't carry the main explanation.
+       8. If the concept's name is also an everyday English word people
+          already use loosely outside math (entropy, variance, significant,
+          confidence, bias), quote a few real sentences using it that way,
+          unpack each into what it actually means, and say when the word
+          does *not* apply (model: `entropy`'s "this password has high
+          entropy" / "the market's been really entropic" list, and its
+          explicit "when the word doesn't fit" callout).
+       9. `**Say it like this:** / **Not like this:**` — a closing block
           contrasting correct phrasing against the natural-sounding wrong
           phrasing. This is now standard on essentially every entry; include
           it every time, not just when a mistake feels obvious.
@@ -130,6 +157,17 @@ big commit. After each step, `make check` must pass before you commit.
      shipped concept is explained, apply it immediately as its own commit
      (`docs(<id>): ...`) rather than letting the gap sit — see the
      `docs(confidence-interval)` commit history for the pattern.
+   - **When fixing an already-shipped entry, read it first and prefer an
+     additive, surgical fix over a wholesale rewrite.** Applying this whole
+     checklist to an existing entry does not mean tearing it down and
+     starting over — a prior pass discovered that all 15 other entries
+     already had a grounded real-world scenario from an even earlier
+     session, and only needed the "Say it like this" block *added*; a full
+     rebuild would have risked discarding a worked example that was already
+     load-bearing (`docs: apply the entropy pattern's 'say it like this'
+     block to every concept` is the model for this: additive, not a
+     rewrite). Only rebuild a section from scratch when it's demonstrably
+     missing the thing you're fixing, not on general principle.
 
 **Finish**
 - `make check` one final time. If anything fails, fix it before pushing; never
