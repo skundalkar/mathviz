@@ -23,13 +23,35 @@ type ParamSpec struct {
 	Unit  string  // optional suffix shown after the value (e.g. "σ", "")
 }
 
+// Section is one labeled block of a concept's explanation. Heading is phrased
+// as a question ("Why would you need this?", "How does it actually work?")
+// so the sequence of Sections reads as a guided path that gradually builds
+// understanding, rather than one undifferentiated paragraph. Body holds one
+// or more plain-language paragraphs; an entry prefixed with "• " renders as
+// a bullet-list item instead of a paragraph, so a short worked sequence
+// (e.g. sweeping a threshold through a few settings) can read as steps.
+type Section struct {
+	Heading string
+	Body    []string
+}
+
 // Concept is one self-contained lesson: a title, an explanation, the knobs the
 // learner can turn, and a pure function that turns knob values into an SVG.
 type Concept struct {
-	ID     string      // url-safe id, also the folder name
-	Title  string      // gallery title
-	Blurb  string      // one-paragraph plain-language explanation
-	Params []ParamSpec // interactive controls
+	ID    string // url-safe id, also the folder name
+	Title string // gallery title
+	// Blurb is a single-paragraph fallback explanation, used when Sections
+	// is empty. Prefer Sections for new concepts — see Section's doc
+	// comment — but Blurb keeps older concepts compiling and rendering
+	// (as one plain paragraph, same as before) without forcing every
+	// existing entry to be restructured at once.
+	Blurb string
+	// Sections is the preferred, structured explanation: an ordered set of
+	// question-headed blocks the WASM front-end renders as separate,
+	// visually distinct sections instead of one wall of text. When set,
+	// the front-end renders these and ignores Blurb.
+	Sections []Section
+	Params   []ParamSpec // interactive controls
 	// Seq is the build sequence number: 1 for the first concept ever built,
 	// incrementing by one for each concept after it, never reused or
 	// renumbered. It exists purely to order the gallery sidebar newest-first

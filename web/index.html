@@ -28,7 +28,21 @@
   .concept-link:hover { border-color: var(--accent); color: var(--accent); }
   main { flex: 1; padding: 28px 34px; max-width: 820px; }
   #concept-title { margin: 0 0 8px; font-size: 24px; }
-  #concept-blurb { color: #46525f; line-height: 1.6; margin: 0 0 22px; font-size: 15px; }
+  #concept-blurb { margin: 0 0 22px; }
+  #concept-blurb p, #concept-blurb li { color: #46525f; line-height: 1.6; font-size: 15px; }
+  #concept-blurb .blurb-fallback { margin: 0; }
+  .explain-section { margin-bottom: 18px; }
+  .explain-section:last-child { margin-bottom: 0; }
+  .explain-heading {
+    font-size: 13px; font-weight: 700; color: var(--accent); letter-spacing: 0.01em;
+    margin: 0 0 6px;
+  }
+  .explain-section p { margin: 0 0 8px; }
+  .explain-section p:last-child { margin-bottom: 0; }
+  .explain-list { margin: 0 0 8px; padding-left: 20px; }
+  .explain-list:last-child { margin-bottom: 0; }
+  .explain-list li { margin-bottom: 4px; }
+  .explain-list li:last-child { margin-bottom: 0; }
   #stage { border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: white; }
   #stage svg { display: block; width: 100%; height: auto; }
   #controls { margin-top: 20px; display: grid; gap: 14px; }
@@ -48,7 +62,7 @@
   </aside>
   <main>
     <h2 id="concept-title">Loading…</h2>
-    <p id="concept-blurb"><span id="loading">Compiling WebAssembly… this takes a second on first load.</span></p>
+    <div id="concept-blurb"><p class="blurb-fallback"><span id="loading">Compiling WebAssembly… this takes a second on first load.</span></p></div>
     <div id="stage"></div>
     <div id="controls"></div>
     <footer>Turn the knobs. Each lesson is a pure Go function that renders live SVG — no server, all in your browser.</footer>

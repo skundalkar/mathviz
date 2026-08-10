@@ -10,6 +10,7 @@ package main
 
 import (
 	"strconv"
+	"strings"
 	"syscall/js"
 
 	"mathviz/internal/concept"
@@ -56,7 +57,7 @@ func selectConcept(c concept.Concept) {
 	params = c.Defaults()
 
 	byID("concept-title").Set("textContent", c.Title)
-	byID("concept-blurb").Set("textContent", c.Blurb)
+	renderExplanation(c)
 
 	controls := byID("controls")
 	controls.Set("innerHTML", "")
@@ -92,6 +93,64 @@ func selectConcept(c concept.Concept) {
 		controls.Call("appendChild", row)
 	}
 	draw()
+}
+
+// renderExplanation fills #concept-blurb with the concept's explanation.
+// Concepts that set Sections get a sequence of headed blocks — each
+// heading a question, so the sections read as a guided path instead of one
+// wall of text. Concepts that only set Blurb (not yet migrated to
+// Sections) fall back to a single plain paragraph, same as before.
+func renderExplanation(c concept.Concept) {
+	host := byID("concept-blurb")
+	host.Set("innerHTML", "")
+
+	if len(c.Sections) == 0 {
+		p := el("p")
+		p.Set("className", "blurb-fallback")
+		p.Set("textContent", c.Blurb)
+		host.Call("appendChild", p)
+		return
+	}
+
+	for _, sec := range c.Sections {
+		block := el("section")
+		block.Set("className", "explain-section")
+
+		h := el("h3")
+		h.Set("className", "explain-heading")
+		h.Set("textContent", sec.Heading)
+		block.Call("appendChild", h)
+
+		var list js.Value
+		hasList := false
+		flushList := func() {
+			if hasList {
+				block.Call("appendChild", list)
+				hasList = false
+			}
+		}
+
+		for _, para := range sec.Body {
+			if strings.HasPrefix(para, "• ") {
+				if !hasList {
+					list = el("ul")
+					list.Set("className", "explain-list")
+					hasList = true
+				}
+				li := el("li")
+				li.Set("textContent", strings.TrimPrefix(para, "• "))
+				list.Call("appendChild", li)
+				continue
+			}
+			flushList()
+			p := el("p")
+			p.Set("textContent", para)
+			block.Call("appendChild", p)
+		}
+		flushList()
+
+		host.Call("appendChild", block)
+	}
 }
 
 func draw() {
