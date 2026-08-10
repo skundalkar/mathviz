@@ -19,6 +19,7 @@ import (
 	_ "mathviz/internal/concepts/precisionrecall"
 	_ "mathviz/internal/concepts/pvalue"
 	_ "mathviz/internal/concepts/rocauc"
+	_ "mathviz/internal/concepts/sigmoidsoftmax"
 	_ "mathviz/internal/concepts/stddev"
 	_ "mathviz/internal/concepts/variancestddev"
 )
