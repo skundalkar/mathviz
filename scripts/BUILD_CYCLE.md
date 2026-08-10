@@ -53,26 +53,69 @@ big commit. After each step, `make check` must pass before you commit.
    - Prepend a new section to `LEARNINGS.md` (newest on top) explaining the
      concept in plain language.
    - Check off the item in `BACKLOG.md` (move it under `## Done`).
-   - **Writing bar for the explanation.** This whole checklist was reverse-
-     engineered from two things: a long series of docs-only fixup commits
+   - **Writing bar for the explanation.** The specific bullets below were
+     reverse-engineered from a long series of docs-only fixup commits
      across nearly every existing concept (`git log --oneline -- LEARNINGS.md`
-     going back to 2026-08-08 — the `docs(confusion-matrix)`,
-     `docs(bayes-theorem)`, `docs(precision-recall)`, `docs(standard-
-     deviation)`, and `docs: apply the entropy pattern... to every concept`
-     commits especially), and a live walkthrough of `confidence-interval`
-     that surfaced further gaps. Match this bar on the first pass instead of
+     going back to 2026-08-08) and a live walkthrough of `confidence-interval`
+     — but a flat checklist of individually-satisfiable bullets turned out
+     to be insufficient on its own: `pr-auc`'s first rewrite ticked every
+     box below (real numbers, a scenario, a Say-it-like-this block) and
+     *still* failed to explain why anyone would want it, because no single
+     bullet tested for that. So before the checklist, the actual reusable
+     framework, restated in one sentence so it transfers to concepts not
+     yet built: **every entry answers, in this order, (1) why would anyone
+     want this — the gap or tension a simpler prior approach leaves open,
+     (2) how does it actually work — a mechanism derived from a small
+     hands-on case, and (3) what can you now do that you couldn't before —
+     and no entry may open with question 2.** The bullets below are how to
+     execute each of those three well, not a replacement for asking them
+     explicitly every time. Match this bar on the first pass instead of
      needing a follow-up fixup commit later:
+     - **The gate every entry must pass before anything else: motivation
+       before mechanism.** This is not one item in the list below — it's a
+       precondition on the first two items, and a checklist of "has a
+       scenario / has real numbers / has a Say-it-like-this block" can be
+       satisfied in full while still failing it, which is exactly what
+       happened to `pr-auc`'s first rewrite. The test: read only the first
+       1-2 sentences. Can a total beginner now say, in their own words, why
+       anyone would want this concept — *before* they understand a single
+       thing about how it works? If the honest reaction to those sentences
+       is "okay, why would I do that?", it's mechanism first and needs to
+       be rewritten. Concretely, that means:
+       - The one-line idea must name a **tension, a gap, or a question**
+         the concept resolves — not a description of what the concept
+         does. Bad (mechanism-first, what `pr-auc` actually shipped):
+         "sweep every threshold and plot (recall, precision) — the area
+         under that curve grades the classifier." Good (names the gap
+         first): "a single precision/recall reading only tells you how one
+         threshold performs, not whether a different threshold — or a
+         different model entirely — would serve you better." Same
+         concept, but only the second version gives the reader a reason to
+         keep going.
+       - The opening scenario must follow **situation → complication →
+         open question**: what was the reader already doing (often a
+         *simpler prior concept in this same gallery* — precision-recall
+         itself is the prior concept `pr-auc` should have leaned on),
+         where does that approach fall short or leave something
+         unresolved, and what question does that gap leave open — all
+         stated *before* any part of the new concept's mechanism shows up.
+         `precision-recall`'s own opening already does this correctly
+         (spam filter, "turn the dial all the way up," which visibly
+         fails before precision/recall are even named) — use it as the
+         model, not just `bayes-theorem`.
      - **The standard shape most entries now follow** (deviate only when a
        concept genuinely doesn't need a piece of it):
-       1. `**The idea in one line:**` — one sentence.
+       1. `**The idea in one line:**` — one sentence, held to the
+          motivation-before-mechanism gate above.
        2. A relatable real-world scenario, pitched at a first-time learner
           with no assumed background — not a formula, not jargon, not a
-          niche-domain setup. If people commonly get this concept wrong on
-          first instinct, say the wrong instinctive answer out loud in the
-          reader's own likely words, *then* show why it's wrong — don't just
-          state the correct version next to it unlabeled (model:
-          `bayes-theorem`'s "gut instinct says 99%... that instinct is
-          wrong" opening).
+          niche-domain setup, and shaped as situation → complication → open
+          question per the gate above. If people commonly get this concept
+          wrong on first instinct, say the wrong instinctive answer out
+          loud in the reader's own likely words, *then* show why it's
+          wrong — don't just state the correct version next to it
+          unlabeled (model: `bayes-theorem`'s "gut instinct says 99%...
+          that instinct is wrong" opening).
        3. **Derive any formula or constant from that scenario before stating
           it formally** — walk a small, concrete, hands-on case (a guessing
           game, a hand-counted example) that makes the formula feel
