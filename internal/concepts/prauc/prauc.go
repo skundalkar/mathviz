@@ -82,8 +82,20 @@ func init() {
 			{
 				Heading: "Why not just use ROC-AUC?",
 				Body: []string{
-					"ROC-AUC can look great even when precision is terrible, because it's diluted by " +
-						"a huge pool of easy true negatives. PR-AUC has nowhere to hide from false " +
+					"Same four thresholds as the sweep above, this time with false-positive rate " +
+						"(FPR = false alarms ÷ 980 real hams) sitting next to precision (= caught ÷ " +
+						"everything flagged):",
+					"• Moderate (flag 22): FPR = 4/980 ≈ 0.4%, precision = 18/22 ≈ 82%.",
+					"• Looser (flag 68): FPR = 50/980 ≈ 5.1%, precision = 18/68 ≈ 26%.",
+					"Going from 'Moderate' to 'Looser' adds 46 more false alarms. FPR barely " +
+						"moves — 0.4% to 5.1% — because those 46 mistakes are divided by 980 real " +
+						"hams, a huge, fixed pool that swallows them easily. Precision collapses — " +
+						"82% to 26% — because those same 46 mistakes are dividing into 'everything " +
+						"flagged,' a pool that can never hold more than the 20 real spam emails that " +
+						"exist. Same threshold, same 46 extra mistakes: one metric shrugs, the other " +
+						"doesn't. ROC-AUC can look great even when precision is terrible for exactly " +
+						"this reason — it's diluted by a huge pool of easy true negatives that " +
+						"precision never gets to hide behind. PR-AUC has nowhere to hide from false " +
 						"positives piling up, so it's the sharper read whenever positives are rare — " +
 						"fraud, disease screening, security alerts.",
 				},

@@ -52,6 +52,18 @@ func init() {
 					"The one thing that genuinely improves both at once is separating the two " +
 						"curves further apart — a better model that scores real spam and real mail " +
 						"more differently in the first place.",
+					"Precision's sensitivity to imbalance is easy to underrate at this scale — 80 " +
+						"legit emails isn't a huge pool. Stretch to a more realistic imbalance, " +
+						"1,000 emails with 20 really spam, and a threshold that wrongly flags 50 of " +
+						"the 980 real hams barely moves a within-class rate metric like " +
+						"false-positive rate (50/980 ≈ 5%, the metric the ROC & AUC concept plots), " +
+						"because those 50 mistakes are divided by a huge, fixed pool that has " +
+						"nothing to do with how trigger-happy the classifier is. Precision feels the " +
+						"same 50 false alarms directly: out of 68 total flagged, only 18 are real " +
+						"spam, so precision craters to 18/68 ≈ 26% — an inbox that's now mostly " +
+						"wrong flags. Same 50 mistakes, one metric shrugs, the other doesn't, " +
+						"because precision's denominator is only ever 'everything flagged,' which " +
+						"stays small when positives are rare.",
 				},
 			},
 			{

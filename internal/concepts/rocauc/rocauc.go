@@ -88,6 +88,14 @@ func init() {
 						"operating threshold and have to live with its specific false-positive rate, " +
 						"though — AUC grades potential, not the one decision you're actually stuck " +
 						"with in production.",
+					"Stretch to a more realistic imbalance and the gap gets sharp: 1,000 emails, " +
+						"20 really spam. A threshold that wrongly flags 50 of the 980 real hams only " +
+						"nudges FPR to 50/980 ≈ 5% — barely visible on this curve, because those 50 " +
+						"mistakes are divided by a huge, fixed pool of real negatives. But the same " +
+						"50 false alarms, out of only 68 total flagged, crater precision to " +
+						"18/68 ≈ 26% — an inbox that's now mostly wrong flags. Same threshold, same " +
+						"50 mistakes: FPR shrugs, precision doesn't. That's exactly the gap the " +
+						"pr-auc concept is built around — reach for it whenever positives are rare.",
 				},
 			},
 			{

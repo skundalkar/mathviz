@@ -142,12 +142,16 @@ before looking at it as a continuous shape:** same 1,000-email inbox as the
 precision-recall lesson, 20 really spam, 980 legit. Instead of picking one
 threshold, walk it from strict to loose and watch (recall, precision) move:
 
-| Threshold | Flagged | Real spam caught | False alarms | Recall | Precision |
-|---|---|---|---|---|---|
-| Strictest | 8 | 8 | 0 | 8/20 = **40%** | 8/8 = **100%** |
-| Moderate | 22 | 18 | 4 | 18/20 = **90%** | 18/22 ≈ **82%** |
-| Looser still | 68 | 18 *(same 18 — no new spam caught)* | 50 | 18/20 = **90%** | 18/68 ≈ **26%** |
-| Loosest | 200 | 20 *(the last 2 finally caught)* | 180 | 20/20 = **100%** | 20/200 = **10%** |
+| Threshold | Flagged | Real spam caught | False alarms | FPR = FP/980 | Recall | Precision |
+|---|---|---|---|---|---|---|
+| Strictest | 8 | 8 | 0 | 0% | 8/20 = **40%** | 8/8 = **100%** |
+| Moderate | 22 | 18 | 4 | 0.4% | 18/20 = **90%** | 18/22 ≈ **82%** |
+| Looser still | 68 | 18 *(same 18 — no new spam caught)* | 50 | 5.1% | 18/20 = **90%** | 18/68 ≈ **26%** |
+| Loosest | 200 | 20 *(the last 2 finally caught)* | 180 | 18.4% | 20/20 = **100%** | 20/200 = **10%** |
+
+(FPR added for the "Why not just use ROC-AUC?" comparison below — it isn't
+part of the PR curve itself, just the metric ROC would plot at these same
+thresholds.)
 
 Plot each (recall, precision) pair as a point on a grid — recall on the
 x-axis, precision on the y-axis — and connect them left to right: that's the
@@ -170,14 +174,19 @@ threshold at once — whichever model has the bigger area is better *no
 matter where either of you eventually sets the dial* — the same way
 ROC-AUC does for the ROC curve.
 
-**Why not just use ROC-AUC?** Look at row 3 through ROC's axes instead of
-PR's. ROC plots false-positive rate against true-positive rate, and FPR is
-computed *within* the negative class alone: 50 false alarms out of 980 real
-hams is FPR ≈ 50/980 ≈ 5% — the ROC curve barely notices that threshold.
-Precision, computed against *everything flagged* rather than diluted by the
-980 easy true negatives sitting in the background, feels the same 50 false
-alarms directly: 18/68 ≈ 26%, an inbox that's now mostly wrong flags. Same
-threshold, same 50 mistakes — one curve shrugs, the other doesn't.
+**Why not just use ROC-AUC?** Look at the FPR column against the Precision
+column, specifically the jump from "Moderate" to "Looser still": 46 more
+false alarms (4→50) land very differently on the two metrics. FPR barely
+moves (0.4%→5.1%) because it's computed *within the negative class alone* —
+those 46 mistakes are divided by 980 real hams, a huge, fixed pool that has
+nothing to do with how trigger-happy the classifier is; a handful more false
+alarms is a rounding error against a denominator that size. Precision
+collapses (82%→26%) because it's computed against *everything flagged* — a
+pool that can never hold more than the 20 real spam emails that exist, so
+those same 46 mistakes are a direct, undiluted share of a small number.
+Same threshold, same 46 extra mistakes — one metric shrugs, the other
+doesn't, and that gap is entirely a consequence of what sits in each
+metric's denominator.
 
 **What the picture shows:** the threshold slider sweeps the same point
 across the curve that the precision-recall lesson held fixed in one spot —
@@ -611,6 +620,21 @@ deployment. It's a poor substitute for precision/recall once you've actually
 picked one operating threshold and have to live with its specific
 false-positive rate, though — AUC grades potential, not the one decision
 you're actually stuck with in production.
+
+**Why ROC-AUC can stay high while a model is unusable.** The 4-patient
+example above is small enough that this doesn't show up, so stretch to a
+more realistic imbalance: 1,000 emails, 20 really spam. A threshold that
+wrongly flags 50 of the 980 real hams only nudges FPR to 50/980 ≈ 5% — the
+ROC curve barely notices, because FPR is computed *within the negative
+class alone* and those 50 mistakes are divided by a huge, fixed pool that
+has nothing to do with how trigger-happy the classifier is. But look at
+precision instead: out of everything flagged (18 real spam caught + 50
+false alarms = 68), precision is only 18/68 ≈ 26% — an inbox that's now
+mostly wrong flags. Same threshold, same 50 mistakes: FPR shrugs, precision
+doesn't, because precision's denominator is "everything flagged," a pool
+that can never hold more than the 20 real spam emails that exist. That's
+the entire reason the `pr-auc` concept exists as this one's sibling — reach
+for it whenever positives are rare.
 
 **Say it like this:** "Model A has a higher AUC than Model B" means A has
 more underlying skill at telling the two classes apart, at every possible
@@ -1376,6 +1400,23 @@ The one thing that genuinely improves both is separating the two curves
 further apart: a better model that scores real spam and real mail more
 differently in the first place, leaving more room between "clearly not
 spam" and "clearly spam" for a threshold to land cleanly.
+
+**Precision's sensitivity to imbalance, at a scale where it actually
+shows.** 80 legit emails is too small a pool to make the point vividly —
+stretch to 1,000 emails, 20 really spam. A threshold that wrongly flags 50
+of the 980 real hams barely moves a *within-class rate* metric like
+false-positive rate: 50/980 ≈ 5%, the metric the roc-auc concept plots,
+computed against a huge, fixed pool of real negatives that has nothing to
+do with how trigger-happy the classifier is. Precision feels the exact same
+50 mistakes directly: out of everything flagged (18 real spam caught + 50
+false alarms = 68), precision is only 18/68 ≈ 26% — an inbox that's now
+mostly wrong flags. Same threshold, same 50 mistakes — one metric shrugs,
+the other doesn't, because precision's denominator is only ever "everything
+flagged," a pool that can never hold more than the 20 real spam emails that
+exist, while a rate like FPR always has the full 980-strong negative class
+to hide inside. See the pr-auc concept for what this looks like swept
+across every threshold at once, and roc-auc for the metric on the other
+side of this comparison.
 
 **From a reading to an action: two knobs, two different costs.** Starting
 from threshold=1.5, separation=2.1 (TP=73, FN=27, FP=7, TN=93 — precision
