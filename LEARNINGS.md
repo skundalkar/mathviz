@@ -116,54 +116,103 @@ sliders' effects legible while still showing genuine three-way competition.
 ---
 
 ## pr-auc — the metric that doesn't get fooled by imbalance
-**The idea in one line:** sweep the classifier's threshold from strictest to
-loosest, plot (recall, precision) at every setting, and the area under that
-curve — PR-AUC — grades the model across all thresholds at once, without
-ROC-AUC's blind spot for rare positives.
+**The idea in one line:** instead of judging a classifier at one threshold,
+sweep every threshold from strictest to loosest, plot (recall, precision) at
+each one, and connect the dots — the area under that curve (PR-AUC) grades
+the classifier across every setting at once, without ROC-AUC's blind spot
+for rare positives.
 
-Take the spam filter from the precision/recall lesson, but stretch it to a
-more realistic imbalance: 1,000 emails, only 20 really spam. A "flag ≥ t"
-threshold has two very different report cards depending on which curve you
-read. ROC's axes are false-positive rate and true-positive rate — both are
-computed *within* a class (FPR out of the 980 real hams, TPR out of the 20
-real spams), so a threshold that wrongly flags 50 of those 980 hams only
-nudges FPR to 50/980 ≈ 5%, and the ROC curve barely notices. But look at
-precision instead: out of everything flagged (18 real spam caught + 50 false
-alarms = 68 flagged), precision is only 18/68 ≈ 26% — the inbox is now
-*mostly* wrong flags, and PR-AUC feels that pain directly because precision
-is computed against everything flagged, not diluted by the 980 easy true
-negatives sitting in the background.
+**With real numbers — building the curve one point at a time, before
+looking at it as a continuous shape:** same 1,000-email inbox as the
+precision-recall lesson, 20 really spam, 980 legit. Instead of picking one
+threshold, walk it from strict to loose and watch (recall, precision) move:
 
-**What the knobs show:** the threshold slider sweeps the same point across
-the curve that the precision/recall lesson fixed in place — dragging it
-right (stricter) climbs toward the top-left (high precision, low recall);
-dragging it left (looser) slides down toward the bottom-right. The
-separation slider makes the two classes' score distributions easier or
-harder to tell apart; more separation bows the curve up and to the right and
-raises PR-AUC, because a threshold can now catch more real positives without
-also catching more negatives. The flat line at y=0.5 (with equal-sized
-classes here) is the floor: a classifier that ranks completely at random
-still lands its flags right, on average, exactly as often as positives occur
-in the data.
+| Threshold | Flagged | Real spam caught | False alarms | Recall | Precision |
+|---|---|---|---|---|---|
+| Strictest | 8 | 8 | 0 | 8/20 = **40%** | 8/8 = **100%** |
+| Moderate | 22 | 18 | 4 | 18/20 = **90%** | 18/22 ≈ **82%** |
+| Looser still | 68 | 18 *(same 18 — no new spam caught)* | 50 | 18/20 = **90%** | 18/68 ≈ **26%** |
+| Loosest | 200 | 20 *(the last 2 finally caught)* | 180 | 20/20 = **100%** | 20/200 = **10%** |
+
+Plot each (recall, precision) pair as a point on a grid — recall on the
+x-axis, precision on the y-axis — and connect them left to right: that's the
+PR curve, built from just 4 thresholds. Notice row 3: loosening the
+threshold from 22 to 68 swept in 46 more emails and *every single one* was a
+false alarm — recall didn't move at all, precision just kept falling. That
+flat stretch is a real feature of PR curves, not a fluke of this example: it
+happens whenever a run of non-spam sits, score-wise, between one real spam
+email and the next. Sweep *every* threshold instead of just these 4 and the
+jagged 4-point line becomes the smooth, continuous curve in the picture; the
+area under it (PR-AUC) is what grades the classifier across all of them at
+once, the same way ROC-AUC does for the ROC curve.
+
+**Why not just use ROC-AUC?** Look at row 3 through ROC's axes instead of
+PR's. ROC plots false-positive rate against true-positive rate, and FPR is
+computed *within* the negative class alone: 50 false alarms out of 980 real
+hams is FPR ≈ 50/980 ≈ 5% — the ROC curve barely notices that threshold.
+Precision, computed against *everything flagged* rather than diluted by the
+980 easy true negatives sitting in the background, feels the same 50 false
+alarms directly: 18/68 ≈ 26%, an inbox that's now mostly wrong flags. Same
+threshold, same 50 mistakes — one curve shrugs, the other doesn't.
+
+**What the picture shows:** the threshold slider sweeps the same point
+across the curve that the precision-recall lesson held fixed in one spot —
+drag it right (stricter) and the marker climbs toward the top-left (high
+precision, low recall, like row 1 above); drag it left (looser) and it
+slides down toward the bottom-right (row 4). With good class separation, the
+curve hugs precision ≈ 100% across most of the recall range and only drops
+sharply right near recall = 1 — the visual version of the table above:
+almost every threshold gives a clean, mostly-correct flag list, and it's
+only the last stretch of genuinely borderline cases that drags precision
+down. The flat grey line at y = 0.5 (equal-sized classes here) is the floor:
+a classifier that ranks completely at random still lands its flags right,
+on average, exactly as often as positives occur in the data — real skill
+means bowing above that line, not below it.
+
+Separation's effect on PR-AUC, computed directly from the same math the
+slider uses:
+
+| Separation | PR-AUC |
+|---|---|
+| 1.0 (heavily overlapping classes) | 0.75 |
+| 2.0 | 0.92 |
+| 3.0 | 0.98 |
+| 5.0 (barely overlapping) | ~1.00 |
 
 **Where it matters:** anywhere positives are rare — fraud detection, disease
-screening, defect detection, security alerts. In those settings ROC-AUC can
-report 0.95+ while the model is still unusable in practice, because it's
-graded on a sea of easy true negatives it isn't even trying hard to get
-right. PR-AUC is the metric that keeps the "how many of my alerts are real"
-question front and center, which is usually the question a human actually
+screening, manufacturing defect detection, security alerts. In those
+settings ROC-AUC can report 0.95+ while the model is still unusable in
+practice, exactly as row 3 above shows in miniature: it's graded on a sea of
+easy true negatives it isn't even trying hard to get right. PR-AUC keeps the
+"how many of my alerts are actually real" question front and center, which
+is usually the question a human on the other end of the alert actually
 cares about.
 
-**A design choice worth flagging:** PR-AUC here is computed with a simple
-trapezoid rule over the sampled curve (`TrapezoidalPRAUC`), the same
-technique `roc-auc` uses for its curve. This is a close cousin of "average
+**Say it like this:** "This fraud model has a great ROC-AUC, but check its
+PR-AUC before shipping it" — with rare positives, a high ROC-AUC alone
+doesn't rule out a flood of false alarms; PR-AUC is the number that would
+catch it.
+**Not like this:** "ROC-AUC and PR-AUC are basically the same metric" — they
+agree when the classes are roughly balanced and diverge exactly when it
+matters most: on the rare-positive problems PR-AUC exists for.
+
+**A design and correctness note worth flagging:** PR-AUC here is computed
+with a simple trapezoid rule over a sampled curve (`TrapezoidalPRAUC`), the
+same technique `roc-auc` uses. This is a close cousin of "average
 precision," which some libraries compute slightly differently (precision
 interpolated only at the points where a positive is added, avoiding
-double-counting jagged detail). On the smooth curve two Gaussian classes
-produce, trapezoidal integration tracks the true area well; on jagged
-real-world curves it can run a touch optimistic. Good enough for the
-intuition this concept is teaching, worth knowing if you reach for the exact
-number in a real evaluation.
+double-counting jagged detail) — trapezoidal integration tracks the true
+area well on the smooth curves two Gaussian classes produce, and can run a
+touch optimistic on jagged real-world curves, worth knowing if you reach for
+the exact number in a real evaluation. More importantly: the threshold
+sweep has to run high enough above the *positive* class's mean for recall
+to actually reach ~0 at the strict end — an earlier version of this concept
+used a fixed sweep window that didn't scale with the separation slider, so
+at high separation the sweep quietly stopped short of recall=0 and
+undercounted PR-AUC for exactly the best classifiers (separation=5 measured
+*lower* than separation=3, backwards). Fixed by scaling the sweep's upper
+bound with separation; `TestCurvePointsSpanFullRecallAcrossSepRange` and the
+strengthened `TestPRAUCBetterSeparationIsHigher` guard against it recurring.
 
 ---
 
@@ -1340,29 +1389,18 @@ held-out data. Good on training, poor on held-out is overfitting (fix:
 simplify or regularize, not enlarge — see the overfitting concept). Poor on
 both is a genuine signal shortage, and the table above applies.
 
-**Can precision, recall, F1, and AUC themselves tell you which cause it
-is?** No — and it's worth being honest about that instead of pretending
-otherwise. Those four numbers, computed once from one trained model, can
-only tell you *that* there's a separation ceiling. A low AUC looks
-identical whether the cause is missing features, noisy labels, too little
-data, or too weak a model — same symptom, different diseases. Telling them
-apart takes a few extra, cheap moves beyond the base metrics, cheapest
-first:
-
-| Diagnostic | What you do | What it tells you |
-|---|---|---|
-| Manual error review | Pull 20–30 false positives and false negatives, look at them by hand | A large chunk are actually mislabeled ground truth → noisy labels. Correctly labeled but genuinely look like the other class → a features or capacity problem, not labels |
-| Train-vs-validation gap | Compare the same metric on training data vs. held-out data | Train high, val low → overfitting, not a signal shortage. Train low too → the model can't fit data it's already seen — underfitting: features lack signal, or the model needs more capacity |
-| Learning curve | Retrain on 25%, 50%, 100% of the data, plot held-out performance against training-set size | Still climbing at 100% → genuinely data-limited, more of the hard class will likely help. Flat/plateaued → more of the same kind of data won't move it |
-| Feature ablation | Add one candidate feature you suspect carries signal, retrain | Meaningful jump → the original features were the bottleneck. No change → keep looking |
-
-The train-low-too row hides one more fork: "features lack signal" and
-"model too weak" produce the *identical* symptom (low training
-performance). The test that splits them: try a substantially more powerful
-model on the exact same features. Still can't fit the training data → the
-features are the ceiling. Suddenly fits well → it was capacity all along.
-The aggregate metrics tell you *whether* to investigate; they don't do the
-investigating for you.
+**A limit worth naming honestly:** precision, recall, F1, and AUC —
+computed once from one trained model — can tell you *that* there's a
+separation ceiling, not *why*. A low AUC looks identical whether the real
+cause is missing features, noisy labels, too little data, or too weak a
+model — same symptom, different diseases, and these four numbers alone
+can't tell those apart. If you're the one who has to debug a real model,
+that diagnosis takes a few extra, practitioner-level moves beyond this
+concept's scope — pulling misclassified examples and reading them by hand,
+comparing training performance against held-out performance, retraining on
+more data to see if performance is still climbing, testing whether a new
+feature moves the needle. This concept's job is showing you *that* you need
+to go digging, not doing the digging for you.
 
 **Where it bites in real life:** cancer screening (a false negative means
 missed disease — worth tolerating more false positives to avoid), spam
