@@ -7,6 +7,7 @@
 package expgrowth
 
 import (
+	"fmt"
 	"math"
 
 	"mathviz/internal/concept"
@@ -77,6 +78,60 @@ func Rule70(ratePct float64) float64 {
 }
 
 func render(p map[string]float64) string {
-	_ = p
-	return viz.New(680, 380, 0, 1, 0, 1).String()
+	rate := p["rate"]
+	if rate < 0.01 {
+		rate = 0.01
+	}
+	periods := p["periods"]
+	if periods < 1 {
+		periods = 1
+	}
+
+	finalExp := Value(periods, rate)
+	finalLin := Linear(periods, rate)
+	ymax := finalExp
+	if finalLin > ymax {
+		ymax = finalLin
+	}
+	ymax *= 1.08
+
+	c := viz.New(680, 400, 0, periods, 0, ymax)
+	c.Axes()
+	for t := 0.0; t <= periods; t += periods / 5 {
+		c.Tick(t, fmt.Sprintf("%.0f", t))
+	}
+
+	// The naive straight-line projection: same starting point, same initial
+	// slope, but it never accelerates.
+	linear := viz.Sample(0, periods, 200, func(t float64) float64 { return Linear(t, rate) })
+	c.Path(linear, viz.Muted, 2)
+
+	// The real, compounding curve.
+	curve := viz.Sample(0, periods, 200, func(t float64) float64 { return Value(t, rate) })
+	c.Path(curve, viz.Accent, 2.5)
+
+	// Mark every doubling: t=0 (value 1), then each successive doubling time,
+	// as long as it still falls within the visible window.
+	dt := DoublingTime(rate)
+	if !math.IsInf(dt, 1) {
+		for k := 0; ; k++ {
+			t := dt * float64(k)
+			if t > periods {
+				break
+			}
+			v := Value(t, rate)
+			px, py := c.X(t), c.Y(v)
+			c.Rect(px-3, py-3, 6, 6, viz.Warm, 1)
+			c.VLine(t, viz.Warm, true)
+		}
+	}
+
+	c.Text(20, 24, fmt.Sprintf("growth rate = %.0f%% per period    doubling time ≈ %.2f periods (rule of 70 ≈ %.1f)",
+		rate, dt, Rule70(rate)), 13, viz.Ink, "start")
+	c.Text(20, 44, fmt.Sprintf("after %.0f periods: compounding = %.2fx   straight-line guess = %.2fx",
+		periods, finalExp, finalLin), 13, viz.Muted, "start")
+	c.Text(20, 62, "solid = compounding value(t)=(1+rate)^t    thin = linear guess from the same starting slope",
+		12, viz.Muted, "start")
+
+	return c.String()
 }
