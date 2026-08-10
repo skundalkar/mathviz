@@ -119,6 +119,13 @@ big commit. After each step, `make check` must pass before you commit.
        plugged-in numbers — a reader should be able to follow the
        arithmetic, not just the shape of the idea. Never assert a number or
        a conclusion without showing the arithmetic that produced it.
+     - When a worked example compares two things side by side, describe
+       both using the *same kind* of measurement — don't give one side
+       "within 2 points of the mean" (a distance from center) and the
+       other "a 40-point range" (a total span); pick one framing and apply
+       it to both, or the comparison won't actually add up on the page
+       (`standard-deviation`'s original two-student example had exactly
+       this mismatch).
      - Define any jargon term the first time it's used, in the same
        sentence or the next one — don't assume the reader already knows it.
      - If you reach for a physical-world analogy, make sure its structure
