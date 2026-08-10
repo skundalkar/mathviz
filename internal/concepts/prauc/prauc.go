@@ -8,6 +8,9 @@
 package prauc
 
 import (
+	"math"
+	"sort"
+
 	"mathviz/internal/concept"
 	"mathviz/internal/viz"
 )
@@ -34,6 +37,64 @@ func init() {
 		},
 		Render: render,
 	})
+}
+
+// tailAbove is P(X > t) for X ~ N(mu, 1): the fraction of a class's scores a
+// threshold t calls positive.
+func tailAbove(t, mu float64) float64 {
+	return 0.5 * math.Erfc((t-mu)/math.Sqrt2)
+}
+
+// Recall is the fraction of the positive class (scores ~ N(sep, 1)) that
+// clears threshold t. Equivalent to TPR in the ROC picture.
+func Recall(t, sep float64) float64 {
+	return tailAbove(t, sep)
+}
+
+// Precision is the fraction of everything flagged positive (score > t, drawn
+// from either class) that is truly positive. By convention, when nothing is
+// flagged (both classes' tails are ~0) precision is defined as 1 — "we made
+// no mistakes because we made no calls" — matching the usual scikit-learn
+// convention at recall=0.
+func Precision(t, sep float64) float64 {
+	tp := tailAbove(t, sep)
+	fp := tailAbove(t, 0)
+	if tp+fp <= 0 {
+		return 1
+	}
+	return tp / (tp + fp)
+}
+
+// CurvePoints sweeps the decision threshold from "call everything positive"
+// up to "call nothing positive" and returns the resulting (recall,
+// precision) points, ordered by increasing recall from ≈0 to ≈1 — the PR
+// curve.
+func CurvePoints(sep float64, steps int) [][2]float64 {
+	if steps < 2 {
+		steps = 2
+	}
+	pts := make([][2]float64, 0, steps+1)
+	for i := 0; i <= steps; i++ {
+		t := 6 - 12*float64(i)/float64(steps) // threshold sweeps +6 down to -6
+		pts = append(pts, [2]float64{Recall(t, sep), Precision(t, sep)})
+	}
+	sort.Slice(pts, func(i, j int) bool { return pts[i][0] < pts[j][0] })
+	return pts
+}
+
+// TrapezoidalPRAUC numerically integrates precision over recall along a PR
+// curve using the trapezoid rule. This is a close cousin of "average
+// precision" and, like it, can be a touch optimistic on a jagged curve — but
+// for the smooth curves two Gaussian classes produce here it tracks the true
+// area well and is simple to compute directly from the sampled points.
+func TrapezoidalPRAUC(pts [][2]float64) float64 {
+	var area float64
+	for i := 1; i < len(pts); i++ {
+		x0, y0 := pts[i-1][0], pts[i-1][1]
+		x1, y1 := pts[i][0], pts[i][1]
+		area += (x1 - x0) * (y0 + y1) / 2
+	}
+	return area
 }
 
 func render(p map[string]float64) string {
