@@ -7,6 +7,8 @@
 package sigmoidsoftmax
 
 import (
+	"math"
+
 	"mathviz/internal/concept"
 	"mathviz/internal/viz"
 )
@@ -36,6 +38,48 @@ func init() {
 		},
 		Render: render,
 	})
+}
+
+// Sigmoid squashes any real-valued logit z into (0, 1): 1/(1+e^-z).
+func Sigmoid(z float64) float64 {
+	return 1 / (1 + math.Exp(-z))
+}
+
+// Softmax turns a list of logits into a probability distribution: each entry
+// is exponentiated and divided by the sum of all the exponentials, so the
+// result is entrywise positive and sums to 1. temp (temperature) divides
+// every logit before exponentiating: temp<1 sharpens the distribution toward
+// whichever logit is largest, temp>1 flattens it toward uniform. Logits are
+// shifted by their max before exponentiating — a standard numerical-stability
+// trick that doesn't change the result (softmax is shift-invariant) but keeps
+// math.Exp from overflowing on large logits.
+func Softmax(logits []float64, temp float64) []float64 {
+	out := make([]float64, len(logits))
+	if len(logits) == 0 {
+		return out
+	}
+	if temp <= 0 {
+		temp = 1e-9
+	}
+	max := logits[0]
+	for _, z := range logits[1:] {
+		if z > max {
+			max = z
+		}
+	}
+	var sum float64
+	for i, z := range logits {
+		e := math.Exp((z - max) / temp)
+		out[i] = e
+		sum += e
+	}
+	if sum <= 0 {
+		return out
+	}
+	for i := range out {
+		out[i] /= sum
+	}
+	return out
 }
 
 func render(p map[string]float64) string {
