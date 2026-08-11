@@ -9,6 +9,8 @@
 package evalplaybook
 
 import (
+	"fmt"
+
 	"mathviz/internal/concept"
 	"mathviz/internal/viz"
 )
@@ -138,7 +140,83 @@ func Scenarios() []Scenario {
 	}
 }
 
+// rowColor picks the at-a-glance category color for a scenario: green for a
+// genuinely healthy fit, red for a real fit problem that needs retraining,
+// orange for "the fit itself is fine, something downstream of it isn't."
+func rowColor(name string) string {
+	switch name {
+	case "Healthy fit":
+		return viz.Good
+	case "Imbalance trap":
+		return viz.Warm
+	default:
+		return viz.Bad
+	}
+}
+
+// render draws the whole thing as a static table — no Params read at all,
+// since every render() call produces the identical picture. This concept is
+// a fixed reference, not something to turn a knob on.
 func render(p map[string]float64) string {
 	_ = p
-	return viz.New(680, 400, 0, 1, 0, 1).String()
+	scenarios := Scenarios()
+
+	c := viz.New(680, 420, 0, 1, 0, 1)
+
+	c.Text(20, 24, "Same numbers, four situations — read down each column, not just across one row",
+		13, viz.Ink, "start")
+	c.Text(20, 44, "loss = arbitrary units, lower is better    other columns = a fraction in [0,1]",
+		12, viz.Muted, "start")
+
+	const startX, startY, rowH = 20.0, 70.0, 56.0
+	colW := []float64{150, 70, 70, 70, 70, 70, 70, 70}
+	headers := []string{"Scenario", "Train loss", "Val loss", "ROC-AUC", "PR-AUC", "Precision", "Recall", "F1"}
+
+	colX := make([]float64, len(colW))
+	x := startX
+	for i, w := range colW {
+		colX[i] = x
+		x += w
+	}
+
+	for i, h := range headers {
+		align, tx := "middle", colX[i]+colW[i]/2
+		if i == 0 {
+			align, tx = "start", colX[i]+4
+		}
+		c.Text(tx, startY-8, h, 12, viz.Muted, align)
+	}
+	c.Rect(startX, startY, x-startX, 1.5, viz.Muted, 0.6)
+
+	for r, s := range scenarios {
+		y := startY + float64(r)*rowH
+		color := rowColor(s.Name)
+
+		c.Rect(startX, y, x-startX, rowH-6, color, 0.06) // tinted row background
+		c.Rect(startX, y, 4, rowH-6, color, 0.9)         // category tag strip
+
+		vals := []string{
+			s.Name,
+			fmt.Sprintf("%.2f", s.TrainLoss),
+			fmt.Sprintf("%.2f", s.ValLoss),
+			fmt.Sprintf("%.2f", s.ROCAUC),
+			fmt.Sprintf("%.2f", s.PRAUC),
+			fmt.Sprintf("%.0f%%", s.Precision*100),
+			fmt.Sprintf("%.0f%%", s.Recall*100),
+			fmt.Sprintf("%.2f", F1(s.Precision, s.Recall)),
+		}
+		for i, v := range vals {
+			align, tx, ink := "middle", colX[i]+colW[i]/2, viz.Ink
+			if i == 0 {
+				align, tx, ink = "start", colX[i]+12, color
+			}
+			c.Text(tx, y+rowH/2-2, v, 13, ink, align)
+		}
+	}
+
+	legendY := startY + float64(len(scenarios))*rowH + 22
+	c.Text(20, legendY, "green = healthy  •  red = a real fit problem, retrain  •  orange = fit is "+
+		"fine, threshold or data isn't", 12, viz.Muted, "start")
+
+	return c.String()
 }
