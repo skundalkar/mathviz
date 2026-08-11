@@ -6,6 +6,8 @@
 package sinecosine
 
 import (
+	"math"
+
 	"mathviz/internal/concept"
 	"mathviz/internal/viz"
 )
@@ -108,6 +110,31 @@ func init() {
 		},
 		Render: render,
 	})
+}
+
+// CirclePoint returns the (x, y) position of a point that has swept
+// through angle theta (radians) counterclockwise from 3-o'clock around a
+// circle of the given radius centered at the origin.
+func CirclePoint(theta, radius float64) (x, y float64) {
+	return radius * math.Cos(theta), radius * math.Sin(theta)
+}
+
+// SineWave is the "unrolled" height of CirclePoint at angle theta: the
+// y-coordinate, plotted against theta itself instead of against x.
+func SineWave(theta, radius float64) float64 {
+	return radius * math.Sin(theta)
+}
+
+// CosineWave is the "unrolled" sideways position of CirclePoint at angle
+// theta: the x-coordinate, plotted against theta itself.
+func CosineWave(theta, radius float64) float64 {
+	return radius * math.Cos(theta)
+}
+
+// Revolutions reports how many full turns around the circle theta
+// represents (theta / 2π).
+func Revolutions(theta float64) float64 {
+	return theta / (2 * math.Pi)
 }
 
 func render(p map[string]float64) string {
