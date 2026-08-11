@@ -43,6 +43,15 @@
   .explain-list:last-child { margin-bottom: 0; }
   .explain-list li { margin-bottom: 4px; }
   .explain-list li:last-child { margin-bottom: 0; }
+  .explain-table {
+    width: 100%; border-collapse: collapse; margin: 0 0 12px; font-size: 13.5px;
+  }
+  .explain-table:last-child { margin-bottom: 0; }
+  .explain-table th, .explain-table td {
+    border: 1px solid var(--line); padding: 6px 10px; text-align: left; vertical-align: top;
+  }
+  .explain-table th { background: var(--panel); font-weight: 700; color: var(--ink); }
+  .explain-table td { color: #46525f; line-height: 1.5; }
   #stage { border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: white; }
   #stage svg { display: block; width: 100%; height: auto; }
   #controls { margin-top: 20px; display: grid; gap: 14px; }

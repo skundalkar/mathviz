@@ -63,10 +63,17 @@ big commit. After each step, `make check` must pass before you commit.
      something a new concept should use. A `Body` entry prefixed with
      `"• "` renders as a bullet-list item instead of a paragraph — use it
      for a short worked sequence (e.g. sweeping a threshold through a few
-     settings) so it reads as steps rather than a run-on sentence. See
-     `internal/concepts/prauc/prauc.go` for a full worked example, and
-     load `web/index.html` after `make build && make serve` to see how it
-     actually renders.
+     settings) so it reads as steps rather than a run-on sentence. A `Body`
+     entry shaped like `"|cell|cell|cell|"` renders as one row of a real
+     `<table>` instead — consecutive table rows form one table, first row
+     as the header — use it whenever the concept was worked out as a
+     pattern/diagnosis/action table in conversation (see
+     `internal/concepts/evalplaybook/evalplaybook.go`'s "How does it
+     actually work?" section): a table reads better than prose for that
+     shape of content, and it's how the reference material looked in the
+     chat it was transcribed from. See `internal/concepts/prauc/prauc.go`
+     for a full worked bullet-list example, and load `web/index.html` after
+     `make build && make serve` to see how either renders.
    - **Writing bar for the explanation.** The specific bullets below were
      reverse-engineered from a long series of docs-only fixup commits
      across nearly every existing concept (`git log --oneline -- LEARNINGS.md`

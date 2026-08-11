@@ -100,6 +100,15 @@ func selectConcept(c concept.Concept) {
 // heading a question, so the sections read as a guided path instead of one
 // wall of text. Concepts that only set Blurb (not yet migrated to
 // Sections) fall back to a single plain paragraph, same as before.
+//
+// Within a Section's Body, three line shapes are recognized: a plain string
+// renders as a paragraph, a "• " prefix renders as one <li> in a bullet
+// list, and a "|cell|cell|...|" pipe-delimited row renders as one row of a
+// table — the first row of each consecutive run of table rows becomes the
+// header (<th>), the rest become data rows (<td>). This mirrors exactly the
+// markdown tables used when these concepts are first talked through in
+// conversation, so the in-app explanation and the chat discussion it's
+// transcribed from read the same way.
 func renderExplanation(c concept.Concept) {
 	host := byID("concept-blurb")
 	host.Set("innerHTML", "")
@@ -130,7 +139,40 @@ func renderExplanation(c concept.Concept) {
 			}
 		}
 
+		var table js.Value
+		hasTable := false
+		tableRow := 0
+		flushTable := func() {
+			if hasTable {
+				block.Call("appendChild", table)
+				hasTable = false
+				tableRow = 0
+			}
+		}
+
 		for _, para := range sec.Body {
+			if isTableRow(para) {
+				flushList()
+				if !hasTable {
+					table = el("table")
+					table.Set("className", "explain-table")
+					hasTable = true
+				}
+				tr := el("tr")
+				cellTag := "td"
+				if tableRow == 0 {
+					cellTag = "th"
+				}
+				for _, cell := range tableCells(para) {
+					td := el(cellTag)
+					td.Set("textContent", cell)
+					tr.Call("appendChild", td)
+				}
+				table.Call("appendChild", tr)
+				tableRow++
+				continue
+			}
+			flushTable()
 			if strings.HasPrefix(para, "• ") {
 				if !hasList {
 					list = el("ul")
@@ -148,9 +190,27 @@ func renderExplanation(c concept.Concept) {
 			block.Call("appendChild", p)
 		}
 		flushList()
+		flushTable()
 
 		host.Call("appendChild", block)
 	}
+}
+
+// isTableRow reports whether a Section Body line is a pipe-delimited table
+// row, e.g. "|Pattern|Diagnosis|Action|".
+func isTableRow(s string) bool {
+	return strings.HasPrefix(s, "|") && strings.HasSuffix(s, "|") && strings.Count(s, "|") >= 3
+}
+
+// tableCells splits a pipe-delimited table row into trimmed cell strings,
+// dropping the empty leading/trailing fields the surrounding pipes produce.
+func tableCells(s string) []string {
+	raw := strings.Split(strings.Trim(s, "|"), "|")
+	cells := make([]string, len(raw))
+	for i, c := range raw {
+		cells[i] = strings.TrimSpace(c)
+	}
+	return cells
 }
 
 func draw() {

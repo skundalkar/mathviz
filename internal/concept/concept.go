@@ -29,7 +29,12 @@ type ParamSpec struct {
 // understanding, rather than one undifferentiated paragraph. Body holds one
 // or more plain-language paragraphs; an entry prefixed with "• " renders as
 // a bullet-list item instead of a paragraph, so a short worked sequence
-// (e.g. sweeping a threshold through a few settings) can read as steps.
+// (e.g. sweeping a threshold through a few settings) can read as steps. An
+// entry shaped like "|cell|cell|cell|" renders as one row of a table —
+// consecutive table rows form one table, with the first row as the header
+// — for reference material that was worked out as a table in conversation
+// (pattern/diagnosis/action, reading/diagnosis/action) and reads better as
+// one than as prose.
 type Section struct {
 	Heading string
 	Body    []string

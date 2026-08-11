@@ -100,15 +100,59 @@ built to synthesize what `overfitting`, `gradient-descent`,
 `confusion-matrix`, `precision-recall`, `roc-auc`, and `pr-auc` each teach in
 isolation.
 
-**The order matters, and here's why.** Check training loss vs. validation
-loss *first*, because a later number can't be trusted until an earlier one
-checks out. Only once loss looks healthy do ROC-AUC and PR-AUC mean
-anything — otherwise they'd be summarizing a model whose basic fit is
-already broken. And only once separation looks good do precision and recall
-at one threshold mean anything: they're one point on a curve you haven't yet
-confirmed is even a good curve.
+**The order matters, and here's why — five steps, because a later step's
+numbers can't be trusted until the earlier ones check out.**
 
-**The four reference scenarios, with real numbers:**
+**Step 1 — loss curves (train vs. validation, over training):**
+
+| Pattern | Diagnosis | Action |
+|---|---|---|
+| Both high, both flat | Underfitting — model/features can't capture the pattern | Bigger/more expressive model, better features, train longer |
+| Train drops, validation stalls or rises | Overfitting — memorizing train-set noise | Regularize, simplify, more data, early stopping (the `overfitting` concept) |
+| Both drop, converge close together | Healthy fit | Move to step 2 |
+| Both noisy, not really decreasing | Optimization problem, not a data/capacity problem | Lower the learning rate, check init/bugs (the `gradient-descent` concept — a learning rate past the critical value looks exactly like this) |
+
+Only leave step 1 once train and validation loss both look reasonable and
+close together.
+
+**Step 2 — threshold-independent separation: ROC-AUC and PR-AUC.**
+Regardless of where you eventually set the threshold, can this model tell
+the classes apart at all?
+
+| Reading | Diagnosis | Action |
+|---|---|---|
+| High ROC-AUC and high PR-AUC | Model genuinely separates the classes | Move to step 3 — this is a threshold-picking problem now, not a model problem |
+| Low AUC (ROC ≈ 0.5, PR ≈ class prevalence) | No threshold will save this — the ranking itself is bad | Go back to the model/data, not the dial (step 4) |
+| High ROC-AUC, disappointing PR-AUC | Model separates fine, but you have the FPR-dilution imbalance-trap problem | Don't touch the model — this is exactly what PR-AUC is built to catch; go to step 3 knowing precision is the metric to watch closely |
+
+**Step 3 — if separation is good, pick the operating threshold.** Sweep it
+(`precision-recall` and `confusion-matrix`'s job), read off precision and
+recall at a few candidates, and pick based on which error costs more in
+your situation — a missed case vs. a false alarm are not equally bad, and
+no formula picks that for you. A free, instant move — no retraining —
+always worth trying first once AUC is already good.
+
+**Step 4 — if separation itself is bad (or good-enough-but-not-there),
+diagnose why.** Precision, recall, F1 and AUC alone can't tell you the
+cause, only that there's a ceiling — a few extra, cheap moves, cheapest
+first:
+
+| Diagnostic | What it tells you |
+|---|---|
+| Compare train-set metric vs. validation-set metric (not just loss — AUC/precision itself) | Train ≫ validation → overfitting (back to step 1's fixes). Both mediocre → genuine signal shortage, keep going down this table |
+| Manual error review — pull 20-30 false positives/negatives, read them by hand | A lot are actually mislabeled → noisy labels, clean them (often the cheapest fix). Correctly labeled but genuinely ambiguous → a features/capacity problem |
+| Learning curve — retrain at 25%/50%/100% of your data, plot validation performance vs. data size | Still climbing at 100% → yes, more data will help. Flat/plateaued → more of the same data won't move it |
+| Feature ablation — add a feature you suspect carries signal, retrain | Meaningful jump → features were the bottleneck. No change → keep looking (try a more expressive model on the same features) |
+
+**Step 5 — touch the test set exactly once.** Everything above uses train/
+validation, potentially many times, as you iterate. The test set gets
+evaluated once, right before shipping, for an honest final number. If test
+performance is notably worse than validation, that's itself a signal:
+repeated tuning quietly overfit to the validation set — the fix is a fresh
+validation split going forward, not more tuning against the one you already
+burned.
+
+**The four reference scenarios (steps 1-2 together), with real numbers:**
 
 | Scenario | Train loss | Val loss | ROC-AUC | PR-AUC | Precision | Recall | F1 |
 |---|---|---|---|---|---|---|---|
