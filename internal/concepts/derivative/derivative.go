@@ -94,6 +94,24 @@ func init() {
 	})
 }
 
+// F is the sample function this concept visualizes, f(x) = x². Pure in,
+// pure out — no globals, no time, no randomness.
+func F(x float64) float64 {
+	return x * x
+}
+
+// SecantSlope is the slope of the line through (x0, F(x0)) and
+// (x0+h, F(x0+h)) — an average rate of change over the interval [x0, x0+h].
+func SecantSlope(x0, h float64) float64 {
+	return (F(x0+h) - F(x0)) / h
+}
+
+// Derivative is the exact, analytic derivative of F at x0: f'(x) = 2x. It's
+// the limit SecantSlope(x0, h) approaches as h shrinks to 0.
+func Derivative(x0 float64) float64 {
+	return 2 * x0
+}
+
 func render(p map[string]float64) string {
 	_ = p
 	return viz.New(680, 320, -2.5, 2.5, 0, 4.5).Axes().String()
