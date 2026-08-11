@@ -30,11 +30,11 @@ Format: `- [ ] <id> — <one-line description of the concept to visualize>`
 - [x] eval-playbook — reading loss, ROC-AUC, PR-AUC, precision and recall together, in order, as a fixed reference table (no sliders — a synthesis of the six classifier concepts above it)
 - [x] calibration — reliability diagrams, Expected Calibration Error, and temperature scaling — why a good ranking (AUC) doesn't mean a trustworthy confidence number
 - [x] derivative — slope of a tangent line as you shrink the interval
+- [x] integral — area under a curve as a sum of shrinking slabs
 
 ## Up next (statistics & ML intuition)
 
 ## Up next (math foundations)
-- [ ] integral — area under a curve as a sum of shrinking slabs
 - [ ] sine-cosine — the unit circle unrolled into waves
 - [ ] vectors — addition, dot product, and projection
 - [ ] complex-numbers — rotation in the complex plane
