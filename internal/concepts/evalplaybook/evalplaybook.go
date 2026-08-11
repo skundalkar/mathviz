@@ -24,7 +24,83 @@ func init() {
 			{
 				Heading: "Why would you need this?",
 				Body: []string{
-					"Placeholder.",
+					"You've trained a model: split your data, ran training, and now you have a " +
+						"handful of numbers — training loss, validation loss, ROC-AUC, PR-AUC, " +
+						"precision, recall. Each one, read alone, tells you something narrow. Is the " +
+						"model actually good? Do you need more data, a bigger model, a different " +
+						"threshold, or is it fine to ship right now? None of these numbers answers " +
+						"that by itself — you have to know which combination of them means what.",
+				},
+			},
+			{
+				Heading: "How does it actually work?",
+				Body: []string{
+					"Check them in a specific order, because a later number can't be trusted until " +
+						"an earlier one checks out. First: training loss vs. validation loss — did " +
+						"the model even learn the right shape of function? Only once that looks " +
+						"healthy do ROC-AUC and PR-AUC mean anything, since they'd otherwise be " +
+						"summarizing a model whose basic fit is already broken. And only once " +
+						"separation looks good do precision and recall at one threshold mean " +
+						"anything — they're one point on a curve you haven't yet confirmed is even a " +
+						"good curve.",
+					"Four situations come up constantly enough to recognize on sight:",
+					"• Healthy fit — train loss 0.30, val loss 0.33 (close together); ROC-AUC 0.93, " +
+						"PR-AUC 0.89 (both high); precision 91%, recall 90% (balanced). Nothing here " +
+						"contradicts anything else.",
+					"• Overfitting — train loss 0.06, val loss 0.58: a wide, growing gap. Every " +
+						"number below loss (ROC-AUC 0.81, PR-AUC 0.74) is measuring an " +
+						"over-memorized model, not a trustworthy one.",
+					"• Underfitting — train loss 0.61, val loss 0.63: both high AND close together. " +
+						"Not a generalization gap — a capacity gap. The model can't even fit its own " +
+						"training data.",
+					"• Imbalance trap — train loss 0.29, val loss 0.31 (healthy); ROC-AUC 0.95 " +
+						"(looks great) — but PR-AUC 0.42 and precision at the chosen threshold, only " +
+						"26%, reveal the model floods you with false alarms relative to how rare " +
+						"positives are, exactly the FPR-dilution pattern from the roc-auc and pr-auc " +
+						"concepts, something ROC-AUC alone hides.",
+				},
+			},
+			{
+				Heading: "What does the picture show?",
+				Body: []string{
+					"A fixed reference table, not something to turn a knob on — every row is a " +
+						"pattern worth recognizing on sight. The left color tag is the fast read: " +
+						"green means ship it, red means something in the fit itself is broken and " +
+						"needs retraining, orange means the fit is fine and the problem is " +
+						"downstream (the threshold, or the data's imbalance) — a different, usually " +
+						"cheaper, fix. Read down a column across all four rows, not just across one " +
+						"row, to see which single number actually distinguishes each situation from " +
+						"'Healthy fit.'",
+				},
+			},
+			{
+				Heading: "What can you do now that you couldn't before?",
+				Body: []string{
+					"You can match your own numbers against these four patterns and go straight to " +
+						"the action instead of guessing: a wide, growing loss gap means retrain with " +
+						"regularization; both losses high and close together means retrain with more " +
+						"capacity or better features; a high-ROC-AUC/low-PR-AUC combination means " +
+						"don't retrain at all — just move the threshold, or go get more of the rare " +
+						"class.",
+				},
+			},
+			{
+				Heading: "Where does this show up in real life?",
+				Body: []string{
+					"This is the actual sequence behind 'is my model ready to ship' for any binary " +
+						"classifier — fraud detection, spam filtering, medical screening, defect " +
+						"detection. Teams that skip straight to 'accuracy is 95%, ship it' are the " +
+						"ones who get blindsided by the Imbalance trap row once it's in production.",
+				},
+			},
+			{
+				Heading: "What's the common mistake here?",
+				Body: []string{
+					"Judging a model by one metric in isolation. 'ROC-AUC is 0.95, this is a great " +
+						"model' is exactly the Imbalance trap row's setup, and it's wrong specifically " +
+						"because it never checked precision. The fix isn't finding a better single " +
+						"metric — there isn't one. It's checking the right numbers in the right " +
+						"order, and knowing what a mismatch between them means.",
 				},
 			},
 		},

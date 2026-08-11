@@ -27,6 +27,7 @@ Format: `- [ ] <id> — <one-line description of the concept to visualize>`
 - [x] pr-auc — sweeping the threshold to trace a precision-recall curve, and why it beats ROC-AUC on imbalanced classes
 - [x] sigmoid-softmax — squashing logits into probabilities
 - [x] exponential-growth — doubling time and why it sneaks up on you
+- [x] eval-playbook — reading loss, ROC-AUC, PR-AUC, precision and recall together, in order, as a fixed reference table (no sliders — a synthesis of the six classifier concepts above it)
 
 ## Up next (statistics & ML intuition)
 

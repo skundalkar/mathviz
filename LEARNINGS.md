@@ -6,6 +6,99 @@ code. Newest entries go at the top.
 
 ---
 
+## eval-playbook — reading the numbers together, in the right order
+**The idea in one line:** training loss, ROC-AUC, PR-AUC, precision, and
+recall each answer a narrow question on their own; the actual "is this model
+good, and what do I do next" call comes from reading them together, in a
+specific order, not from any one of them alone.
+
+You've trained a model: split your data, ran training, and now you have a
+handful of numbers. Each one, read alone, tells you something narrow. Is the
+model actually good? Do you need more data, a bigger model, a different
+threshold, or is it fine to ship right now? None of these numbers answers
+that by itself — you have to know which *combination* of them means what.
+This concept is unlike every other one in this gallery: it has no sliders.
+It's a fixed reference table of the four patterns that come up constantly,
+each with the numbers you'd see together, the diagnosis, and the action —
+built to synthesize what `overfitting`, `gradient-descent`,
+`confusion-matrix`, `precision-recall`, `roc-auc`, and `pr-auc` each teach in
+isolation.
+
+**The order matters, and here's why.** Check training loss vs. validation
+loss *first*, because a later number can't be trusted until an earlier one
+checks out. Only once loss looks healthy do ROC-AUC and PR-AUC mean
+anything — otherwise they'd be summarizing a model whose basic fit is
+already broken. And only once separation looks good do precision and recall
+at one threshold mean anything: they're one point on a curve you haven't yet
+confirmed is even a good curve.
+
+**The four reference scenarios, with real numbers:**
+
+| Scenario | Train loss | Val loss | ROC-AUC | PR-AUC | Precision | Recall | F1 |
+|---|---|---|---|---|---|---|---|
+| Healthy fit | 0.30 | 0.33 | 0.93 | 0.89 | 91% | 90% | 0.90 |
+| Overfitting | 0.06 | 0.58 | 0.81 | 0.74 | 78% | 70% | 0.74 |
+| Underfitting | 0.61 | 0.63 | 0.68 | 0.55 | 60% | 58% | 0.59 |
+| Imbalance trap | 0.29 | 0.31 | 0.95 | 0.42 | 26% | 90% | 0.40 |
+
+- **Healthy fit:** losses converged close together, both AUCs high,
+  precision/recall balanced. Nothing here contradicts anything else. *Ship
+  it* — pick the exact threshold based on which error costs more.
+- **Overfitting:** training loss excellent, validation loss isn't — a wide,
+  growing gap. The model has started memorizing training-set specifics;
+  every number below loss (AUCs, precision, recall) is measuring that
+  over-memorized version, not a trustworthy one. *Regularize, simplify,
+  more data, or stop training earlier* — don't act on precision/recall
+  until you've retrained.
+- **Underfitting:** training loss is high *too*, not just validation loss,
+  and the two sit close together. Not a generalization gap — a capacity or
+  signal gap: the model can't fit even the data it's training on. *Bigger
+  model or better features* — more data alone rarely fixes this.
+- **Imbalance trap:** loss looks healthy, ROC-AUC looks great — but PR-AUC
+  is mediocre and precision at the operating threshold has collapsed. This
+  is the exact false-positive-rate-dilution pattern from the `roc-auc` and
+  `pr-auc` concepts: precision = 26%, recall = 90% is the same pair of
+  numbers as `pr-auc`'s "Looser still" row (flag 68 of 1,000 emails, 20
+  really spam) — not a new example, the same one, seen from the training-
+  diagnostics side. *Don't retrain* — loss and ROC-AUC both say the model
+  is fine. Move the threshold, or if PR-AUC itself is the ceiling, get more
+  positive-class examples.
+
+**What the picture shows:** the table itself, color-tagged by category —
+green (healthy, ship it), red (a real fit problem, retrain), orange (the fit
+is fine, something downstream isn't). Reading *down* a column across all
+four rows, rather than across one row at a time, is what makes each
+scenario's distinguishing number jump out — e.g. every row's ROC-AUC looks
+"pretty good" read in isolation, but Imbalance trap's PR-AUC is the one that
+breaks the pattern.
+
+**Where it bites in real life:** this is the actual sequence behind "is my
+model ready to ship" for any binary classifier — fraud detection, spam
+filtering, medical screening, defect detection. Teams that skip straight to
+"accuracy is 95%, ship it" are the ones who get blindsided by the Imbalance
+trap row once it's in production.
+
+**Say it like this:** "Loss and ROC-AUC both look fine, so the model itself
+is fine — the problem is the threshold or the class imbalance, not the
+training." That's a diagnosis you can act on immediately without retraining
+anything.
+**Not like this:** "ROC-AUC is 0.95, this is a great model" — that's exactly
+the Imbalance trap row's setup, and it's wrong specifically because it never
+checked precision. There isn't a single metric that replaces reading
+several together; the fix is checking them in the right order, not finding
+a better one to check alone.
+
+**A scope note:** a fifth pattern — loss that's oscillating or diverging
+outright (not converging at all, in either train or validation) — is a
+learning-rate/optimization problem, not a data or capacity one; see
+`gradient-descent` for what that looks like and why. It's deliberately left
+out of the numeric table above, since "oscillating" isn't a single number
+that fits a table column the way the other four scenarios' settled loss
+values do — it's a distinct, earlier check ("is loss converging at all?")
+that should be resolved before any of the four rows above are worth reading.
+
+---
+
 ## exponential-growth — why compounding looks boring right up until it isn't
 **The idea in one line:** exponential growth compounds off of whatever's
 already there, so a fixed *rate* produces an accelerating *amount* — the
