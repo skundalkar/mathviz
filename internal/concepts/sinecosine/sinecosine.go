@@ -6,6 +6,7 @@
 package sinecosine
 
 import (
+	"fmt"
 	"math"
 
 	"mathviz/internal/concept"
@@ -137,7 +138,81 @@ func Revolutions(theta float64) float64 {
 	return theta / (2 * math.Pi)
 }
 
+// waveMax is the right edge of the wave panel: two full revolutions.
+const waveMax = 4 * math.Pi
+
 func render(p map[string]float64) string {
-	_ = p
-	return viz.New(760, 380, 0, 1, -1, 1).Axes().String()
+	theta, radius := p["theta"], p["radius"]
+
+	c := viz.New(760, 380, -5, waveMax+0.3, -1.75, 1.75)
+
+	// Zero baseline across the whole canvas, and a divider at x=0 between
+	// the circle inset (negative x, otherwise unused space) and the wave
+	// panel (x in [0, waveMax]).
+	c.Path([][2]float64{{c.XMin, 0}, {c.XMax, 0}}, viz.Muted, 1)
+	c.Path([][2]float64{{0, c.YMin}, {0, c.YMax}}, viz.Muted, 1)
+
+	// --- Circle inset ---------------------------------------------------
+	// Convert a desired pixel radius into data-space radii that compensate
+	// for the canvas's (very different) x and y scales, so the circle
+	// renders as an actual circle instead of a squashed ellipse.
+	pxPerUnitX := (c.W - c.PadL - c.PadR) / (c.XMax - c.XMin)
+	pxPerUnitY := (c.H - c.PadT - c.PadB) / (c.YMax - c.YMin)
+	const insetPixelRadius = 55
+	rx := insetPixelRadius / pxPerUnitX * radius
+	ry := insetPixelRadius / pxPerUnitY * radius
+	const cx, cy = -2.6, 0.0
+
+	circle := make([][2]float64, 0, 101)
+	for i := 0; i <= 100; i++ {
+		phi := 2 * math.Pi * float64(i) / 100
+		circle = append(circle, [2]float64{cx + rx*math.Cos(phi), cy + ry*math.Sin(phi)})
+	}
+	c.Path(circle, viz.Ink, 1.5)
+	c.Path([][2]float64{{cx - rx*1.15, cy}, {cx + rx*1.15, cy}}, viz.Muted, 1)
+	c.Path([][2]float64{{cx, cy - ry*1.15}, {cx, cy + ry*1.15}}, viz.Muted, 1)
+
+	dotX, dotY := cx+rx*math.Cos(theta), cy+ry*math.Sin(theta)
+	c.Path([][2]float64{{cx, cy}, {dotX, dotY}}, viz.Accent, 2)
+	c.Path([][2]float64{{dotX, dotY}, {cx, dotY}}, viz.Warm, 1) // height guide
+	px, py := c.X(dotX), c.Y(dotY)
+	c.Rect(px-4, py-4, 8, 8, viz.Accent, 1)
+
+	// --- Wave panel -------------------------------------------------------
+	for k := 0.0; k <= 4; k++ {
+		label := "0"
+		switch k {
+		case 1:
+			label = "π"
+		case 2:
+			label = "2π"
+		case 3:
+			label = "3π"
+		case 4:
+			label = "4π"
+		}
+		c.Tick(k*math.Pi, label)
+	}
+
+	sine := viz.Sample(0, waveMax, 300, func(t float64) float64 { return SineWave(t, radius) })
+	cosine := viz.Sample(0, waveMax, 300, func(t float64) float64 { return CosineWave(t, radius) })
+	c.Path(sine, viz.Accent, 2)
+	c.Path(cosine, viz.Warm, 2)
+
+	sinNow, cosNow := SineWave(theta, radius), CosineWave(theta, radius)
+	c.VLine(theta, viz.Muted, true)
+	c.Path([][2]float64{{0, sinNow}, {theta, sinNow}}, viz.Accent, 1)
+	c.Path([][2]float64{{0, cosNow}, {theta, cosNow}}, viz.Warm, 1)
+	sx, sy := c.X(theta), c.Y(sinNow)
+	c.Rect(sx-4, sy-4, 8, 8, viz.Accent, 1)
+	cxPx, cyPx := c.X(theta), c.Y(cosNow)
+	c.Rect(cxPx-4, cyPx-4, 8, 8, viz.Warm, 1)
+
+	c.Text(20, 24, fmt.Sprintf("θ = %.2f rad (%.2f revolutions)    radius = %.2f", theta, Revolutions(theta), radius),
+		14, viz.Ink, "start")
+	c.Text(20, 44, fmt.Sprintf("sin θ = %.3f (blue)    cos θ = %.3f (orange)", sinNow, cosNow), 13, viz.Muted, "start")
+	c.Text(20, 62, "left: the circle the angle sweeps around    right: that same height/position, unrolled against θ",
+		12, viz.Muted, "start")
+
+	return c.String()
 }
