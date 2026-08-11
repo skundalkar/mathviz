@@ -15,6 +15,7 @@ import (
 	_ "mathviz/internal/concepts/evalplaybook"
 	_ "mathviz/internal/concepts/expgrowth"
 	_ "mathviz/internal/concepts/gradientdescent"
+	_ "mathviz/internal/concepts/integral"
 	_ "mathviz/internal/concepts/logscale"
 	_ "mathviz/internal/concepts/meanmedianmode"
 	_ "mathviz/internal/concepts/normalskew"
