@@ -31,11 +31,11 @@ Format: `- [ ] <id> — <one-line description of the concept to visualize>`
 - [x] calibration — reliability diagrams, Expected Calibration Error, and temperature scaling — why a good ranking (AUC) doesn't mean a trustworthy confidence number
 - [x] derivative — slope of a tangent line as you shrink the interval
 - [x] integral — area under a curve as a sum of shrinking slabs
+- [x] sine-cosine — the unit circle unrolled into waves
 
 ## Up next (statistics & ML intuition)
 
 ## Up next (math foundations)
-- [ ] sine-cosine — the unit circle unrolled into waves
 - [ ] vectors — addition, dot product, and projection
 - [ ] complex-numbers — rotation in the complex plane
 - [ ] prime-sieve — the Sieve of Eratosthenes animated
