@@ -106,6 +106,37 @@ func init() {
 	})
 }
 
+// V is the speed function this concept integrates, v(t) = 2t — the exact
+// derivative of the derivative concept's position function p(t) = t².
+func V(t float64) float64 {
+	return 2 * t
+}
+
+// RiemannSum approximates ∫[a,b] V(t) dt by chopping [a,b] into n
+// equal-width slabs and, in each one, sampling V at a fixed fraction
+// samplePos of the way across the slab (0 = left edge, 1 = right edge),
+// treating that sample as the slab's constant height. n below 1 is
+// clamped to 1.
+func RiemannSum(a, b float64, n int, samplePos float64) float64 {
+	if n < 1 {
+		n = 1
+	}
+	w := (b - a) / float64(n)
+	sum := 0.0
+	for i := 0; i < n; i++ {
+		left := a + float64(i)*w
+		sample := left + samplePos*w
+		sum += V(sample) * w
+	}
+	return sum
+}
+
+// TrueIntegral is the exact, analytic value of ∫[a,b] V(t) dt. Since V(t) =
+// 2t has antiderivative t², this is simply b² − a².
+func TrueIntegral(a, b float64) float64 {
+	return b*b - a*a
+}
+
 func render(p map[string]float64) string {
 	_ = p
 	return viz.New(680, 380, 0, 2, 0, 4.6).Axes().String()
