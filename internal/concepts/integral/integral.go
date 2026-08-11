@@ -7,6 +7,9 @@
 package integral
 
 import (
+	"fmt"
+	"math"
+
 	"mathviz/internal/concept"
 	"mathviz/internal/viz"
 )
@@ -137,7 +140,48 @@ func TrueIntegral(a, b float64) float64 {
 	return b*b - a*a
 }
 
+const (
+	windowA, windowB = 0.0, 2.0 // fixed [a,b] this concept sweeps
+)
+
 func render(p map[string]float64) string {
-	_ = p
-	return viz.New(680, 380, 0, 2, 0, 4.6).Axes().String()
+	n := int(math.Round(p["n"]))
+	if n < 1 {
+		n = 1
+	}
+	samplePos := p["samplePos"]
+
+	c := viz.New(680, 380, windowA, windowB, 0, V(windowB)*1.15)
+	c.Axes()
+	for x := windowA; x <= windowB+1e-9; x += 0.5 {
+		c.Tick(x, fmt.Sprintf("%.1f", x))
+	}
+
+	// Draw each slab's rectangle: width = one slab, height = V sampled at
+	// samplePos through the slab. Drawn before the curve so the curve's
+	// line sits visibly on top of (or above) the rectangle tops.
+	w := (windowB - windowA) / float64(n)
+	for i := 0; i < n; i++ {
+		left := windowA + float64(i)*w
+		right := left + w
+		height := V(left + samplePos*w)
+		leftPx, rightPx := c.X(left), c.X(right)
+		topPx, basePx := c.Y(height), c.Y(0)
+		c.Rect(leftPx, topPx, rightPx-leftPx, basePx-topPx, viz.Accent, 0.35)
+	}
+
+	curve := viz.Sample(windowA, windowB, 100, V)
+	c.Path(curve, viz.Ink, 2.5)
+
+	sum := RiemannSum(windowA, windowB, n, samplePos)
+	trueVal := TrueIntegral(windowA, windowB)
+
+	c.Text(20, 24, fmt.Sprintf("n = %d slabs    sample = %.2f (0 = left edge, 1 = right edge)", n, samplePos),
+		14, viz.Ink, "start")
+	c.Text(20, 44, fmt.Sprintf("Riemann sum ≈ %.3f    true area = %.3f    error = %.3f", sum, trueVal, sum-trueVal),
+		13, viz.Muted, "start")
+	c.Text(20, 62, "x = time t (s), y = speed v(t) = 2t (m/s) — shaded rectangles approximate the distance traveled",
+		12, viz.Muted, "start")
+
+	return c.String()
 }
