@@ -101,6 +101,10 @@ func init() {
 						"because it never checked precision. The fix isn't finding a better single " +
 						"metric — there isn't one. It's checking the right numbers in the right " +
 						"order, and knowing what a mismatch between them means.",
+					"One more question this table can't answer even for the 'Healthy fit' row: is " +
+						"the model's stated confidence trustworthy — is '90% confident' actually " +
+						"right 90% of the time? A model can rank perfectly and still be badly " +
+						"miscalibrated. See the calibration concept.",
 				},
 			},
 		},

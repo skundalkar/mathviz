@@ -6,6 +6,82 @@ code. Newest entries go at the top.
 
 ---
 
+## calibration — a good ranking doesn't mean a trustworthy confidence number
+**The idea in one line:** ROC-AUC and PR-AUC only ever measure whether a
+model *ranks* positives above negatives correctly; they say nothing about
+whether its stated probability ("90% confident") is actually right 90% of
+the time — that's a separate question, called calibration, and a model can
+ace one while failing the other completely.
+
+The `eval-playbook` concept's table can say "Healthy fit" — loss converged,
+ROC-AUC 0.93, precision and recall balanced — and still be hiding a failure
+none of those numbers can see. Imagine a model that reports 99% for every
+real positive and 51% for every real negative. Ranking is flawless: every
+positive scores higher than every negative, AUC = 1.0. But if those
+"51%" examples are actually positive 90% of the time, that number is a lie.
+Once separation looks good, one more question is worth asking before
+trusting the raw output as a probability: when this model says "90%
+confident," is it actually right about 90% of the time it says that?
+
+**With real numbers — Expected Calibration Error (ECE):** group predictions
+by their stated confidence. Say the "80–90% confidence" bucket has 100
+predictions, averaging 85% predicted — but only 60 of those 100 turned out
+to actually be positive. That bucket's gap is |0.85 − 0.60| = **0.25**. Do
+this across every bucket, weight by how many predictions land in each one,
+and average the gaps: that's ECE. 0 = perfectly calibrated.
+
+**The exact worked example this concept renders:** two equal-variance
+classes (negatives ~ N(0,1), positives ~ N(sep,1) — the same generative
+setup `precision-recall`, `roc-auc`, and `pr-auc` all use), so the *true*,
+perfectly-calibrated log-odds of a raw score z is derivable from Bayes'
+theorem exactly: `sep·z − sep²/2`, no fitting required. A model with
+temperature `T` reports `sigmoid(true_logit / T)` instead of the true
+probability. Invert that relationship and the reliability curve itself has
+a closed form: `observed(p) = sigmoid(T · logit(p))`. At **T = 0.5** (a
+concretely overconfident model), a predicted **90%** confidence corresponds
+to an actual **75%** — computed exactly, not simulated: `sigmoid(0.5 ×
+logit(0.9)) = sigmoid(0.5 × 2.197) = 0.75`.
+
+**What the picture shows:** the reliability diagram — x is stated
+probability, y is observed frequency. The grey diagonal is perfect
+calibration. Drag temperature below 1 and the curve bows into an S below
+the diagonal on the right, above it on the left: high-confidence
+predictions overstate themselves, low-confidence ones understate
+themselves — the classic overconfident shape, and the default view here.
+Above 1, the curve flattens the opposite way (underconfident). At exactly
+1, the curve sits exactly on the diagonal and ECE reads 0. The orange
+marker reads off what any one stated confidence actually means.
+
+**Why temperature scaling is the standard fix:** dividing every logit by
+the same constant cannot change their relative order — so temperature
+scaling fixes calibration without touching ranking at all. Recompute
+ROC-AUC and PR-AUC after fitting T, and they come out identical, because
+the fix only ever touches the number *reported*, never which examples
+score higher than which others. Fit one scalar on held-out data, done — no
+retraining, no architecture change.
+
+**Where it bites in real life:** anywhere a raw probability is used as more
+than a ranking signal — an expected-value calculation (fraud score × dollar
+amount at risk only makes sense if the score really is a probability),
+averaging probabilities across an ensemble, or a confidence number a human
+acts on directly ("the model is 92% sure"). Worth checking as standard
+practice after training any modern deep net: this kind of overconfidence
+turns out to be close to universal in networks trained the usual way (Guo
+et al., *On Calibration of Modern Neural Networks*, 2017), not a rare edge
+case.
+
+**Say it like this:** "Loss and ROC-AUC both look great, but check
+calibration before you trust the confidence numbers themselves" — two
+genuinely separate questions, and a model can pass one while failing the
+other.
+**Not like this:** "The model has 0.95 AUC, so its 90%-confidence
+predictions are trustworthy" — AUC only ever measures relative order; a
+model can ace it while its stated probabilities are badly miscalibrated in
+either direction. There isn't a single metric that covers both — checking
+discrimination and checking calibration are two separate steps.
+
+---
+
 ## eval-playbook — reading the numbers together, in the right order
 **The idea in one line:** training loss, ROC-AUC, PR-AUC, precision, and
 recall each answer a narrow question on their own; the actual "is this model
@@ -96,6 +172,12 @@ out of the numeric table above, since "oscillating" isn't a single number
 that fits a table column the way the other four scenarios' settled loss
 values do — it's a distinct, earlier check ("is loss converging at all?")
 that should be resolved before any of the four rows above are worth reading.
+
+A sixth question this table doesn't cover at all: even once a model's numbers
+say "Healthy fit," does its stated confidence mean anything — is "90%
+confident" actually right 90% of the time? That's calibration, a question
+orthogonal to everything in this table (a model can rank perfectly and still
+be badly miscalibrated); see the `calibration` concept.
 
 ---
 

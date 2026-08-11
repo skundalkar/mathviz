@@ -28,6 +28,7 @@ Format: `- [ ] <id> — <one-line description of the concept to visualize>`
 - [x] sigmoid-softmax — squashing logits into probabilities
 - [x] exponential-growth — doubling time and why it sneaks up on you
 - [x] eval-playbook — reading loss, ROC-AUC, PR-AUC, precision and recall together, in order, as a fixed reference table (no sliders — a synthesis of the six classifier concepts above it)
+- [x] calibration — reliability diagrams, Expected Calibration Error, and temperature scaling — why a good ranking (AUC) doesn't mean a trustworthy confidence number
 
 ## Up next (statistics & ML intuition)
 

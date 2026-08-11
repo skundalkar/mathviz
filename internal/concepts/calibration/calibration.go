@@ -23,7 +23,89 @@ func init() {
 		Sections: []concept.Section{
 			{
 				Heading: "Why would you need this?",
-				Body:    []string{"Placeholder."},
+				Body: []string{
+					"The eval-playbook concept's table can say 'Healthy fit' — loss converged, " +
+						"ROC-AUC 0.93, precision and recall both balanced — and still be hiding one " +
+						"more failure mode none of those numbers can see: does the model's OWN " +
+						"confidence number mean anything? A model can rank examples perfectly " +
+						"(every real positive scores higher than every real negative — AUC = 1.0) " +
+						"while its stated probabilities are nonsense — imagine it reports 99% for " +
+						"every real positive and 51% for every real negative. Ranking is flawless. " +
+						"But if 51% is supposed to mean 'roughly a coin flip,' and those examples " +
+						"are actually positive 90% of the time, that number is lying.",
+					"So: once separation looks good, one more question is worth asking before you " +
+						"trust the raw output as a probability — when this model says '90% " +
+						"confident,' is it actually right about 90% of the time it says that?",
+				},
+			},
+			{
+				Heading: "How does it actually work?",
+				Body: []string{
+					"Group predictions by their stated confidence and check each group against " +
+						"reality. Say the '80-90% confidence' bucket has 100 predictions, averaging " +
+						"85% predicted — but only 60 of those 100 turned out to actually be " +
+						"positive. That bucket's calibration gap is |0.85 − 0.60| = 0.25. Do this " +
+						"across every confidence bucket, weight by how many predictions fall in " +
+						"each one, and average the gaps: that's Expected Calibration Error (ECE). " +
+						"0 = perfectly calibrated; the further from 0, the more the stated " +
+						"confidence and reality disagree.",
+					"The fix is temperature scaling — the exact same knob the sigmoid-softmax " +
+						"concept exposes. After training, divide every logit by one learned scalar " +
+						"T before turning it into a probability, fit only on held-out data. T<1 " +
+						"sharpens probabilities toward 0/1 (fixes underconfidence, the rarer case); " +
+						"T>1 flattens them toward 0.5 (fixes overconfidence, the common one — " +
+						"trained neural nets are usually overconfident by default). The key " +
+						"property: dividing every logit by the same constant can't change their " +
+						"ORDER, so temperature scaling fixes calibration without touching ranking " +
+						"at all — ROC-AUC and PR-AUC come out exactly the same before and after.",
+				},
+			},
+			{
+				Heading: "What does the picture show?",
+				Body: []string{
+					"A reliability diagram: x is the probability the model states, y is how often " +
+						"examples at that stated probability are actually positive. The grey " +
+						"diagonal is perfect calibration — stated 70%, actually 70%. The temperature " +
+						"slider bends the blue curve away from it: below 1, the curve is an S bowed " +
+						"BELOW the diagonal on the right and ABOVE it on the left — high-confidence " +
+						"predictions overstate themselves, low-confidence ones understate themselves. " +
+						"Above 1, the curve flattens the opposite way. At exactly 1 the curve sits " +
+						"precisely on the diagonal, and ECE reads 0. The orange marker lets you pick " +
+						"any stated confidence and read off what it actually means in this model.",
+				},
+			},
+			{
+				Heading: "What can you do now that you couldn't before?",
+				Body: []string{
+					"You can now tell whether a model's stated confidence is trustworthy, as a " +
+						"question completely separate from whether it ranks well — and fix it " +
+						"cheaply. If ECE is high but ROC-AUC/PR-AUC are already good, you don't " +
+						"retrain: fit one temperature scalar on validation data and the probabilities " +
+						"become trustworthy, with the ranking metrics unchanged.",
+				},
+			},
+			{
+				Heading: "Where does this show up in real life?",
+				Body: []string{
+					"Anywhere the raw probability gets used as more than a ranking signal: an " +
+						"expected-value calculation (fraud score × dollar amount at risk only makes " +
+						"sense if the score really is a probability), averaging probabilities across " +
+						"an ensemble of models, or reporting a confidence number a human will act on " +
+						"directly ('the model is 92% sure'). It's also worth checking as standard " +
+						"practice after training any modern deep net — this kind of overconfidence " +
+						"turns out to be close to universal in networks trained the usual way, not a " +
+						"rare edge case.",
+				},
+			},
+			{
+				Heading: "What's the common mistake here?",
+				Body: []string{
+					"Treating a high ROC-AUC as proof the probabilities themselves can be trusted. " +
+						"AUC only ever measures relative order; a model can ace it while its actual " +
+						"confidence numbers are badly miscalibrated in either direction. There isn't " +
+						"a single metric that covers both questions — checking discrimination " +
+						"(AUC) and checking calibration (ECE) are two separate steps, not one.",
+				},
 			},
 		},
 		Params: []concept.ParamSpec{
