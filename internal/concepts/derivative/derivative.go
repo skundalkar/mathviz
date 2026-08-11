@@ -6,6 +6,9 @@
 package derivative
 
 import (
+	"fmt"
+	"math"
+
 	"mathviz/internal/concept"
 	"mathviz/internal/viz"
 )
@@ -50,7 +53,7 @@ func init() {
 				Body: []string{
 					"The blue secant line runs through (x0, f(x0)) and (x0+h, f(x0+h)) — the same " +
 						"two points used to compute an average speed above. Drag h down and the " +
-						"secant visibly rotates to hug the dashed tangent line, which always has " +
+						"secant visibly rotates to hug the orange tangent line, which always has " +
 						"slope 2·x0. Drag x0 and both lines slide to a new point on the curve; the " +
 						"tangent's slope changes with it, exactly tracking 2x0.",
 				},
@@ -113,6 +116,60 @@ func Derivative(x0 float64) float64 {
 }
 
 func render(p map[string]float64) string {
-	_ = p
-	return viz.New(680, 320, -2.5, 2.5, 0, 4.5).Axes().String()
+	x0, h := p["x0"], p["h"]
+	if h <= 0 {
+		h = 0.05
+	}
+	x1 := x0 + h
+
+	// Window the plot around both secant points so it stays legible no
+	// matter where x0 sits or how wide h stretches, with a floor on the
+	// width so a tiny h doesn't over-zoom the curve into a near-straight
+	// line.
+	lo, hi := math.Min(x0, x1), math.Max(x0, x1)
+	xmin, xmax := lo-1.2, hi+1.2
+	if xmax-xmin < 3 {
+		mid := (xmin + xmax) / 2
+		xmin, xmax = mid-1.5, mid+1.5
+	}
+	ymax := math.Max(F(xmin), F(xmax)) * 1.15
+
+	c := viz.New(680, 340, xmin, xmax, 0, ymax)
+	c.Axes()
+	step := math.Round((xmax-xmin)/6*10) / 10
+	if step <= 0 {
+		step = 0.5
+	}
+	for x := math.Ceil(xmin/step) * step; x <= xmax; x += step {
+		c.Tick(x, fmt.Sprintf("%.1f", x))
+	}
+
+	curve := viz.Sample(xmin, xmax, 200, F)
+	c.Path(curve, viz.Ink, 2)
+
+	// Tangent line: passes through (x0, F(x0)) with slope Derivative(x0),
+	// drawn across the visible window.
+	slope := Derivative(x0)
+	tangent := [][2]float64{
+		{xmin, F(x0) + slope*(xmin-x0)},
+		{xmax, F(x0) + slope*(xmax-x0)},
+	}
+	c.Path(tangent, viz.Warm, 2)
+
+	// Secant line: the two points the average-speed calculation actually uses.
+	secant := [][2]float64{{x0, F(x0)}, {x1, F(x1)}}
+	c.Path(secant, viz.Accent, 2.5)
+
+	for _, pt := range secant {
+		px, py := c.X(pt[0]), c.Y(pt[1])
+		c.Rect(px-4, py-4, 8, 8, viz.Accent, 1)
+	}
+
+	c.Text(20, 24, fmt.Sprintf("x0 = %.2f    h = %.2f", x0, h), 14, viz.Ink, "start")
+	c.Text(20, 44, fmt.Sprintf("secant slope = %.3f    tangent slope f'(x0) = %.3f", SecantSlope(x0, h), slope),
+		13, viz.Muted, "start")
+	c.Text(20, 62, "blue = secant through (x0,f(x0)) and (x0+h,f(x0+h))    orange = tangent at x0",
+		12, viz.Muted, "start")
+
+	return c.String()
 }
