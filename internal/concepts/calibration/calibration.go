@@ -8,6 +8,7 @@
 package calibration
 
 import (
+	"fmt"
 	"math"
 
 	"mathviz/internal/concept"
@@ -126,6 +127,55 @@ func ExpectedCalibrationError(sep, temp float64, steps int) float64 {
 }
 
 func render(p map[string]float64) string {
-	_ = p
-	return viz.New(680, 420, 0, 1, 0, 1).String()
+	sep, temp, markP := p["sep"], p["temp"], p["markP"]
+	if temp <= 0.01 {
+		temp = 0.01
+	}
+	if markP <= 0 {
+		markP = 0.01
+	}
+	if markP >= 1 {
+		markP = 0.99
+	}
+
+	c := viz.New(680, 460, 0, 1, 0, 1)
+	c.PadT = 96 // room for four lines of header text above the diagram
+	c.Axes()
+	for x := 0.0; x <= 1.0; x += 0.2 {
+		c.Tick(x, fmt.Sprintf("%.1f", x))
+	}
+
+	// Perfect calibration is exactly the diagonal.
+	c.Path([][2]float64{{0, 0}, {1, 1}}, viz.Muted, 1.5)
+
+	// The reliability curve itself, avoiding p=0/1 where logit blows up.
+	curve := viz.Sample(0.01, 0.99, 240, func(pp float64) float64 {
+		return ObservedFrequency(pp, temp)
+	})
+	c.Path(curve, viz.Accent, 2.5)
+
+	// Mark the inspected confidence level: predicted vs. what it actually
+	// means, with a dashed guide down to the x-axis.
+	observed := ObservedFrequency(markP, temp)
+	c.VLine(markP, viz.Warm, true)
+	mx, my := c.X(markP), c.Y(observed)
+	c.Rect(mx-4, my-4, 8, 8, viz.Warm, 1)
+
+	ece := ExpectedCalibrationError(sep, temp, 400)
+	verdict := "well-calibrated (temp ≈ 1)"
+	if temp < 0.95 {
+		verdict = "overconfident (temp < 1) — the common failure for trained neural nets"
+	} else if temp > 1.05 {
+		verdict = "underconfident (temp > 1)"
+	}
+
+	c.Text(20, 24, fmt.Sprintf("temperature = %.2f    ECE ≈ %.3f    separation = %.1f", temp, ece, sep),
+		14, viz.Ink, "start")
+	c.Text(20, 44, verdict, 13, viz.Warm, "start")
+	c.Text(20, 64, fmt.Sprintf("when the model says %.0f%% confident, it's actually right about %.0f%% of the time",
+		markP*100, observed*100), 13, viz.Muted, "start")
+	c.Text(20, 84, "x = predicted probability, y = observed frequency    grey diagonal = perfect calibration",
+		12, viz.Muted, "start")
+
+	return c.String()
 }
