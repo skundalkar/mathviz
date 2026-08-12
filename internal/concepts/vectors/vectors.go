@@ -5,6 +5,8 @@
 package vectors
 
 import (
+	"math"
+
 	"mathviz/internal/concept"
 	"mathviz/internal/viz"
 )
@@ -122,6 +124,66 @@ func init() {
 		},
 		Render: render,
 	})
+}
+
+// Add returns the component-wise sum of the vectors (ux,uy) and (vx,vy).
+func Add(ux, uy, vx, vy float64) (x, y float64) {
+	return ux + vx, uy + vy
+}
+
+// Dot returns the dot product of the vectors (ux,uy) and (vx,vy): the sum
+// of the products of their matching components.
+func Dot(ux, uy, vx, vy float64) float64 {
+	return ux*vx + uy*vy
+}
+
+// Magnitude returns the length of the vector (x,y).
+func Magnitude(x, y float64) float64 {
+	return math.Hypot(x, y)
+}
+
+// AngleBetween returns the angle in radians, in [0, π], between the
+// vectors (ux,uy) and (vx,vy). Returns 0 if either vector has zero length
+// (a zero vector has no direction to measure an angle against).
+func AngleBetween(ux, uy, vx, vy float64) float64 {
+	mu, mv := Magnitude(ux, uy), Magnitude(vx, vy)
+	if mu == 0 || mv == 0 {
+		return 0
+	}
+	cos := Dot(ux, uy, vx, vy) / (mu * mv)
+	// Clamp: floating-point rounding can push |cos| a hair past 1, which
+	// would make Acos return NaN.
+	switch {
+	case cos > 1:
+		cos = 1
+	case cos < -1:
+		cos = -1
+	}
+	return math.Acos(cos)
+}
+
+// ScalarProjection returns the signed length of the component of (ux,uy)
+// that lies along the direction of (vx,vy) — how far u reaches in v's
+// direction. Negative means u leans more against v's direction than with
+// it. Returns 0 if v is the zero vector (no direction to project onto).
+func ScalarProjection(ux, uy, vx, vy float64) float64 {
+	mv := Magnitude(vx, vy)
+	if mv == 0 {
+		return 0
+	}
+	return Dot(ux, uy, vx, vy) / mv
+}
+
+// VectorProjection returns the component of (ux,uy) that lies along the
+// vector (vx,vy), as a vector pointing along v (or its opposite, when the
+// scalar projection is negative). Returns (0,0) if v is the zero vector.
+func VectorProjection(ux, uy, vx, vy float64) (x, y float64) {
+	vv := Dot(vx, vy, vx, vy)
+	if vv == 0 {
+		return 0, 0
+	}
+	scale := Dot(ux, uy, vx, vy) / vv
+	return scale * vx, scale * vy
 }
 
 func render(p map[string]float64) string {
