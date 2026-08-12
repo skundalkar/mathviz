@@ -34,11 +34,11 @@ Format: `- [ ] <id> — <one-line description of the concept to visualize>`
 - [x] sine-cosine — the unit circle unrolled into waves
 - [x] vectors — addition, dot product, and projection
 - [x] complex-numbers — rotation in the complex plane
+- [x] prime-sieve — the Sieve of Eratosthenes animated
 
 ## Up next (statistics & ML intuition)
 
 ## Up next (math foundations)
-- [ ] prime-sieve — the Sieve of Eratosthenes animated
 - [ ] modular-arithmetic — the clock that makes cryptography work
 
 ## How to add work
