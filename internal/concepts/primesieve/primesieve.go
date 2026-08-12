@@ -5,6 +5,9 @@
 package primesieve
 
 import (
+	"fmt"
+	"math"
+
 	"mathviz/internal/concept"
 	"mathviz/internal/viz"
 )
@@ -162,7 +165,59 @@ func PrimesUpTo(n int) []int {
 	return out
 }
 
+const cols = 10
+
 func render(p map[string]float64) string {
-	c := viz.New(588, 554, 0, 1, 0, 1)
+	n := int(math.Round(p["n"]))
+	step := int(math.Round(p["step"]))
+	sqrtN := math.Sqrt(float64(n))
+
+	count := n - 1 // numbers 2..n
+	rows := (count + cols - 1) / cols
+
+	const cellW, cellH = 54.0, 42.0
+	const marginL, marginT = 24.0, 92.0
+	w := marginL*2 + cols*cellW
+	h := marginT + float64(rows)*cellH + 20
+
+	// The grid is drawn entirely in pixel space via Rect/Text, so the
+	// data-space range passed to New is unused — any placeholder works.
+	c := viz.New(w, h, 0, 1, 0, 1)
+
+	confirmed := 0
+	for num := 2; num <= n; num++ {
+		idx := num - 2
+		row, col := idx/cols, idx%cols
+		x := marginL + float64(col)*cellW
+		y := marginT + float64(row)*cellH
+
+		marked := MarkedAtStep(num, step)
+		swept := float64(step) >= sqrtN
+
+		fill, opacity, textColor := viz.Faint, 1.0, viz.Ink // still a candidate
+		switch {
+		case marked:
+			fill, opacity, textColor = viz.Muted, 0.25, viz.Muted
+		case swept:
+			fill, opacity, textColor = viz.Good, 0.25, viz.Good
+			confirmed++
+		}
+
+		if num == step {
+			// Colored border behind the fill: draw a slightly larger rect
+			// first, then the normal (smaller, inset) fill on top of it.
+			c.Rect(x, y, cellW-2, cellH-2, viz.Accent, 1)
+		}
+		c.Rect(x+2, y+2, cellW-6, cellH-6, fill, opacity)
+		c.Text(x+cellW/2, y+cellH/2+5, fmt.Sprintf("%d", num), 14, textColor, "middle")
+	}
+
+	c.Text(marginL, 24, fmt.Sprintf("Sieve of Eratosthenes up to N=%d — swept every prime ≤ %d", n, step),
+		15, viz.Ink, "start")
+	c.Text(marginL, 46, fmt.Sprintf("√N ≈ %.2f — once swept past that, every remaining candidate is guaranteed prime", sqrtN),
+		13, viz.Muted, "start")
+	c.Text(marginL, 68, fmt.Sprintf("green = confirmed prime (%d so far)   gray = crossed off   white = still a candidate", confirmed),
+		13, viz.Muted, "start")
+
 	return c.String()
 }
