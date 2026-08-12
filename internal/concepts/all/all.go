@@ -23,6 +23,7 @@ import (
 	_ "mathviz/internal/concepts/overfitting"
 	_ "mathviz/internal/concepts/prauc"
 	_ "mathviz/internal/concepts/precisionrecall"
+	_ "mathviz/internal/concepts/primesieve"
 	_ "mathviz/internal/concepts/pvalue"
 	_ "mathviz/internal/concepts/rocauc"
 	_ "mathviz/internal/concepts/sigmoidsoftmax"
