@@ -28,4 +28,5 @@ import (
 	_ "mathviz/internal/concepts/sinecosine"
 	_ "mathviz/internal/concepts/stddev"
 	_ "mathviz/internal/concepts/variancestddev"
+	_ "mathviz/internal/concepts/vectors"
 )
