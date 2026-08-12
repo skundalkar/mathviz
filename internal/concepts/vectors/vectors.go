@@ -5,6 +5,7 @@
 package vectors
 
 import (
+	"fmt"
 	"math"
 
 	"mathviz/internal/concept"
@@ -187,6 +188,69 @@ func VectorProjection(ux, uy, vx, vy float64) (x, y float64) {
 }
 
 func render(p map[string]float64) string {
+	ux, uy, vx, vy := p["ux"], p["uy"], p["vx"], p["vy"]
+	sx, sy := Add(ux, uy, vx, vy)
+	dot := Dot(ux, uy, vx, vy)
+	mu, mv, msum := Magnitude(ux, uy), Magnitude(vx, vy), Magnitude(sx, sy)
+	proj := ScalarProjection(ux, uy, vx, vy)
+	projX, projY := VectorProjection(ux, uy, vx, vy)
+	angleDeg := AngleBetween(ux, uy, vx, vy) * 180 / math.Pi
+
+	// Square-ish data range: viz.New's fixed padding (48/18 left/right,
+	// 18/34 top/bottom) leaves an equal-ish plot area on a 534x520 canvas,
+	// so a symmetric data range renders angles without visible skew.
 	c := viz.New(534, 520, -11, 11, -11, 11)
+
+	// Axes through the origin.
+	c.Path([][2]float64{{c.XMin, 0}, {c.XMax, 0}}, viz.Muted, 1)
+	c.Path([][2]float64{{0, c.YMin}, {0, c.YMax}}, viz.Muted, 1)
+
+	// Parallelogram construction: dashed guides from each vector's tip to
+	// the sum, parallel to the other vector, showing where u+v lands.
+	c.Path([][2]float64{{ux, uy}, {sx, sy}}, viz.Faint, 1)
+	c.Path([][2]float64{{vx, vy}, {sx, sy}}, viz.Faint, 1)
+
+	// Projection: the dotted segment from the origin to the projection
+	// point along v, and the perpendicular dropped from the tip of u.
+	c.Path([][2]float64{{0, 0}, {projX, projY}}, viz.Good, 3)
+	c.Path([][2]float64{{ux, uy}, {projX, projY}}, viz.Muted, 1)
+
+	arrow(c, 0, 0, vx, vy, viz.Warm, 2.5)
+	arrow(c, 0, 0, ux, uy, viz.Accent, 2.5)
+	arrow(c, 0, 0, sx, sy, viz.Ink, 2)
+
+	c.Text(16, 24, fmt.Sprintf("u = (%.1f, %.1f)  |u| = %.2f", ux, uy, mu), 14, viz.Accent, "start")
+	c.Text(16, 44, fmt.Sprintf("v = (%.1f, %.1f)  |v| = %.2f", vx, vy, mv), 14, viz.Warm, "start")
+	c.Text(16, 64, fmt.Sprintf("u + v = (%.1f, %.1f)  |u+v| = %.2f", sx, sy, msum), 14, viz.Ink, "start")
+	c.Text(16, 84, fmt.Sprintf("u · v = %.2f    angle = %.1f°    proj of u onto v = %.2f", dot, angleDeg, proj),
+		13, viz.Good, "start")
+
 	return c.String()
+}
+
+// arrow draws a straight line from (x0,y0) to (x1,y1) in data space, with
+// a small V-shaped arrowhead at the end. The data range is kept roughly
+// square (see render), so a fixed data-space arrowhead reads correctly on
+// both axes without needing pixel-space compensation.
+func arrow(c *viz.Canvas, x0, y0, x1, y1 float64, color string, width float64) {
+	c.Path([][2]float64{{x0, y0}, {x1, y1}}, color, width)
+
+	dx, dy := x1-x0, y1-y0
+	length := math.Hypot(dx, dy)
+	if length < 1e-9 {
+		return
+	}
+	ux, uy := dx/length, dy/length
+	const headLen = 0.45
+	const headAngle = 0.5 // radians, ~29° off the shaft on each side
+
+	barb := func(theta float64) (float64, float64) {
+		cos, sin := math.Cos(theta), math.Sin(theta)
+		bx, by := -ux, -uy // pointing back along the shaft
+		return bx*cos - by*sin, bx*sin + by*cos
+	}
+	b1x, b1y := barb(headAngle)
+	b2x, b2y := barb(-headAngle)
+	c.Path([][2]float64{{x1, y1}, {x1 + headLen*b1x, y1 + headLen*b1y}}, color, width)
+	c.Path([][2]float64{{x1, y1}, {x1 + headLen*b2x, y1 + headLen*b2y}}, color, width)
 }
