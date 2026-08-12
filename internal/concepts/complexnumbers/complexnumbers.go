@@ -5,6 +5,8 @@
 package complexnumbers
 
 import (
+	"math"
+
 	"mathviz/internal/concept"
 	"mathviz/internal/viz"
 )
@@ -126,6 +128,37 @@ func init() {
 		},
 		Render: render,
 	})
+}
+
+// Multiply returns the product (re,im) of the complex numbers a+bi and
+// c+di: (ac−bd) + (ad+bc)i.
+func Multiply(a, b, c, d float64) (re, im float64) {
+	return a*c - b*d, a*d + b*c
+}
+
+// Modulus returns the length |z| of the complex number a+bi — its
+// distance from the origin.
+func Modulus(a, b float64) float64 {
+	return math.Hypot(a, b)
+}
+
+// Argument returns the angle in radians, in (−π, π], that a+bi makes with
+// the positive real axis.
+func Argument(a, b float64) float64 {
+	return math.Atan2(b, a)
+}
+
+// FromPolar returns the (re,im) components of the complex number with the
+// given modulus r and argument theta (radians).
+func FromPolar(r, theta float64) (re, im float64) {
+	return r * math.Cos(theta), r * math.Sin(theta)
+}
+
+// Rotate multiplies a+bi by the rotor r·(cos θ + i sin θ): it turns
+// (a,b) by theta radians and scales it by r in one step.
+func Rotate(a, b, theta, r float64) (re, im float64) {
+	c, d := FromPolar(r, theta)
+	return Multiply(a, b, c, d)
 }
 
 func render(p map[string]float64) string {
