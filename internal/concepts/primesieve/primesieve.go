@@ -113,6 +113,55 @@ func init() {
 	})
 }
 
+// IsPrime reports whether n is a prime number: greater than 1, with no
+// divisor other than 1 and itself. Trial division only needs to check up
+// to √n — if n had a factor larger than that, it would need a matching
+// factor smaller than √n, which would already have been found.
+func IsPrime(n int) bool {
+	if n < 2 {
+		return false
+	}
+	for d := 2; d*d <= n; d++ {
+		if n%d == 0 {
+			return false
+		}
+	}
+	return true
+}
+
+// SmallestPrimeFactor returns the smallest prime that divides n, for
+// n >= 2. Returns n itself when n is prime.
+func SmallestPrimeFactor(n int) int {
+	for d := 2; d*d <= n; d++ {
+		if n%d == 0 {
+			return d
+		}
+	}
+	return n
+}
+
+// MarkedAtStep reports whether n has been crossed off once the sieve has
+// swept every prime p <= step: true exactly when n is composite and its
+// smallest prime factor is <= step. A composite's smallest prime factor q
+// satisfies q*q <= n, so n is always crossed off during q's own sweep —
+// the same moment the sieve reaches q — regardless of any larger factors
+// n might also have.
+func MarkedAtStep(n, step int) bool {
+	spf := SmallestPrimeFactor(n)
+	return spf != n && spf <= step
+}
+
+// PrimesUpTo returns every prime number from 2 to n, inclusive.
+func PrimesUpTo(n int) []int {
+	var out []int
+	for k := 2; k <= n; k++ {
+		if IsPrime(k) {
+			out = append(out, k)
+		}
+	}
+	return out
+}
+
 func render(p map[string]float64) string {
 	c := viz.New(588, 554, 0, 1, 0, 1)
 	return c.String()
