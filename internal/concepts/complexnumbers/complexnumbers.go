@@ -5,6 +5,7 @@
 package complexnumbers
 
 import (
+	"fmt"
 	"math"
 
 	"mathviz/internal/concept"
@@ -162,6 +163,79 @@ func Rotate(a, b, theta, r float64) (re, im float64) {
 }
 
 func render(p map[string]float64) string {
+	zRe, zIm := p["zRe"], p["zIm"]
+	thetaDeg, scale := p["angle"], p["scale"]
+	theta := thetaDeg * math.Pi / 180
+
+	wRe, wIm := FromPolar(scale, theta)
+	prodRe, prodIm := Rotate(zRe, zIm, theta, scale)
+	modZ, modW, modProd := Modulus(zRe, zIm), Modulus(wRe, wIm), Modulus(prodRe, prodIm)
+	argZ, argProd := Argument(zRe, zIm), Argument(prodRe, prodIm)
+
+	// Square-ish data range: viz.New's fixed padding leaves an equal-ish
+	// plot area on a 534x520 canvas, so angles render without visible skew.
 	c := viz.New(534, 520, -13, 13, -13, 13)
+
+	// Axes through the origin.
+	c.Path([][2]float64{{c.XMin, 0}, {c.XMax, 0}}, viz.Muted, 1)
+	c.Path([][2]float64{{0, c.YMin}, {0, c.YMax}}, viz.Muted, 1)
+
+	// Dashed circle of radius |z|: with scale=1 the product's tip never
+	// leaves this circle, only slides around it as angle changes.
+	circle := make([][2]float64, 0, 121)
+	for i := 0; i <= 120; i++ {
+		phi := 2 * math.Pi * float64(i) / 120
+		circle = append(circle, [2]float64{modZ * math.Cos(phi), modZ * math.Sin(phi)})
+	}
+	c.Path(circle, viz.Faint, 1)
+
+	// Arc from z's angle to the product's angle, at a fixed inset radius,
+	// showing "the angle just added" — theta, the rotor's own angle.
+	const arcRadius = 1.6
+	arc := make([][2]float64, 0, 61)
+	for i := 0; i <= 60; i++ {
+		t := argZ + theta*float64(i)/60
+		arc = append(arc, [2]float64{arcRadius * math.Cos(t), arcRadius * math.Sin(t)})
+	}
+	c.Path(arc, viz.Warm, 1.5)
+
+	arrow(c, 0, 0, wRe, wIm, viz.Warm, 2)
+	arrow(c, 0, 0, zRe, zIm, viz.Accent, 2.5)
+	arrow(c, 0, 0, prodRe, prodIm, viz.Good, 2.5)
+
+	c.Text(16, 24, fmt.Sprintf("z = %.2f%+.2fi   |z| = %.2f   arg z = %.1f°", zRe, zIm, modZ, argZ*180/math.Pi),
+		14, viz.Accent, "start")
+	c.Text(16, 44, fmt.Sprintf("w = %.2f%+.2fi   |w| = %.2f (=r)   arg w = θ = %.1f°", wRe, wIm, modW, thetaDeg),
+		14, viz.Warm, "start")
+	c.Text(16, 64, fmt.Sprintf("z × w = %.2f%+.2fi   |z×w| = %.2f (=|z|·r)   arg(z×w) = %.1f°",
+		prodRe, prodIm, modProd, argProd*180/math.Pi), 14, viz.Good, "start")
+
 	return c.String()
+}
+
+// arrow draws a straight line from (x0,y0) to (x1,y1) in data space, with
+// a small V-shaped arrowhead at the end. The data range is kept roughly
+// square (see render), so a fixed data-space arrowhead reads correctly on
+// both axes without needing pixel-space compensation.
+func arrow(c *viz.Canvas, x0, y0, x1, y1 float64, color string, width float64) {
+	c.Path([][2]float64{{x0, y0}, {x1, y1}}, color, width)
+
+	dx, dy := x1-x0, y1-y0
+	length := math.Hypot(dx, dy)
+	if length < 1e-9 {
+		return
+	}
+	ux, uy := dx/length, dy/length
+	const headLen = 0.5
+	const headAngle = 0.5 // radians, ~29° off the shaft on each side
+
+	barb := func(t float64) (float64, float64) {
+		cos, sin := math.Cos(t), math.Sin(t)
+		bx, by := -ux, -uy // pointing back along the shaft
+		return bx*cos - by*sin, bx*sin + by*cos
+	}
+	b1x, b1y := barb(headAngle)
+	b2x, b2y := barb(-headAngle)
+	c.Path([][2]float64{{x1, y1}, {x1 + headLen*b1x, y1 + headLen*b1y}}, color, width)
+	c.Path([][2]float64{{x1, y1}, {x1 + headLen*b2x, y1 + headLen*b2y}}, color, width)
 }
