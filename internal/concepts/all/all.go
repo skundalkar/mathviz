@@ -7,6 +7,7 @@ import (
 	_ "mathviz/internal/concepts/bayestheorem"
 	_ "mathviz/internal/concepts/calibration"
 	_ "mathviz/internal/concepts/clt"
+	_ "mathviz/internal/concepts/complexnumbers"
 	_ "mathviz/internal/concepts/confint"
 	_ "mathviz/internal/concepts/confusionmatrix"
 	_ "mathviz/internal/concepts/correlation"
