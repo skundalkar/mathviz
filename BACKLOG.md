@@ -32,11 +32,11 @@ Format: `- [ ] <id> — <one-line description of the concept to visualize>`
 - [x] derivative — slope of a tangent line as you shrink the interval
 - [x] integral — area under a curve as a sum of shrinking slabs
 - [x] sine-cosine — the unit circle unrolled into waves
+- [x] vectors — addition, dot product, and projection
 
 ## Up next (statistics & ML intuition)
 
 ## Up next (math foundations)
-- [ ] vectors — addition, dot product, and projection
 - [ ] complex-numbers — rotation in the complex plane
 - [ ] prime-sieve — the Sieve of Eratosthenes animated
 - [ ] modular-arithmetic — the clock that makes cryptography work
