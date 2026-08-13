@@ -123,6 +123,48 @@ func init() {
 	})
 }
 
+// Mod returns a mod n, always in [0, n) — including for negative a, unlike
+// Go's built-in % which can return a negative result (e.g. -1 % 12 == -1 in
+// Go, but Mod(-1, 12) == 11, the hour right before midnight). n must be
+// positive.
+func Mod(a, n int) int {
+	r := a % n
+	if r < 0 {
+		r += n
+	}
+	return r
+}
+
+// AddMod returns (a + b) mod n.
+func AddMod(a, b, n int) int {
+	return Mod(a+b, n)
+}
+
+// MulMod returns (a * b) mod n.
+func MulMod(a, b, n int) int {
+	return Mod(a*b, n)
+}
+
+// PowMod returns (base ^ exp) mod n, for exp >= 0, using repeated squaring
+// so each intermediate result is reduced mod n before it's squared again —
+// the same trick that makes modular exponentiation cheap even for huge
+// exponents (see the concept's "What can you do now" section).
+func PowMod(base, exp, n int) int {
+	if n == 1 {
+		return 0
+	}
+	result := 1
+	base = Mod(base, n)
+	for exp > 0 {
+		if exp&1 == 1 {
+			result = MulMod(result, base, n)
+		}
+		base = MulMod(base, base, n)
+		exp >>= 1
+	}
+	return result
+}
+
 func render(p map[string]float64) string {
 	c := viz.New(534, 604, 0, 1, 0, 1)
 	return c.String()
