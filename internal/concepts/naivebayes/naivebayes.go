@@ -127,6 +127,52 @@ func init() {
 	})
 }
 
+// Fixed per-word statistics for the worked example every Section walks
+// through, as if estimated from a training set of spam and non-spam email:
+// how often each word appears in spam vs. in non-spam.
+const (
+	PFreeGivenSpam    = 0.6
+	PFreeGivenHam     = 0.1
+	PMeetingGivenSpam = 0.1
+	PMeetingGivenHam  = 0.5
+)
+
+// Odds converts a probability into odds: p / (1-p). p must be in (0, 1).
+func Odds(p float64) float64 {
+	return p / (1 - p)
+}
+
+// ProbabilityFromOdds is Odds's inverse: odds / (1 + odds).
+func ProbabilityFromOdds(odds float64) float64 {
+	return odds / (1 + odds)
+}
+
+// WordLikelihoodRatio returns one word's contribution to the posterior
+// odds: how much more likely its observed status (present or absent) is
+// under spam than under not-spam. present=true uses the word's own
+// probabilities directly; present=false uses their complements, since a
+// word's absence is itself evidence.
+func WordLikelihoodRatio(present bool, pGivenSpam, pGivenHam float64) float64 {
+	if present {
+		return pGivenSpam / pGivenHam
+	}
+	return (1 - pGivenSpam) / (1 - pGivenHam)
+}
+
+// PosteriorProbability folds a prior probability and any number of
+// independent likelihood ratios into one posterior probability: convert
+// the prior to odds, multiply in every ratio (the naive-Bayes "naive"
+// step — treating each ratio's evidence as independent of the others),
+// then convert back to a probability. Called with no ratios, it returns
+// the prior unchanged.
+func PosteriorProbability(prior float64, ratios ...float64) float64 {
+	odds := Odds(prior)
+	for _, r := range ratios {
+		odds *= r
+	}
+	return ProbabilityFromOdds(odds)
+}
+
 func render(p map[string]float64) string {
 	c := viz.New(640, 380, 0, 1, 0, 1)
 	return c.String()
