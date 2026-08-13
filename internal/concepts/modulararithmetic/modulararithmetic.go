@@ -6,6 +6,10 @@
 package modulararithmetic
 
 import (
+	"fmt"
+	"math"
+	"strings"
+
 	"mathviz/internal/concept"
 	"mathviz/internal/viz"
 )
@@ -165,7 +169,96 @@ func PowMod(base, exp, n int) int {
 	return result
 }
 
+// clockPoint returns the (x, y) position of point k on a unit circle of n
+// evenly-spaced points, starting at the top (12-o'clock) and going
+// clockwise like a real clock face — the same layout described in the
+// "What does the picture show?" section.
+func clockPoint(k, n int) (x, y float64) {
+	theta := math.Pi/2 - 2*math.Pi*float64(k)/float64(n)
+	return math.Cos(theta), math.Sin(theta)
+}
+
 func render(p map[string]float64) string {
-	c := viz.New(534, 604, 0, 1, 0, 1)
+	n := int(math.Round(p["n"]))
+	mult := int(math.Round(p["multiplier"]))
+
+	// 534x604 with PadT/PadB overridden below keeps the plot area an exact
+	// 468x468 square (534-48-18 = 604-96-40 = 468) so a unit circle drawn
+	// through data-space (x,y) renders as an actual circle, not an ellipse
+	// — the same trick used in sinecosine's inset circle.
+	c := viz.New(534, 604, -1.3, 1.3, -1.3, 1.3)
+	c.PadT = 96 // room for three lines of header text above the circle
+	c.PadB = 40 // room for one line of footer text below it
+
+	// The clock face itself.
+	circle := make([][2]float64, 0, 121)
+	for i := 0; i <= 120; i++ {
+		phi := 2 * math.Pi * float64(i) / 120
+		circle = append(circle, [2]float64{math.Cos(phi), math.Sin(phi)})
+	}
+	c.Path(circle, viz.Faint, 1.5)
+
+	// One chord per point k, from k to (k*mult) mod n — skipped when a
+	// point maps to itself (so multiplier=1 draws no chords at all), and
+	// deduplicated so a mutual pair (k maps to j, and j maps back to k)
+	// only draws its shared segment once instead of stacking two
+	// identical lines on top of each other.
+	drawn := map[[2]int]bool{}
+	chords := 0
+	for k := 0; k < n; k++ {
+		target := MulMod(k, mult, n)
+		if target == k {
+			continue
+		}
+		key := [2]int{k, target}
+		if key[0] > key[1] {
+			key[0], key[1] = key[1], key[0]
+		}
+		if drawn[key] {
+			continue
+		}
+		drawn[key] = true
+
+		x0, y0 := clockPoint(k, n)
+		x1, y1 := clockPoint(target, n)
+		c.Path([][2]float64{{x0, y0}, {x1, y1}}, viz.Accent, 1)
+		chords++
+	}
+
+	// Points and their labels, drawn last so they sit on top of the chords.
+	for k := 0; k < n; k++ {
+		x, y := clockPoint(k, n)
+		px, py := c.X(x), c.Y(y)
+		c.Rect(px-3, py-3, 6, 6, viz.Ink, 1)
+
+		lx, ly := clockPoint(k, n)
+		lpx, lpy := c.X(lx*1.16), c.Y(ly*1.16)
+		c.Text(lpx, lpy+4, fmt.Sprintf("%d", k), 12, viz.Muted, "middle")
+	}
+
+	// A few worked mappings, matching the section-2 walkthrough, computed
+	// for whatever n and multiplier are currently dialed in.
+	shown := n
+	if shown > 6 {
+		shown = 6
+	}
+	pairs := make([]string, 0, shown)
+	for k := 0; k < shown; k++ {
+		pairs = append(pairs, fmt.Sprintf("%d→%d", k, MulMod(k, mult, n)))
+	}
+	trail := ""
+	if n > shown {
+		trail = " ..."
+	}
+
+	c.Text(20, 26, fmt.Sprintf("Clock size n=%d, multiplier a=%d — chord from k to (k × %d) mod %d", n, mult, mult, n),
+		15, viz.Ink, "start")
+	c.Text(20, 48, fmt.Sprintf("k → k×%d mod %d:  %s%s", mult, n, strings.Join(pairs, "  "), trail),
+		13, viz.Muted, "start")
+	c.Text(20, 70, fmt.Sprintf("%d chords drawn out of %d points", chords, n), 13, viz.Muted, "start")
+
+	c.Text(20, c.H-14, "multiplier=1 draws no chords at all — every point maps only to itself",
+		12, viz.Muted, "start")
+
 	return c.String()
 }
