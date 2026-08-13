@@ -5,6 +5,7 @@
 package zscore
 
 import (
+	"fmt"
 	"math"
 
 	"mathviz/internal/concept"
@@ -165,6 +166,60 @@ func PercentileFromZ(z float64) float64 {
 }
 
 func render(p map[string]float64) string {
-	c := viz.New(680, 380, 0, 1, 0, 1)
+	mean, sd, score := p["mean"], p["stddev"], p["score"]
+	if sd <= 0 {
+		sd = 1
+	}
+	z := ZScore(score, mean, sd)
+	pct := PercentileFromZ(z)
+
+	xmin, xmax := mean-4*sd, mean+4*sd
+	curve := viz.Sample(xmin, xmax, 300, func(x float64) float64 { return NormalPDF(x, mean, sd) })
+	peak := NormalPDF(mean, mean, sd)
+
+	c := viz.New(680, 380, xmin, xmax, 0, peak*1.2)
+	c.PadT = 96
+	c.Axes()
+	for k := -3.0; k <= 3; k++ {
+		x := mean + k*sd
+		c.Tick(x, fmt.Sprintf("%.0f", x))
+	}
+
+	// The score is a free-floating slider independent of mean/stddev, so it
+	// can land outside the plotted window — clamp what's drawn to the
+	// visible range while still reporting the true (unclamped) z-score in
+	// the text, instead of drawing off the edge of the canvas.
+	shown := score
+	if shown < xmin {
+		shown = xmin
+	}
+	if shown > xmax {
+		shown = xmax
+	}
+	shadeLo, shadeHi := math.Min(mean, shown), math.Max(mean, shown)
+
+	// The gap step 2 measures: shaded between the mean and the score.
+	c.Area(curve, shadeLo, shadeHi, viz.Accent, 0.25)
+	c.Path(curve, viz.Ink, 2)
+
+	c.VLine(mean, viz.Muted, true)
+	c.VLine(shown, viz.Accent, false)
+
+	direction := "above"
+	if z < 0 {
+		direction = "below"
+	}
+	off := ""
+	if shown != score {
+		off = "  (off-chart at this μ/σ)"
+	}
+
+	c.Text(20, 24, fmt.Sprintf("x = %.0f    μ = %.0f    σ = %.1f    z = (x−μ)/σ = %.2f", score, mean, sd, z),
+		15, viz.Ink, "start")
+	c.Text(20, 46, fmt.Sprintf("%.0f is %.2f standard deviations %s the mean — roughly the %.1fth percentile%s",
+		score, math.Abs(z), direction, pct, off), 13, viz.Muted, "start")
+	c.Text(20, 68, "dashed = mean μ    solid = score x    shaded = the gap being measured, in raw units",
+		12, viz.Muted, "start")
+
 	return c.String()
 }
