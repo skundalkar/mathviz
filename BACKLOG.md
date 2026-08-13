@@ -36,9 +36,9 @@ Format: `- [ ] <id> — <one-line description of the concept to visualize>`
 - [x] complex-numbers — rotation in the complex plane
 - [x] prime-sieve — the Sieve of Eratosthenes animated
 - [x] modular-arithmetic — the clock that makes cryptography work
+- [x] z-score — standardizing a value by how many standard deviations it sits from the mean, so scores from different scales become comparable
 
 ## Up next (statistics & ML intuition)
-- [ ] z-score — standardizing a value by how many standard deviations it sits from the mean, so scores from different scales become comparable
 - [ ] linear-regression — fitting the least-squares line through a scatter and reading the residuals as what it doesn't explain
 - [ ] naive-bayes — classifying by combining per-feature likelihoods under Bayes' theorem's independence assumption
 - [ ] k-means-clustering — partitioning points into clusters by iteratively updating centroids
