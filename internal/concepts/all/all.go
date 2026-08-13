@@ -32,4 +32,5 @@ import (
 	_ "mathviz/internal/concepts/stddev"
 	_ "mathviz/internal/concepts/variancestddev"
 	_ "mathviz/internal/concepts/vectors"
+	_ "mathviz/internal/concepts/zscore"
 )
