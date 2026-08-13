@@ -35,11 +35,11 @@ Format: `- [ ] <id> — <one-line description of the concept to visualize>`
 - [x] vectors — addition, dot product, and projection
 - [x] complex-numbers — rotation in the complex plane
 - [x] prime-sieve — the Sieve of Eratosthenes animated
+- [x] modular-arithmetic — the clock that makes cryptography work
 
 ## Up next (statistics & ML intuition)
 
 ## Up next (math foundations)
-- [ ] modular-arithmetic — the clock that makes cryptography work
 
 ## How to add work
 Append an unchecked line under the right section. The loop never runs dry as
