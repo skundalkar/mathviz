@@ -5,6 +5,8 @@
 package linreg
 
 import (
+	"fmt"
+
 	"mathviz/internal/concept"
 	"mathviz/internal/viz"
 )
@@ -175,6 +177,77 @@ func SumSquaredError(xs, ys []float64, slope, intercept float64) float64 {
 }
 
 func render(p map[string]float64) string {
-	c := viz.New(680, 420, 0, 1, 0, 1)
+	guessSlope, guessIntercept := p["guessSlope"], p["guessIntercept"]
+
+	bestSlope := Slope(HoursStudied, QuizScore)
+	bestIntercept := Intercept(HoursStudied, QuizScore)
+	sseBest := SumSquaredError(HoursStudied, QuizScore, bestSlope, bestIntercept)
+	sseGuess := SumSquaredError(HoursStudied, QuizScore, guessSlope, guessIntercept)
+
+	const xmin, xmax = 0.0, 6.0
+
+	// Size the y-range to whatever's actually on screen — the data points
+	// plus both lines' endpoints — so an extreme guess slider never draws
+	// off the edge of the canvas.
+	vals := append([]float64{}, QuizScore...)
+	vals = append(vals,
+		Predict(bestSlope, bestIntercept, xmin), Predict(bestSlope, bestIntercept, xmax),
+		Predict(guessSlope, guessIntercept, xmin), Predict(guessSlope, guessIntercept, xmax))
+	ymin, ymax := vals[0], vals[0]
+	for _, v := range vals {
+		if v < ymin {
+			ymin = v
+		}
+		if v > ymax {
+			ymax = v
+		}
+	}
+	pad := (ymax - ymin) * 0.12
+	if pad < 5 {
+		pad = 5
+	}
+	ymin -= pad
+	ymax += pad
+
+	c := viz.New(680, 420, xmin, xmax, ymin, ymax)
+	c.PadT = 96
+	c.Axes()
+	for x := 0.0; x <= xmax; x++ {
+		c.Tick(x, fmt.Sprintf("%g", x))
+	}
+
+	bestLine := viz.Sample(xmin, xmax, 2, func(x float64) float64 { return Predict(bestSlope, bestIntercept, x) })
+	guessLine := viz.Sample(xmin, xmax, 2, func(x float64) float64 { return Predict(guessSlope, guessIntercept, x) })
+
+	// Residuals for the guess line: a thin line from each data point down
+	// (or up) to where the guess line sits at that x.
+	for i, x := range HoursStudied {
+		y := QuizScore[i]
+		guessY := Predict(guessSlope, guessIntercept, x)
+		c.Path([][2]float64{{x, y}, {x, guessY}}, viz.Warm, 1)
+	}
+
+	c.Path(bestLine, viz.Good, 2.5)
+	c.Path(guessLine, viz.Accent, 2)
+
+	for i, x := range HoursStudied {
+		px, py := c.X(x), c.Y(QuizScore[i])
+		c.Rect(px-4, py-4, 8, 8, viz.Ink, 1)
+	}
+
+	beat := "worse than"
+	if sseGuess <= sseBest+1e-9 {
+		beat = "matches"
+	}
+
+	c.Text(20, 24, fmt.Sprintf("least-squares (green): y = %.1f + %.1f·x    SSE(best) = %.2f",
+		bestIntercept, bestSlope, sseBest), 14, viz.Good, "start")
+	c.Text(20, 46, fmt.Sprintf("your guess (blue): y = %.1f + %.1f·x    SSE(yours) = %.2f",
+		guessIntercept, guessSlope, sseGuess), 14, viz.Accent, "start")
+	c.Text(20, 66, fmt.Sprintf("SSE(yours) %s SSE(best) — try to close the gap, you can't beat it", beat),
+		12, viz.Muted, "start")
+	c.Text(20, 86, "black squares = the 5 fixed data points    thin orange = your line's residuals",
+		12, viz.Muted, "start")
+
 	return c.String()
 }
