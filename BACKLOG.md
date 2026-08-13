@@ -38,9 +38,21 @@ Format: `- [ ] <id> — <one-line description of the concept to visualize>`
 - [x] modular-arithmetic — the clock that makes cryptography work
 
 ## Up next (statistics & ML intuition)
+- [ ] z-score — standardizing a value by how many standard deviations it sits from the mean, so scores from different scales become comparable
+- [ ] linear-regression — fitting the least-squares line through a scatter and reading the residuals as what it doesn't explain
+- [ ] naive-bayes — classifying by combining per-feature likelihoods under Bayes' theorem's independence assumption
+- [ ] k-means-clustering — partitioning points into clusters by iteratively updating centroids
+- [ ] cosine-similarity — comparing vector directions instead of magnitudes, the backbone of embedding search
 
 ## Up next (math foundations)
+- [ ] pascals-triangle — binomial coefficients built row by row, and why each entry is "n choose k"
+- [ ] eigenvectors-eigenvalues — the directions a linear transformation only stretches, never rotates
+- [ ] birthday-paradox — why shared-birthday collisions happen far sooner than intuition expects
 
 ## How to add work
-Append an unchecked line under the right section. The loop never runs dry as
-long as there is one unchecked box.
+Append an unchecked line under the right section by hand any time — the loop
+never runs dry as long as there is one unchecked box. The daily build trigger
+also tops this up itself: before building, it checks the unchecked count and,
+if it's running low, proposes a few new math/stats/ML items (checked against
+`## Done` and the rest of this file for duplicates) and commits them on their
+own before touching any concept work.
