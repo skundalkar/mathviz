@@ -5,6 +5,8 @@
 package zscore
 
 import (
+	"math"
+
 	"mathviz/internal/concept"
 	"mathviz/internal/viz"
 )
@@ -132,6 +134,34 @@ func init() {
 		},
 		Render: render,
 	})
+}
+
+// ZScore standardizes a raw value x against a distribution with the given
+// mean and standard deviation: how many standard deviations x sits above
+// (positive) or below (negative) that mean. stddev must be > 0.
+func ZScore(x, mean, stddev float64) float64 {
+	return (x - mean) / stddev
+}
+
+// RawFromZ is ZScore's inverse: the raw value that would produce the given
+// z-score under a distribution with the given mean and standard deviation.
+func RawFromZ(z, mean, stddev float64) float64 {
+	return mean + z*stddev
+}
+
+// NormalPDF is the density of a normal distribution with the given mean and
+// standard deviation, evaluated at x — the height of the bell curve.
+func NormalPDF(x, mean, stddev float64) float64 {
+	z := ZScore(x, mean, stddev)
+	return math.Exp(-0.5*z*z) / (stddev * math.Sqrt(2*math.Pi))
+}
+
+// PercentileFromZ converts a z-score into a percentile (0-100) under a
+// standard normal distribution: the share of a normally-distributed
+// population that falls at or below that many standard deviations from the
+// mean. z=0 is the 50th percentile; z=2 is about the 97.7th.
+func PercentileFromZ(z float64) float64 {
+	return 50 * (1 + math.Erf(z/math.Sqrt2))
 }
 
 func render(p map[string]float64) string {
