@@ -121,6 +121,59 @@ func init() {
 	})
 }
 
+// HoursStudied and QuizScore are the fixed 5-student worked example every
+// Section walks through: hours studied (x) against quiz score (y).
+var (
+	HoursStudied = []float64{1, 2, 3, 4, 5}
+	QuizScore    = []float64{50, 55, 65, 70, 80}
+)
+
+// Mean returns the arithmetic mean of v.
+func Mean(v []float64) float64 {
+	sum := 0.0
+	for _, x := range v {
+		sum += x
+	}
+	return sum / float64(len(v))
+}
+
+// Slope returns the least-squares slope of the line fit to (xs, ys):
+// Σ(x−x̄)(y−ȳ) / Σ(x−x̄)². xs and ys must be the same non-empty length.
+func Slope(xs, ys []float64) float64 {
+	xBar, yBar := Mean(xs), Mean(ys)
+	var sxy, sxx float64
+	for i := range xs {
+		dx := xs[i] - xBar
+		sxy += dx * (ys[i] - yBar)
+		sxx += dx * dx
+	}
+	return sxy / sxx
+}
+
+// Intercept returns the least-squares intercept of the line fit to (xs,
+// ys): ȳ − slope·x̄ — the value that forces the line through the data's
+// own center of mass (x̄, ȳ).
+func Intercept(xs, ys []float64) float64 {
+	return Mean(ys) - Slope(xs, ys)*Mean(xs)
+}
+
+// Predict evaluates a line (given its slope and intercept) at x.
+func Predict(slope, intercept, x float64) float64 {
+	return slope*x + intercept
+}
+
+// SumSquaredError totals the squared residual (actual y minus predicted y)
+// of a line (slope, intercept) across every (xs[i], ys[i]) pair — the
+// quantity the least-squares line is built to minimize.
+func SumSquaredError(xs, ys []float64, slope, intercept float64) float64 {
+	var sse float64
+	for i := range xs {
+		r := ys[i] - Predict(slope, intercept, xs[i])
+		sse += r * r
+	}
+	return sse
+}
+
 func render(p map[string]float64) string {
 	c := viz.New(680, 420, 0, 1, 0, 1)
 	return c.String()
