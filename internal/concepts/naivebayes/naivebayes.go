@@ -5,6 +5,8 @@
 package naivebayes
 
 import (
+	"fmt"
+
 	"mathviz/internal/concept"
 	"mathviz/internal/viz"
 )
@@ -173,7 +175,64 @@ func PosteriorProbability(prior float64, ratios ...float64) float64 {
 	return ProbabilityFromOdds(odds)
 }
 
+// bar draws one row's running P(spam): a label above a horizontal bar
+// filled proportionally to prob, colored orange once prob crosses 50% (the
+// email would be classified spam at that point) or green below it, with a
+// thin tick marking the 50% threshold itself. Returns the y to start the
+// next row at.
+func bar(c *viz.Canvas, y float64, label string, prob float64) float64 {
+	const x0, w, h = 20.0, 460.0, 24.0
+
+	color := viz.Good
+	if prob >= 0.5 {
+		color = viz.Warm
+	}
+
+	c.Text(x0, y, label, 13, viz.Ink, "start")
+	barY := y + 8
+	c.Rect(x0, barY, w, h, viz.Faint, 1)
+	c.Rect(x0, barY, w*prob, h, color, 1)
+	c.Rect(x0+w*0.5-0.5, barY-3, 1, h+6, viz.Muted, 1)
+	c.Text(x0+w+10, barY+h/2+5, fmt.Sprintf("%.1f%%", prob*100), 13, viz.Ink, "start")
+
+	return barY + h + 34
+}
+
 func render(p map[string]float64) string {
+	prior := p["prior"] / 100
+	freePresent := p["freePresent"] >= 0.5
+	meetingPresent := p["meetingPresent"] >= 0.5
+
+	ratioFree := WordLikelihoodRatio(freePresent, PFreeGivenSpam, PFreeGivenHam)
+	ratioMeeting := WordLikelihoodRatio(meetingPresent, PMeetingGivenSpam, PMeetingGivenHam)
+	afterFree := PosteriorProbability(prior, ratioFree)
+	afterBoth := PosteriorProbability(prior, ratioFree, ratioMeeting)
+
 	c := viz.New(640, 380, 0, 1, 0, 1)
+
+	freeWord, meetingWord := "doesn't contain", "doesn't contain"
+	if freePresent {
+		freeWord = "contains"
+	}
+	if meetingPresent {
+		meetingWord = "contains"
+	}
+
+	c.Text(20, 24, fmt.Sprintf("P(free|spam)=%.2f  P(free|ham)=%.2f    P(meeting|spam)=%.2f  P(meeting|ham)=%.2f",
+		PFreeGivenSpam, PFreeGivenHam, PMeetingGivenSpam, PMeetingGivenHam), 12, viz.Muted, "start")
+
+	y := 70.0
+	y = bar(c, y, "Prior — before checking any word", prior)
+	y = bar(c, y, fmt.Sprintf("Email %s 'free'  (likelihood ratio ×%.2f)", freeWord, ratioFree), afterFree)
+	y = bar(c, y, fmt.Sprintf("...and %s 'meeting'  (likelihood ratio ×%.2f)", meetingWord, ratioMeeting), afterBoth)
+
+	verdict, vColor := "HAM", viz.Good
+	if afterBoth >= 0.5 {
+		verdict, vColor = "SPAM", viz.Warm
+	}
+	c.Text(20, y+8, fmt.Sprintf("Final verdict: %s — P(spam) = %.1f%%", verdict, afterBoth*100), 15, vColor, "start")
+	c.Text(20, y+30, "gray tick = the 50% classification boundary each bar crosses",
+		12, viz.Muted, "start")
+
 	return c.String()
 }
