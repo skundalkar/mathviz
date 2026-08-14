@@ -6,6 +6,102 @@ code. Newest entries go at the top.
 
 ---
 
+## cosine-similarity — comparing vector direction, not distance
+**Why would you need this?** You've built a document search engine: type
+a query, get back the most similar documents. Represent each document as
+a vector of word counts — the same idea the naive-bayes entry above uses
+for "does this email contain word X," just counted instead of yes/no.
+"Moby Dick" mentions "whale" 900 times; a one-paragraph book review
+mentions "whale" 3 times. Gut instinct: "just compare the raw counts
+directly — closer counts should mean more related documents." That
+instinct actively works against you: measured by ordinary straight-line
+distance between word-count vectors, the short review will always look
+"far" from the long novel even though they're about exactly the same
+thing, while two unrelated documents that happen to be similar lengths
+can look deceptively close. Length alone ends up dominating the
+comparison. Is there a way to compare two vectors that captures "are
+these about the same thing" without being thrown off by "how long are
+they"?
+
+**How does it actually work?** Compare directions instead of raw
+positions. Take two word-count vectors tracking just two words, "cat"
+and "dog": document A, u = (4, 2), and a much shorter document B that
+happens to use the same two words in the same ratio, v = (2, 1) —
+exactly half of u.
+- **Dot product:** u·v = (4)(2) + (2)(1) = 8 + 2 = **10** — multiply
+  matching components and add, the same operation the vectors entry uses.
+- **Magnitudes (lengths):** |u| = √(4²+2²) = √20 ≈ **4.47**, |v| =
+  √(2²+1²) = √5 ≈ **2.24**.
+- **Cosine similarity** = (u·v)/(|u|·|v|) = 10/(4.47×2.24) = 10/10.00 =
+  **1.00** — dividing out both magnitudes cancels the length difference
+  completely, leaving only "do these two vectors point the same way."
+  They do, exactly, so the score hits its maximum, 1.00, even though B is
+  half as long as A.
+- **Contrast with Euclidean (straight-line) distance** between the same
+  two points: √((4-2)²+(2-1)²) = √5 ≈ **2.24** — very much not zero.
+  Distance says "these are apart"; cosine similarity says "these point
+  the same way." Both are true at once, and for "is this document about
+  the same topic," the direction is the one that matters.
+- A third document, C = (1, 5) — mostly "dog," barely any "cat" — gives
+  u·C = 4+10 = 14, |C| = √26 ≈ 5.10, cosine similarity = 14/(4.47×5.10)
+  ≈ **0.61**, angle ≈ 52° — related, but noticeably less so than A and B.
+- A fourth, D = (2, -4), gives u·D = 8-8 = 0 — cosine similarity exactly
+  **0**, a 90° angle: orthogonal, the vector-space way of saying "no
+  direction in common at all."
+
+**What the picture shows:** the blue arrow is u, the orange arrow is v,
+both drawn from the origin — dragging either vector's sliders moves its
+arrow. The green arc traces θ, the angle between them, and the numbers
+above report u·v, cos θ, and θ itself, live. The dashed circle has
+radius 1; the small blue and orange squares sitting on it are u and v
+after dividing each by its own length — "direction only" made literal,
+since every vector lands on the same circle regardless of how long it
+started. With the default u=(4,2), v=(2,1), the two squares land in
+exactly the same spot on the circle (cos θ = 1.00) even though the
+arrows themselves are clearly different lengths — and the gray
+"Euclidean distance" line underneath stays a stubborn 2.24, proof that
+the two measures are answering genuinely different questions. Scale v
+further out along the same direction (say to (4,2) itself, or (8,4)) and
+watch cos θ hold at 1.00 the whole time while the distance number keeps
+changing.
+
+**What can you do now that you couldn't before?** Rank documents (or, in
+a modern system, embeddings — vectors a neural network produces to stand
+in for meaning) by topic or meaning, with a short precise match able to
+outrank a long meandering one, instead of length quietly deciding the
+ranking for you. This is exactly the comparison a semantic search or
+recommendation engine runs, millions of times per query, between a query
+vector and every candidate in its index.
+
+**Where does this show up in real life?** Search engines and
+recommendation systems ranking results by relevance rather than raw
+overlap; embedding-based semantic search — the retrieval step behind
+modern AI assistants that look up relevant documents before answering —
+which represents text, images, or audio as vectors and finds "similar"
+ones by exactly this comparison; duplicate and near-duplicate detection
+(two versions of the same document, lightly edited, still point the same
+way); and "people who liked this also liked..." recommendations,
+comparing users' preference vectors the same way. Outside tech, everyday
+"similar" usually folds in size too ("a similar-sized crowd") — cosine
+similarity deliberately does not; two things can be maximally "similar"
+by this measure while being wildly different in scale.
+
+**Say it like this:** "cosine similarity is the cosine of the angle
+between two vectors — it's blind to their lengths on purpose."
+**Not like this:** treating it like a distance, where smaller means more
+similar — cosine similarity runs the other way, with 1.00 (0°, pointing
+the same way) as the most similar and -1.00 (180°, pointing exactly
+opposite) as the least; or assuming a score of 0 always means
+"completely unrelated" in a real-world sense — it precisely means
+"perpendicular in whatever feature space these vectors were built from,"
+which for a two-word count vector like this example is a fairly literal
+"shares nothing," but in a 300-dimension embedding space is a subtler
+statement about the geometry a model learned, not a plain-English
+verdict; and don't assume the score is bounded 0 to 1 the way a
+probability is — it legitimately runs from -1 to 1.
+
+---
+
 ## k-means-clustering — grouping unlabeled points by nearest centroid
 **Why would you need this?** You're handed a spreadsheet of customers,
 each row just (visits per month, average spend) — no labels, nobody has

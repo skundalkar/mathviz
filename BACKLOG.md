@@ -40,9 +40,9 @@ Format: `- [ ] <id> — <one-line description of the concept to visualize>`
 - [x] linear-regression — fitting the least-squares line through a scatter and reading the residuals as what it doesn't explain
 - [x] naive-bayes — classifying by combining per-feature likelihoods under Bayes' theorem's independence assumption
 - [x] k-means-clustering — partitioning points into clusters by iteratively updating centroids
+- [x] cosine-similarity — comparing vector directions instead of magnitudes, the backbone of embedding search
 
 ## Up next (statistics & ML intuition)
-- [ ] cosine-similarity — comparing vector directions instead of magnitudes, the backbone of embedding search
 
 ## Up next (math foundations)
 - [ ] pascals-triangle — binomial coefficients built row by row, and why each entry is "n choose k"
