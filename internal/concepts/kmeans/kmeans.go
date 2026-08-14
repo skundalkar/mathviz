@@ -4,6 +4,8 @@
 package kmeans
 
 import (
+	"fmt"
+
 	"mathviz/internal/concept"
 	"mathviz/internal/viz"
 )
@@ -130,7 +132,47 @@ func Lloyd(points, initCentroids []Point, iterations int) (centroids []Point, as
 	return centroids, assignments
 }
 
+var clusterColor = []string{viz.Accent, viz.Warm, viz.Good}
+
 func render(p map[string]float64) string {
+	iteration := int(p["iteration"])
+	seed := int(p["seed"])
+
+	initCentroids := SeedCentroids(seed)
+	centroids, assignments := Lloyd(DataPoints, initCentroids, iteration)
+
 	c := viz.New(600, 440, -1, 11, -1, 11)
+	c.Axes()
+
+	// A thin line from each point to the centroid it's currently assigned
+	// to, so a reassignment (a line jumping to a different centroid) is as
+	// visible as a centroid moving.
+	for i, pt := range DataPoints {
+		cen := centroids[assignments[i]]
+		c.Path([][2]float64{{pt.X, pt.Y}, {cen.X, cen.Y}}, viz.Faint, 1)
+	}
+
+	for i, pt := range DataPoints {
+		px, py := c.X(pt.X), c.Y(pt.Y)
+		color := clusterColor[assignments[i]%len(clusterColor)]
+		c.Rect(px-4, py-4, 8, 8, color, 0.85)
+		c.Text(px+7, py-6, PointLabels[i], 11, viz.Muted, "start")
+	}
+
+	for k, cen := range centroids {
+		px, py := c.X(cen.X), c.Y(cen.Y)
+		c.Rect(px-7, py-7, 14, 14, viz.Ink, 0.9)
+		c.Rect(px-5, py-5, 10, 10, clusterColor[k%len(clusterColor)], 1)
+	}
+
+	seedLabel := "spread-out corners"
+	if seed == 1 {
+		seedLabel = "two guesses crammed into one corner"
+	}
+	c.Text(20, 20, "squares = data points, colored by current assignment    bigger boxes = centroids", 12, viz.Muted, "start")
+	c.Text(20, 400, fmt.Sprintf("starting centroids: %s", seedLabel), 13, viz.Ink, "start")
+	c.Text(20, 420, fmt.Sprintf("iteration %d of Lloyd's algorithm (assign to nearest centroid, then move each centroid to its group's mean)", iteration),
+		12, viz.Muted, "start")
+
 	return c.String()
 }
