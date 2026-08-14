@@ -5,6 +5,8 @@
 package pascalstriangle
 
 import (
+	"fmt"
+
 	"mathviz/internal/concept"
 	"mathviz/internal/viz"
 )
@@ -75,7 +77,95 @@ func PascalTriangle(rows int) [][]int64 {
 	return t
 }
 
+const (
+	cellW, cellH     = 54.0, 42.0
+	marginT          = 84.0
+	canvasW, canvasH = 560.0, 560.0
+	triangleCenterX  = canvasW / 2
+	// triangleBottom is the pixel y just past row MaxRows-1's cells (see
+	// cellCenter: row MaxRows-1's center is marginT+(MaxRows-1)*cellH+cellH/2,
+	// and each cell extends 18px past its center), leaving the formula text
+	// below room to sit without overlapping the grid.
+	triangleBottom = marginT + (MaxRows-1)*cellH + cellH/2 + 18
+)
+
 func render(p map[string]float64) string {
-	c := viz.New(600, 440, 0, 1, 0, 1)
+	n := int(p["n"])
+	if n < 0 {
+		n = 0
+	}
+	if n > MaxRows-1 {
+		n = MaxRows - 1
+	}
+	k := int(p["k"])
+	if k < 0 {
+		k = 0
+	}
+	if k > n {
+		k = n
+	}
+
+	tri := PascalTriangle(MaxRows)
+	target := tri[n][k]
+
+	// The grid is drawn entirely in pixel space via Rect/Text, so the
+	// data-space range passed to New is unused -- any placeholder works.
+	c := viz.New(canvasW, canvasH, 0, 1, 0, 1)
+
+	cellCenter := func(row, col int) (float64, float64) {
+		rowWidth := float64(row+1) * cellW
+		xStart := triangleCenterX - rowWidth/2
+		return xStart + float64(col)*cellW + cellW/2, marginT + float64(row)*cellH + cellH/2
+	}
+
+	// The edges of every row (k=0 or k=n) have nothing to sum -- they're 1
+	// by definition, not by addition. Interior entries always have exactly
+	// two real parents, one row up.
+	interior := n > 0 && k > 0 && k < n
+
+	// Connecting lines from parents down to the target, drawn first so the
+	// cells sit on top of them.
+	if interior {
+		px, py := cellCenter(n-1, k-1)
+		tx, ty := cellCenter(n, k)
+		c.Path([][2]float64{{px, py}, {tx, ty}}, viz.Warm, 2)
+		px2, py2 := cellCenter(n-1, k)
+		c.Path([][2]float64{{px2, py2}, {tx, ty}}, viz.Warm, 2)
+	}
+
+	for row := 0; row < MaxRows; row++ {
+		for col := 0; col <= row; col++ {
+			x, y := cellCenter(row, col)
+			fill, opacity, textColor := viz.Faint, 1.0, viz.Ink
+			switch {
+			case row == n && col == k:
+				fill, opacity, textColor = viz.Accent, 0.9, "white"
+			case interior && row == n-1 && (col == k-1 || col == k):
+				fill, opacity, textColor = viz.Warm, 0.35, viz.Ink
+			}
+			const r = 18.0
+			c.Rect(x-r, y-r, 2*r, 2*r, fill, opacity)
+			c.Text(x, y+5, fmt.Sprintf("%d", tri[row][col]), 13, textColor, "middle")
+		}
+	}
+
+	c.Text(20, 24, fmt.Sprintf("Row %d, position %d: C(%d,%d) = %d", n, k, n, k, target), 15, viz.Ink, "start")
+
+	y := triangleBottom + 25.0
+	if interior {
+		left, right := tri[n-1][k-1], tri[n-1][k]
+		c.Text(20, y, fmt.Sprintf("Addition rule: C(%d,%d) = C(%d,%d) + C(%d,%d) = %d + %d = %d",
+			n, k, n-1, k-1, n-1, k, left, right, target), 13, viz.Warm, "start")
+	} else {
+		c.Text(20, y, "Edge entries are always 1 — there's exactly one way to choose none of n items, or all of them.",
+			13, viz.Warm, "start")
+	}
+	y += 22
+	c.Text(20, y, fmt.Sprintf("Combinatorial formula: %d! / (%d! × %d!) = %d / (%d × %d) = %d",
+		n, k, n-k, Factorial(n), Factorial(k), Factorial(n-k), target), 13, viz.Muted, "start")
+	y += 22
+	c.Text(20, y, fmt.Sprintf("In words: there are %d different ways to choose %d items out of %d.", target, k, n),
+		13, viz.Ink, "start")
+
 	return c.String()
 }
