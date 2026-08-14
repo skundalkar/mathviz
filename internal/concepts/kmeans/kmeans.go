@@ -18,7 +18,123 @@ func init() {
 		Sections: []concept.Section{
 			{
 				Heading: "Why would you need this?",
-				Body:    []string{"placeholder"},
+				Body: []string{
+					"You're handed a spreadsheet of customers, each row just (visits per " +
+						"month, average spend) — no labels, nobody has told you which customers " +
+						"are 'similar' — and you want to group them so three different email " +
+						"campaigns can go to three different types of shopper. Gut instinct: 'just " +
+						"plot it and eyeball where the clumps are.' That works fine on a napkin, " +
+						"for a handful of points, on exactly two measurements. It breaks down " +
+						"fast: with three or more measurements per customer you can't even draw " +
+						"the scatter plot anymore, with thousands of points the clumps blur into " +
+						"one smear, and two different people staring at the same cloud will circle " +
+						"different boundaries. Is there a mechanical, repeatable rule — one a " +
+						"computer could run with nobody circling anything by hand — that keeps " +
+						"producing the same grouping from the same data every time?",
+				},
+			},
+			{
+				Heading: "How does it actually work?",
+				Body: []string{
+					"Guess a number of groups, k, and k starting 'centers' anywhere at all — " +
+						"they don't need to be good guesses. Then repeat two steps until nothing " +
+						"changes: (1) assign every point to whichever center is currently closest " +
+						"to it, (2) move each center to the average position of the points just " +
+						"assigned to it. Work a small example with k=3: nine points forming three " +
+						"visible clumps — {A(1,2), B(2,1), C(3,3)} near (2,2), {D(7,1), E(8,2), " +
+						"F(9,3)} near (8,2), {G(4,7), H(5,9), I(6,8)} near (5,8) — and three " +
+						"starting centers guessed badly on purpose, to make the process visible: " +
+						"center 1 at (1,1), center 2 at (2,2), center 3 at (9,9) (two guesses " +
+						"crammed into the first blob's corner, one guess covering both far blobs " +
+						"at once).",
+					"• Assign step 1: compare each point's distance to all three centers. A(1,2) " +
+						"is equally close to center 1 and center 2 (distance² = 1 either way) and " +
+						"goes to whichever is checked first, center 1. G(4,7) is equally close to " +
+						"center 2 and center 3 (distance² = 29 either way) and goes to center 2. " +
+						"Working through all nine points this way gives a messy first grouping: " +
+						"center 1 = {A, B}; center 2 = {C, D, E, G}; center 3 = {F, H, I} — center " +
+						"2 grabbed the nearby point C, but also D and E from the second blob and G " +
+						"from the third.",
+					"• Update step 1: move each center to the mean of its current group. Center 1 " +
+						"→ mean(A,B) = (1.5, 1.5). Center 2 → mean(C,D,E,G) = " +
+						"((3+7+8+4)/4, (3+1+2+7)/4) = (5.5, 3.25). Center 3 → mean(F,H,I) = " +
+						"((9+5+6)/3, (3+9+8)/3) ≈ (6.67, 6.67).",
+					"• Assign step 2: recompute nearest-center with the moved centers. Every " +
+						"point now lands in its real blob: center 1 = {A, B, C}; center 2 = " +
+						"{D, E, F}; center 3 = {G, H, I} — one update cycle already recovered the " +
+						"three real groups, even though the starting guesses were bad.",
+					"• Update step 2: recompute the means one more time — center 1 → (2, 2), " +
+						"center 2 → (8, 2), center 3 → (5, 8), exactly the three blobs' true " +
+						"centers. Reassigning again changes nothing: that 'nothing changed' is " +
+						"exactly the signal to stop.",
+				},
+			},
+			{
+				Heading: "What does the picture show?",
+				Body: []string{
+					"Each of the nine points (labeled A-I, matching the worked example above) is " +
+						"a small square colored by whichever center it's currently assigned to; " +
+						"the three larger bordered squares are the centers themselves; a thin " +
+						"line connects every point to its current center, so a point switching " +
+						"groups shows up as a line jumping, not just a color changing. The " +
+						"Iteration slider steps through the process above exactly: at 0 you see " +
+						"the messy first assignment (center 2's lines reaching out to grab D, E, " +
+						"and G); move it to 1 and the lines redraw around the newly-moved centers, " +
+						"correctly regrouping into the three blobs; move it to 2 and the centers " +
+						"visibly slide the rest of the way onto the true blob centers computed " +
+						"above; moving it further changes nothing at all — convergence, made " +
+						"visible. The starting-centroids toggle swaps in the other seed set (three " +
+						"well-spread guesses, one per blob), where the very first assignment is " +
+						"already correct and only the centers' exact positions still need to catch " +
+						"up — worth flipping back and forth to see how much a bad starting guess " +
+						"changes the trajectory, even when (as here) it doesn't change the final " +
+						"answer.",
+				},
+			},
+			{
+				Heading: "What can you do now that you couldn't before?",
+				Body: []string{
+					"Automatically and repeatably sort unlabeled points into groups — for as " +
+						"many points and as many measurements per point as you have, since " +
+						"'distance between two points' and 'average of a group' both keep working " +
+						"past two dimensions even though a picture can't — with no eyeballing, and " +
+						"the same input always producing the same output. This is exactly how a " +
+						"real customer-segmentation tool sorts thousands of shoppers into a " +
+						"handful of groups worth targeting differently, without anyone drawing " +
+						"circles on a scatter plot.",
+				},
+			},
+			{
+				Heading: "Where does this show up in real life?",
+				Body: []string{
+					"Customer segmentation (grouping shoppers by behavior so different groups " +
+						"get different marketing), image compression (grouping similar pixel " +
+						"colors down to a small palette), grouping news articles or documents by " +
+						"rough topic, and as a common first step inside bigger machine-learning " +
+						"pipelines (picking a handful of 'typical' examples to represent a much " +
+						"larger dataset). It's one of the first tools reached for whenever the " +
+						"goal is 'let the data suggest the groups' instead of defining categories " +
+						"by hand ahead of time.",
+				},
+			},
+			{
+				Heading: "What's the common mistake here?",
+				Body: []string{
+					"Say it like this: 'k-means repeatedly assigns each point to its nearest " +
+						"center, then moves each center to the mean of the points now assigned to " +
+						"it, until nothing changes' — the centers are not real data points, " +
+						"they're computed averages that happen to land somewhere in the middle of " +
+						"a group. Not like this: assuming the algorithm figures out how many " +
+						"groups exist on its own — you choose k yourself ahead of time (fixed at 3 " +
+						"here to match the three visible blobs; k=2 would force two of these real " +
+						"blobs to merge, k=4 would split one blob in half, and either produces a " +
+						"technically-valid but wrong-feeling answer); or assuming k-means always " +
+						"converges to the same grouping no matter the starting guesses — it does " +
+						"here because the three blobs are so well separated, but on messier or " +
+						"overlapping data, different starting centers can converge to genuinely " +
+						"different final groupings (a 'local optimum'), not just take a different " +
+						"number of iterations to arrive at the same one.",
+				},
 			},
 		},
 		Params: []concept.ParamSpec{

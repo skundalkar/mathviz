@@ -39,9 +39,9 @@ Format: `- [ ] <id> — <one-line description of the concept to visualize>`
 - [x] z-score — standardizing a value by how many standard deviations it sits from the mean, so scores from different scales become comparable
 - [x] linear-regression — fitting the least-squares line through a scatter and reading the residuals as what it doesn't explain
 - [x] naive-bayes — classifying by combining per-feature likelihoods under Bayes' theorem's independence assumption
+- [x] k-means-clustering — partitioning points into clusters by iteratively updating centroids
 
 ## Up next (statistics & ML intuition)
-- [ ] k-means-clustering — partitioning points into clusters by iteratively updating centroids
 - [ ] cosine-similarity — comparing vector directions instead of magnitudes, the backbone of embedding search
 
 ## Up next (math foundations)
