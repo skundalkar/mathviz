@@ -6,6 +6,92 @@ code. Newest entries go at the top.
 
 ---
 
+## pascals-triangle — binomial coefficients built row by row
+**Why would you need this?** You're picking a 2-person subcommittee out
+of a 5-person team, or figuring out how many different 3-topping pizzas
+you can order from 8 available toppings. Gut instinct: "easy, 5 people
+times 4 remaining choices, that's 20 ways to pick 2." That overcounts —
+picking Alice then Bob lands you the same 2-person subcommittee as
+picking Bob then Alice, but the instinctive count treats them as two
+different outcomes, so the real number of distinct groups is smaller
+than 20. Listing every group by hand to avoid that trap works for 2 of 5
+people, gets tedious for 3 of 8 toppings, and is hopeless for, say, 5
+cards out of a 52-card deck. Is there a fast, unambiguous way to count
+"how many distinct groups of k can I make from n things" — one you can
+look up or build up once, instead of listing or re-deriving it by hand
+every time?
+
+**How does it actually work?** Build a triangle of numbers from the top,
+one row at a time. Row 0 is just a single 1 (there's exactly one way to
+choose nothing from nothing). Every row after that starts and ends with 1
+— there's always exactly one way to choose none of n things, and exactly
+one way to choose all of them — and every entry in between is simply the
+sum of the two entries diagonally above it.
+- Row 0 = [1]. Row 1 = [1, 1]. Row 2 = [1, 2, 1] — the middle 2 is 1+1
+  from row 1. Row 3 = [1, 3, 3, 1] — each 3 is 1+2. Row 4 = [1, 4, 6, 4,
+  1] — the 6 is 3+3 from row 3.
+- **Row 5 = [1, 5, 10, 10, 5, 1]** — the first 10 (position k=2) is row
+  4's 4 plus row 4's 6: 4 + 6 = **10**.
+
+That 10 also has a second, completely independent way to arrive at the
+same number: the combinatorial formula for "n choose k,"
+n!/(k!(n-k)!) = 5!/(2!×3!) = 120/(2×6) = **10** — exact same answer,
+reached by pure multiplication and division instead of repeated
+addition. That's not a coincidence: every entry the triangle produces by
+addition always equals its row and position's "n choose k" value,
+proven equal, not just observed to often match.
+
+Apply it: 8 toppings, choose 3 — row 8 of the triangle is
+[1, 8, 28, 56, 70, 56, 28, 8, 1], and position k=3 reads **56**. There
+are 56 distinct 3-topping pizzas possible from 8 toppings.
+
+**What the picture shows:** every row 0 through 8 drawn as a triangle of
+numbers. The Row n and Position k sliders pick one entry, highlighted in
+blue. Whenever that entry isn't on the edge of its row, its two parents
+one row up are highlighted in orange and connected to it with two orange
+lines, tracing out exactly the addition that produced it — move either
+slider and watch which two numbers feed into the newly highlighted one.
+Below the triangle, the same entry is broken down three ways at once:
+the addition (parent + parent = child), the factorial formula, and a
+plain-English "ways to choose" sentence — all three landing on the same
+number, since they're three views of one fact rather than three separate
+facts.
+
+**What can you do now that you couldn't before?** Instantly count how
+many distinct groups of k you can form from n things, for numbers far
+too large to list by hand — using the fast recursive picture if you
+already have the row above, or the direct formula if you don't — and
+trust the two always agree, because they're proven equal, not just
+usually consistent. 8 toppings choose 3 = 56 possible pizzas; 52 cards
+choose 5 = 2,598,960 possible poker hands — numbers nobody is
+realistically listing out one at a time by hand.
+
+**Where does this show up in real life?** Counting problems generally —
+how many ways to pick a starting five from a twelve-player roster, how
+many different lottery ticket combinations exist, how many possible
+poker hands a deck can deal. It's also the exact set of coefficients
+that appear when you expand (a+b)ⁿ in algebra (row n of the triangle
+gives the coefficients of (a+b)ⁿ's expanded terms), and it underlies the
+binomial probability distribution — the math behind "what are the odds
+of exactly 6 heads in 10 coin flips" or reading results out of an A/B
+test. "Pascal's triangle" is also just the name most people already know
+this shape by from a math class, whether or not they remember why it
+works.
+
+**Say it like this:** "C(n,k) counts groups where order doesn't matter —
+picking Alice then Bob is the same group as picking Bob then Alice."
+**Not like this:** confusing it with counting ordered arrangements
+(permutations), which is a bigger number — 5×4=20 ordered pairs from a
+5-person team, versus C(5,2)=10 unordered pairs, exactly double, because
+each unordered pair corresponds to 2 possible orderings. Also not like
+this: treating the addition rule and the factorial formula as two
+competing methods that might disagree — they're proven to always produce
+the identical number by two different routes, so if a hand calculation
+ever gives different answers from the two methods, the arithmetic has a
+mistake in it somewhere, not the underlying rule.
+
+---
+
 ## cosine-similarity — comparing vector direction, not distance
 **Why would you need this?** You've built a document search engine: type
 a query, get back the most similar documents. Represent each document as

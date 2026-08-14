@@ -41,11 +41,11 @@ Format: `- [ ] <id> — <one-line description of the concept to visualize>`
 - [x] naive-bayes — classifying by combining per-feature likelihoods under Bayes' theorem's independence assumption
 - [x] k-means-clustering — partitioning points into clusters by iteratively updating centroids
 - [x] cosine-similarity — comparing vector directions instead of magnitudes, the backbone of embedding search
+- [x] pascals-triangle — binomial coefficients built row by row, and why each entry is "n choose k"
 
 ## Up next (statistics & ML intuition)
 
 ## Up next (math foundations)
-- [ ] pascals-triangle — binomial coefficients built row by row, and why each entry is "n choose k"
 - [ ] eigenvectors-eigenvalues — the directions a linear transformation only stretches, never rotates
 - [ ] birthday-paradox — why shared-birthday collisions happen far sooner than intuition expects
 
