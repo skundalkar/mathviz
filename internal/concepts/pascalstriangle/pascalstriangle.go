@@ -26,12 +26,17 @@ func init() {
 						"20 ways to pick 2.' That overcounts — picking Alice then Bob lands you the " +
 						"same 2-person subcommittee as picking Bob then Alice, but the instinctive " +
 						"count treats them as two different outcomes, so the real number of " +
-						"distinct groups is smaller than 20. Listing every group by hand to avoid " +
-						"that trap works for 2 of 5 people, gets tedious for 3 of 8 toppings, and " +
-						"is hopeless for, say, 5 cards out of a 52-card deck. Is there a fast, " +
-						"unambiguous way to count 'how many distinct groups of k can I make from n " +
-						"things' — one you can look up or build up once, instead of listing or " +
-						"re-deriving it by hand every time?",
+						"distinct groups is smaller than 20. If you've taken a permutations-and-" +
+						"combinations class, you already know the fix has a name — 'n choose k' — " +
+						"and a formula, n!/(k!(n-k)!). But actually computing that formula by hand " +
+						"for a real-sized problem, like the number of possible 5-card poker hands " +
+						"out of a 52-card deck, means first computing 52! — a number 68 digits " +
+						"long — and 5! and 47!, then dividing almost all of that back out again. " +
+						"And if you next want 6-card hands instead, none of that work carries over " +
+						"— you start over from a fresh set of enormous factorials. Is there a way " +
+						"to build up the exact same counts using nothing but small additions, " +
+						"reusing every count you've already worked out, instead of wrestling with " +
+						"gigantic factorials from scratch each time?",
 				},
 			},
 			{
