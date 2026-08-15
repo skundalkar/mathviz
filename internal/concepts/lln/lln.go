@@ -5,6 +5,7 @@
 package lln
 
 import (
+	"fmt"
 	"math"
 
 	"mathviz/internal/concept"
@@ -85,7 +86,47 @@ func RunningAverage(n int, p float64) float64 {
 	return sum / float64(n)
 }
 
-func render(p map[string]float64) string {
-	c := viz.New(680, 420, 0, 300, 0, 1)
+// maxFlips is the fixed right edge of the curve's x-axis, matching the
+// "Number of flips" slider's own Max so the whole slider range stays
+// visible on the plot.
+const maxFlips = 300
+
+func render(params map[string]float64) string {
+	trueP := params["p"]
+	n := int(params["n"])
+	if n < 1 {
+		n = 1
+	}
+
+	series := RunningAverages(maxFlips, trueP)
+
+	c := viz.New(680, 420, 0, maxFlips, 0, 1)
+	c.Axes()
+	for x := 0.0; x <= maxFlips; x += 50 {
+		c.Tick(x, fmt.Sprintf("%.0f", x))
+	}
+
+	// The true probability, as a dashed reference line the running
+	// average is converging toward.
+	c.Path([][2]float64{{0, trueP}, {maxFlips, trueP}}, viz.Muted, 1)
+
+	// The running-average curve itself: wide, noisy swings at small n,
+	// settling toward the flat line as n grows.
+	curve := make([][2]float64, maxFlips)
+	for i, avg := range series {
+		curve[i] = [2]float64{float64(i + 1), avg}
+	}
+	c.Path(curve, viz.Accent, 2)
+
+	// The current n, highlighted.
+	avg := series[n-1]
+	px, py := c.X(float64(n)), c.Y(avg)
+	c.Path([][2]float64{{float64(n), 0}, {float64(n), avg}}, viz.Warm, 1)
+	c.Rect(px-4, py-4, 8, 8, viz.Warm, 1)
+
+	c.Text(16, 24, fmt.Sprintf("true probability p = %.2f", trueP), 14, viz.Muted, "start")
+	c.Text(16, 44, fmt.Sprintf("after n=%d flips: running average = %.3f", n, avg), 15, viz.Warm, "start")
+	c.Text(16, 64, fmt.Sprintf("error |average - p| = %.3f", math.Abs(avg-trueP)), 13, viz.Ink, "start")
+
 	return c.String()
 }
