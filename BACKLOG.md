@@ -44,9 +44,9 @@ Format: `- [ ] <id> — <one-line description of the concept to visualize>`
 - [x] pascals-triangle — binomial coefficients built row by row, and why each entry is "n choose k"
 - [x] eigenvectors-eigenvalues — the directions a linear transformation only stretches, never rotates
 - [x] birthday-paradox — why shared-birthday collisions happen far sooner than intuition expects
+- [x] law-of-large-numbers — why a sample average settles down toward the true mean as n grows, and how noisy it still is at small n
 
 ## Up next (statistics & ML intuition)
-- [ ] law-of-large-numbers — why a sample average settles down toward the true mean as n grows, and how noisy it still is at small n
 - [ ] monte-carlo-estimation — estimating a number you can't solve for directly (like π) by sampling randomly and watching the estimate converge
 
 ## Up next (math foundations)
