@@ -4,6 +4,8 @@
 package birthday
 
 import (
+	"fmt"
+
 	"mathviz/internal/concept"
 	"mathviz/internal/viz"
 )
@@ -71,7 +73,56 @@ func MinPeopleForProbability(days int, threshold float64) int {
 	return days + 1
 }
 
+// maxN is the fixed right edge of the curve's x-axis, matching the "People
+// in the room" slider's own Max so the whole slider range is always
+// visible on the plot.
+const maxN = 100
+
 func render(p map[string]float64) string {
-	c := viz.New(680, 420, 0, 100, 0, 1)
+	n := int(p["n"])
+	days := int(p["days"])
+	if days < 2 {
+		days = 2
+	}
+
+	c := viz.New(680, 420, 0, maxN, 0, 1)
+	c.Axes()
+	for x := 0.0; x <= maxN; x += 20 {
+		c.Tick(x, fmt.Sprintf("%.0f", x))
+	}
+
+	// The collision-probability curve for the current `days`, over the
+	// full n range the slider can reach.
+	curve := make([][2]float64, maxN+1)
+	for i := 0; i <= maxN; i++ {
+		curve[i] = [2]float64{float64(i), ProbCollision(i, days)}
+	}
+	c.Path(curve, viz.Accent, 2.5)
+
+	// The 50%-chance reference line and the smallest n that crosses it,
+	// for this many possible days.
+	c.Path([][2]float64{{0, 0.5}, {maxN, 0.5}}, viz.Muted, 1)
+	half := MinPeopleForProbability(days, 0.5)
+	if half <= maxN {
+		c.Path([][2]float64{{float64(half), 0}, {float64(half), 1}}, viz.Good, 1.5)
+		c.Text(c.X(float64(half))+4, c.Y(0.06), fmt.Sprintf("n=%d crosses 50%%", half), 12, viz.Good, "start")
+	}
+
+	// The current (n, P) point, highlighted.
+	prob := ProbCollision(n, days)
+	px, py := c.X(float64(n)), c.Y(prob)
+	c.Rect(px-4, py-4, 8, 8, viz.Warm, 1)
+	c.Path([][2]float64{{float64(n), 0}, {float64(n), prob}}, viz.Warm, 1)
+
+	c.Text(16, 24, fmt.Sprintf("%d possible birthdays, %d people in the room", days, n), 14, viz.Ink, "start")
+	c.Text(16, 44, fmt.Sprintf("P(at least one shared birthday) = %.1f%%", prob*100), 15, viz.Warm, "start")
+	if n > days {
+		c.Text(16, 64, "n exceeds the number of possible days -- a shared birthday is guaranteed (pigeonhole principle).",
+			13, viz.Muted, "start")
+	} else {
+		c.Text(16, 64, fmt.Sprintf("It only takes %d people to make a shared birthday more likely than not.", half),
+			13, viz.Muted, "start")
+	}
+
 	return c.String()
 }
