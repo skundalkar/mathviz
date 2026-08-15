@@ -22,6 +22,7 @@ import (
 	_ "mathviz/internal/concepts/integral"
 	_ "mathviz/internal/concepts/kmeans"
 	_ "mathviz/internal/concepts/linreg"
+	_ "mathviz/internal/concepts/lln"
 	_ "mathviz/internal/concepts/logscale"
 	_ "mathviz/internal/concepts/meanmedianmode"
 	_ "mathviz/internal/concepts/modulararithmetic"
