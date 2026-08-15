@@ -13,6 +13,7 @@ import (
 	_ "mathviz/internal/concepts/correlation"
 	_ "mathviz/internal/concepts/cosinesimilarity"
 	_ "mathviz/internal/concepts/derivative"
+	_ "mathviz/internal/concepts/eigen"
 	_ "mathviz/internal/concepts/entropy"
 	_ "mathviz/internal/concepts/evalplaybook"
 	_ "mathviz/internal/concepts/expgrowth"
