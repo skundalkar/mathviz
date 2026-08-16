@@ -8,6 +8,8 @@
 package montecarlo
 
 import (
+	"math"
+
 	"mathviz/internal/concept"
 	"mathviz/internal/viz"
 )
@@ -133,6 +135,78 @@ func init() {
 		},
 		Render: render,
 	})
+}
+
+// hash01 turns an integer seed into a deterministic pseudo-random number in
+// [0, 1) via a fixed irrational-multiplier trick. It's not a real random
+// number generator -- it's a fixed, reproducible sequence that merely looks
+// patternless, which is exactly what Render needs (pure: same input, same
+// output, no time, no math/rand). Same trick as internal/concepts/lln.
+func hash01(seed int) float64 {
+	x := math.Sin(float64(seed)*12.9898) * 43758.5453123
+	_, frac := math.Modf(x)
+	if frac < 0 {
+		frac += 1
+	}
+	return frac
+}
+
+// runBase spaces different "run" batches a million seeds apart, far more
+// than any single run's point count ever reaches, so two runs never draw
+// from overlapping parts of the hash01 sequence.
+const runBase = 1_000_000
+
+// SamplePoint returns the `i`-th random point (1-indexed) of batch `run`,
+// drawn uniformly from the 2x2 square [-1,1]x[-1,1]. Deterministic in i and
+// run -- the same (i, run) always reproduces the same point, so a whole run
+// of points can be recomputed exactly, and different runs never collide.
+func SamplePoint(i, run int) (x, y float64) {
+	base := run*runBase + 2*i
+	x = 2*hash01(base) - 1
+	y = 2*hash01(base+1) - 1
+	return x, y
+}
+
+// Inside reports whether (x, y) falls within the unit circle centered at
+// the origin -- the check each random point undergoes.
+func Inside(x, y float64) bool {
+	return x*x+y*y <= 1
+}
+
+// EstimatePi returns the Monte Carlo estimate of π from the first n points
+// of batch `run`: 4 times the fraction of those points that land inside the
+// unit circle. n < 1 is treated as 1.
+func EstimatePi(n, run int) float64 {
+	if n < 1 {
+		n = 1
+	}
+	count := 0
+	for i := 1; i <= n; i++ {
+		x, y := SamplePoint(i, run)
+		if Inside(x, y) {
+			count++
+		}
+	}
+	return 4 * float64(count) / float64(n)
+}
+
+// EstimatePiSeries returns the running Monte Carlo estimate of π after each
+// of the first maxN points of batch `run`: result[i] is the estimate using
+// the first i+1 points. maxN < 1 is treated as 1.
+func EstimatePiSeries(maxN, run int) []float64 {
+	if maxN < 1 {
+		maxN = 1
+	}
+	out := make([]float64, maxN)
+	count := 0
+	for i := 1; i <= maxN; i++ {
+		x, y := SamplePoint(i, run)
+		if Inside(x, y) {
+			count++
+		}
+		out[i-1] = 4 * float64(count) / float64(i)
+	}
+	return out
 }
 
 func render(params map[string]float64) string {
