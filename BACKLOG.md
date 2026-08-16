@@ -45,9 +45,9 @@ Format: `- [ ] <id> — <one-line description of the concept to visualize>`
 - [x] eigenvectors-eigenvalues — the directions a linear transformation only stretches, never rotates
 - [x] birthday-paradox — why shared-birthday collisions happen far sooner than intuition expects
 - [x] law-of-large-numbers — why a sample average settles down toward the true mean as n grows, and how noisy it still is at small n
+- [x] monte-carlo-estimation — estimating a number you can't solve for directly (like π) by sampling randomly and watching the estimate converge
 
 ## Up next (statistics & ML intuition)
-- [ ] monte-carlo-estimation — estimating a number you can't solve for directly (like π) by sampling randomly and watching the estimate converge
 
 ## Up next (math foundations)
 - [ ] fourier-series — approximating a wave (even a square wave) by summing sine waves of increasing frequency
