@@ -46,11 +46,11 @@ Format: `- [ ] <id> — <one-line description of the concept to visualize>`
 - [x] birthday-paradox — why shared-birthday collisions happen far sooner than intuition expects
 - [x] law-of-large-numbers — why a sample average settles down toward the true mean as n grows, and how noisy it still is at small n
 - [x] monte-carlo-estimation — estimating a number you can't solve for directly (like π) by sampling randomly and watching the estimate converge
+- [x] fourier-series — approximating a wave (even a square wave) by summing sine waves of increasing frequency
 
 ## Up next (statistics & ML intuition)
 
 ## Up next (math foundations)
-- [ ] fourier-series — approximating a wave (even a square wave) by summing sine waves of increasing frequency
 - [ ] markov-chains — transition probabilities and the steady-state distribution a random walk settles into
 
 ## How to add work
