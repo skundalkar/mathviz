@@ -26,6 +26,7 @@ import (
 	_ "mathviz/internal/concepts/logscale"
 	_ "mathviz/internal/concepts/meanmedianmode"
 	_ "mathviz/internal/concepts/modulararithmetic"
+	_ "mathviz/internal/concepts/montecarlo"
 	_ "mathviz/internal/concepts/naivebayes"
 	_ "mathviz/internal/concepts/normalskew"
 	_ "mathviz/internal/concepts/overfitting"
