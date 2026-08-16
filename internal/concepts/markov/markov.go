@@ -8,6 +8,9 @@
 package markov
 
 import (
+	"fmt"
+	"math"
+
 	"mathviz/internal/concept"
 	"mathviz/internal/viz"
 )
@@ -154,7 +157,50 @@ func Trajectory(pSunny0, a, b float64, steps int) []float64 {
 	return out
 }
 
+// maxDays is the fixed right edge of the curve's x-axis, matching the "Day
+// (t)" slider's own Max so the whole slider range stays visible on the plot.
+const maxDays = 30
+
 func render(params map[string]float64) string {
-	_ = params
-	return viz.New(680, 420, 0, 30, 0, 1).String()
+	a := params["a"]
+	b := params["b"]
+	t := int(params["t"] + 0.5)
+	if t < 0 {
+		t = 0
+	}
+	if t > maxDays {
+		t = maxDays
+	}
+
+	sunny, _ := SteadyState(a, b)
+	traj := Trajectory(0, a, b, maxDays)
+
+	c := viz.New(680, 420, 0, maxDays, 0, 1)
+	c.Axes()
+	for x := 0.0; x <= maxDays; x += 5 {
+		c.Tick(x, fmt.Sprintf("%.0f", x))
+	}
+
+	// The steady state, as a reference line the trajectory converges toward.
+	c.Path([][2]float64{{0, sunny}, {maxDays, sunny}}, viz.Muted, 1)
+
+	// The day-by-day trajectory itself, starting from a certain-rain day 0.
+	curve := make([][2]float64, len(traj))
+	for i, p := range traj {
+		curve[i] = [2]float64{float64(i), p}
+	}
+	c.Path(curve, viz.Accent, 2)
+
+	// The current day, highlighted.
+	pSunny := traj[t]
+	px, py := c.X(float64(t)), c.Y(pSunny)
+	c.Path([][2]float64{{float64(t), 0}, {float64(t), pSunny}}, viz.Warm, 1)
+	c.Rect(px-4, py-4, 8, 8, viz.Warm, 1)
+
+	c.Text(16, 24, fmt.Sprintf("P(stay sunny)=%.2f    P(stay rainy)=%.2f    steady state P(sunny)=%.4f",
+		a, b, sunny), 14, viz.Muted, "start")
+	c.Text(16, 44, fmt.Sprintf("day %d: P(sunny) = %.4f", t, pSunny), 15, viz.Warm, "start")
+	c.Text(16, 64, fmt.Sprintf("gap to steady state = %.4f", math.Abs(pSunny-sunny)), 13, viz.Ink, "start")
+
+	return c.String()
 }
