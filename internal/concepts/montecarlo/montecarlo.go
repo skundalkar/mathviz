@@ -8,6 +8,7 @@
 package montecarlo
 
 import (
+	"fmt"
 	"math"
 
 	"mathviz/internal/concept"
@@ -210,6 +211,51 @@ func EstimatePiSeries(maxN, run int) []float64 {
 }
 
 func render(params map[string]float64) string {
-	_ = params
-	return viz.New(680, 420, -1.2, 1.2, -1.2, 1.2).String()
+	n := int(params["n"] + 0.5)
+	if n < 1 {
+		n = 1
+	}
+	run := int(params["run"] + 0.5)
+
+	c := viz.New(680, 420, -1.2, 1.2, -1.2, 1.2)
+
+	// The 2x2 sampling square, [-1,1]x[-1,1].
+	square := [][2]float64{{-1, -1}, {1, -1}, {1, 1}, {-1, 1}, {-1, -1}}
+	c.Path(square, viz.Muted, 1.5)
+
+	// The unit circle whose area (pi) is being estimated, as a polygon
+	// approximation dense enough to look smooth.
+	const circleSteps = 96
+	circle := make([][2]float64, circleSteps+1)
+	for i := 0; i <= circleSteps; i++ {
+		t := 2 * math.Pi * float64(i) / circleSteps
+		circle[i] = [2]float64{math.Cos(t), math.Sin(t)}
+	}
+	c.Path(circle, viz.Accent, 1.5)
+
+	// Every sample point, colored by whether it landed inside the circle.
+	// Recomputing Inside here (rather than trusting EstimatePi's internal
+	// count) keeps the drawn dots and the reported count/estimate visibly
+	// tied to the same underlying points.
+	inside := 0
+	for i := 1; i <= n; i++ {
+		x, y := SamplePoint(i, run)
+		color := viz.Bad
+		if Inside(x, y) {
+			color = viz.Good
+			inside++
+		}
+		px, py := c.X(x), c.Y(y)
+		c.Rect(px-2, py-2, 4, 4, color, 0.85)
+	}
+
+	estimate := 4 * float64(inside) / float64(n)
+	errAbs := math.Abs(estimate - math.Pi)
+
+	c.Text(16, 24, fmt.Sprintf("n = %d points    run = %d", n, run), 14, viz.Muted, "start")
+	c.Text(16, 44, fmt.Sprintf("%d of %d landed inside the circle -> estimate = 4 x %d/%d = %.4f",
+		inside, n, inside, n, estimate), 14, viz.Warm, "start")
+	c.Text(16, 64, fmt.Sprintf("true pi = %.4f    error = %.4f", math.Pi, errAbs), 13, viz.Ink, "start")
+
+	return c.String()
 }
