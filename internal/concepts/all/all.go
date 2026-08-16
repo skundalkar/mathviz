@@ -25,6 +25,7 @@ import (
 	_ "mathviz/internal/concepts/linreg"
 	_ "mathviz/internal/concepts/lln"
 	_ "mathviz/internal/concepts/logscale"
+	_ "mathviz/internal/concepts/markov"
 	_ "mathviz/internal/concepts/meanmedianmode"
 	_ "mathviz/internal/concepts/modulararithmetic"
 	_ "mathviz/internal/concepts/montecarlo"
