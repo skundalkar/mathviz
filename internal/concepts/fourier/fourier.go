@@ -7,6 +7,8 @@
 package fourier
 
 import (
+	"math"
+
 	"mathviz/internal/concept"
 	"mathviz/internal/viz"
 )
@@ -126,6 +128,90 @@ func init() {
 		},
 		Render: render,
 	})
+}
+
+// wrapPi maps any x onto the representative period [-π, π), so every target
+// wave only needs to define its shape on that one interval and repeat it.
+func wrapPi(x float64) float64 {
+	y := math.Mod(x+math.Pi, 2*math.Pi)
+	if y < 0 {
+		y += 2 * math.Pi
+	}
+	return y - math.Pi
+}
+
+// SquareWave returns the target odd square wave's value at x: +1 on (0,π),
+// -1 on (-π,0), and 0 exactly at the jumps (x a multiple of π), repeating
+// with period 2π.
+func SquareWave(x float64) float64 {
+	w := wrapPi(x)
+	switch {
+	case w > 0:
+		return 1
+	case w < 0:
+		return -1
+	default:
+		return 0
+	}
+}
+
+// SawtoothWave returns the target sawtooth wave's value at x: a straight
+// ramp from -1 to +1 across (-π,π), repeating with period 2π.
+func SawtoothWave(x float64) float64 {
+	return wrapPi(x) / math.Pi
+}
+
+// SquareWavePartialSum returns the sum of the first `terms` nonzero terms of
+// the square wave's Fourier series -- (4/π)Σ sin((2n-1)x)/(2n-1) for
+// n=1..terms -- using only odd harmonics. terms < 1 is treated as 1.
+func SquareWavePartialSum(x float64, terms int) float64 {
+	if terms < 1 {
+		terms = 1
+	}
+	sum := 0.0
+	for n := 1; n <= terms; n++ {
+		k := 2*n - 1
+		sum += math.Sin(float64(k)*x) / float64(k)
+	}
+	return (4 / math.Pi) * sum
+}
+
+// SawtoothPartialSum returns the sum of the first `terms` terms of the
+// sawtooth wave's Fourier series -- (2/π)Σ (-1)^(k+1) sin(kx)/k for
+// k=1..terms -- using every harmonic, alternating sign. terms < 1 is
+// treated as 1.
+func SawtoothPartialSum(x float64, terms int) float64 {
+	if terms < 1 {
+		terms = 1
+	}
+	sum := 0.0
+	for k := 1; k <= terms; k++ {
+		sign := 1.0
+		if k%2 == 0 {
+			sign = -1.0
+		}
+		sum += sign * math.Sin(float64(k)*x) / float64(k)
+	}
+	return (2 / math.Pi) * sum
+}
+
+// PartialSum dispatches to SquareWavePartialSum (wave==0) or
+// SawtoothPartialSum (wave!=0), so callers can select the target wave with
+// a single numeric slider value.
+func PartialSum(x float64, terms, wave int) float64 {
+	if wave == 0 {
+		return SquareWavePartialSum(x, terms)
+	}
+	return SawtoothPartialSum(x, terms)
+}
+
+// Target dispatches to SquareWave (wave==0) or SawtoothWave (wave!=0), the
+// function each PartialSum with the same wave value is approximating.
+func Target(x float64, wave int) float64 {
+	if wave == 0 {
+		return SquareWave(x)
+	}
+	return SawtoothWave(x)
 }
 
 func render(params map[string]float64) string {
