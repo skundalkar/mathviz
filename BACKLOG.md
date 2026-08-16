@@ -47,11 +47,11 @@ Format: `- [ ] <id> — <one-line description of the concept to visualize>`
 - [x] law-of-large-numbers — why a sample average settles down toward the true mean as n grows, and how noisy it still is at small n
 - [x] monte-carlo-estimation — estimating a number you can't solve for directly (like π) by sampling randomly and watching the estimate converge
 - [x] fourier-series — approximating a wave (even a square wave) by summing sine waves of increasing frequency
+- [x] markov-chains — transition probabilities and the steady-state distribution a random walk settles into
 
 ## Up next (statistics & ML intuition)
 
 ## Up next (math foundations)
-- [ ] markov-chains — transition probabilities and the steady-state distribution a random walk settles into
 
 ## How to add work
 Append an unchecked line under the right section by hand any time — the loop
