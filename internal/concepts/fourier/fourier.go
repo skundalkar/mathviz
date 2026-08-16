@@ -7,6 +7,7 @@
 package fourier
 
 import (
+	"fmt"
 	"math"
 
 	"mathviz/internal/concept"
@@ -214,7 +215,50 @@ func Target(x float64, wave int) float64 {
 	return SawtoothWave(x)
 }
 
+func waveName(wave int) string {
+	if wave == 0 {
+		return "square wave"
+	}
+	return "sawtooth wave"
+}
+
 func render(params map[string]float64) string {
-	_ = params
-	return viz.New(680, 420, -3.3, 3.3, -1.6, 1.6).String()
+	terms := int(params["harmonics"] + 0.5)
+	if terms < 1 {
+		terms = 1
+	}
+	wave := int(params["wave"] + 0.5)
+
+	const lo, hi = -math.Pi, math.Pi
+	const steps = 400
+
+	target := viz.Sample(lo, hi, steps, func(x float64) float64 { return Target(x, wave) })
+	sum := viz.Sample(lo, hi, steps, func(x float64) float64 { return PartialSum(x, terms, wave) })
+
+	// Peak overshoot just past the jump at x=0: how far the partial sum's
+	// highest value near the jump exceeds the target's own peak of 1.
+	peak := 0.0
+	for _, pt := range sum {
+		if pt[0] >= 0 && pt[0] <= hi/2 && pt[1] > peak {
+			peak = pt[1]
+		}
+	}
+	overshoot := (peak - 1) * 100
+
+	c := viz.New(680, 420, lo-0.3, hi+0.3, -1.6, 1.6)
+	c.Axes()
+	c.Tick(-math.Pi, "-π")
+	c.Tick(0, "0")
+	c.Tick(math.Pi, "π")
+	c.VLine(0, viz.Faint, false)
+
+	c.Path(target, viz.Muted, 1.5)
+	c.Path(sum, viz.Accent, 2)
+
+	c.Text(16, 24, fmt.Sprintf("%s    harmonics = %d", waveName(wave), terms), 14, viz.Muted, "start")
+	c.Text(16, 44, fmt.Sprintf("peak near the jump = %.4f (target = 1.0000, overshoot = %.1f%%)",
+		peak, overshoot), 14, viz.Warm, "start")
+	c.Text(16, 64, "dashed = target wave    solid = partial sum of sine terms", 13, viz.Ink, "start")
+
+	return c.String()
 }
