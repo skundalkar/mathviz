@@ -119,6 +119,41 @@ func init() {
 	})
 }
 
+// SteadyState returns the long-run probability of being Sunny and Rainy for
+// a two-state chain with P(stay sunny)=a and P(stay rainy)=b: the fixed
+// point of the one-step update, solved directly rather than simulated.
+// a+b==2 (both states absorbing, no way to leave either) is degenerate and
+// has no unique fixed point; that combination never occurs given the
+// Params' Max of 0.95 each, so it isn't guarded against here.
+func SteadyState(a, b float64) (sunny, rainy float64) {
+	denom := 2 - a - b
+	sunny = (1 - b) / denom
+	rainy = (1 - a) / denom
+	return sunny, rainy
+}
+
+// Step advances one day: given today's probability of being sunny and the
+// chain's stickiness a (P(stay sunny)) and b (P(stay rainy)), returns
+// tomorrow's probability of being sunny.
+func Step(pSunny, a, b float64) float64 {
+	return pSunny*a + (1-pSunny)*(1-b)
+}
+
+// Trajectory returns the probability of being sunny on each of days
+// 0..steps, starting from pSunny0 on day 0 and applying Step once per day.
+// steps < 0 is treated as 0.
+func Trajectory(pSunny0, a, b float64, steps int) []float64 {
+	if steps < 0 {
+		steps = 0
+	}
+	out := make([]float64, steps+1)
+	out[0] = pSunny0
+	for t := 1; t <= steps; t++ {
+		out[t] = Step(out[t-1], a, b)
+	}
+	return out
+}
+
 func render(params map[string]float64) string {
 	_ = params
 	return viz.New(680, 420, 0, 30, 0, 1).String()
