@@ -7,6 +7,8 @@
 package covariance
 
 import (
+	"math"
+
 	"mathviz/internal/concept"
 	"mathviz/internal/viz"
 )
@@ -122,6 +124,111 @@ func init() {
 		},
 		Render: render,
 	})
+}
+
+// hash01 turns an integer seed into a deterministic, evenly-scattered value in
+// [0, 1). It is a fixed function of its input — not a random-number generator
+// — so GeneratePoints stays pure: same (r, n) always produces the same cloud.
+// Identical to correlation.hash01 (each concept package is self-contained;
+// see BUILD_CYCLE.md), reused here to build the same kind of scatter cloud.
+func hash01(seed int) float64 {
+	x := math.Sin(float64(seed)*12.9898) * 43758.5453123
+	_, frac := math.Modf(x)
+	if frac < 0 {
+		frac += 1
+	}
+	return frac
+}
+
+// GeneratePoints returns n (x, y) pairs whose population correlation is r.
+// Both x and y are standardized (mean 0, variance 1) before any Scale is
+// applied — see Scale below for the unit-relabeling step that keeps
+// correlation fixed while covariance moves.
+func GeneratePoints(r float64, n int) (xs, ys []float64) {
+	if n < 1 {
+		n = 1
+	}
+	if r > 1 {
+		r = 1
+	}
+	if r < -1 {
+		r = -1
+	}
+	xs = make([]float64, n)
+	ys = make([]float64, n)
+	tail := math.Sqrt(1 - r*r)
+	for i := 0; i < n; i++ {
+		u1 := hash01(2*i + 1)
+		u2 := hash01(2*i + 2)
+		if u1 < 1e-9 {
+			u1 = 1e-9 // keep log() finite
+		}
+		mag := math.Sqrt(-2 * math.Log(u1))
+		z1 := mag * math.Cos(2*math.Pi*u2)
+		z2 := mag * math.Sin(2*math.Pi*u2)
+		xs[i] = z1
+		ys[i] = r*z1 + tail*z2
+	}
+	return xs, ys
+}
+
+// Scale multiplies every x value by factor — a stand-in for relabeling the
+// x-axis's units (centimeters to millimeters, hours to minutes). It changes
+// nothing about the actual relationship between x and y, only the number
+// each x is reported as.
+func Scale(xs []float64, factor float64) []float64 {
+	out := make([]float64, len(xs))
+	for i, x := range xs {
+		out[i] = x * factor
+	}
+	return out
+}
+
+// Mean returns the arithmetic mean of xs, or 0 for an empty slice.
+func Mean(xs []float64) float64 {
+	if len(xs) == 0 {
+		return 0
+	}
+	sum := 0.0
+	for _, x := range xs {
+		sum += x
+	}
+	return sum / float64(len(xs))
+}
+
+// Covariance returns the population covariance of xs and ys: the average of
+// (x - mean x) * (y - mean y). Returns 0 if the slices are empty or of
+// mismatched length.
+func Covariance(xs, ys []float64) float64 {
+	n := len(xs)
+	if n == 0 || len(ys) != n {
+		return 0
+	}
+	mx, my := Mean(xs), Mean(ys)
+	sum := 0.0
+	for i := 0; i < n; i++ {
+		sum += (xs[i] - mx) * (ys[i] - my)
+	}
+	return sum / float64(n)
+}
+
+// StdDev returns the population standard deviation of xs: sqrt(Covariance(xs, xs)),
+// since a variable's covariance with itself is exactly its variance.
+func StdDev(xs []float64) float64 {
+	return math.Sqrt(Covariance(xs, xs))
+}
+
+// Correlation returns the Pearson correlation coefficient of xs and ys —
+// covariance normalized by both standard deviations, which is what makes it
+// invariant to rescaling either variable (see LEARNINGS.md). Returns 0 if
+// either series has zero variance (undefined correlation, rather than
+// dividing by zero).
+func Correlation(xs, ys []float64) float64 {
+	sx, sy := StdDev(xs), StdDev(ys)
+	if sx <= 0 || sy <= 0 {
+		return 0
+	}
+	return Covariance(xs, ys) / (sx * sy)
 }
 
 func render(params map[string]float64) string {
