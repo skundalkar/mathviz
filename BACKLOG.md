@@ -48,9 +48,9 @@ Format: `- [ ] <id> — <one-line description of the concept to visualize>`
 - [x] monte-carlo-estimation — estimating a number you can't solve for directly (like π) by sampling randomly and watching the estimate converge
 - [x] fourier-series — approximating a wave (even a square wave) by summing sine waves of increasing frequency
 - [x] markov-chains — transition probabilities and the steady-state distribution a random walk settles into
+- [x] binomial-distribution — the probability of exactly k successes in n independent trials, built from pascals-triangle's n-choose-k
 
 ## Up next (statistics & ML intuition)
-- [ ] binomial-distribution — the probability of exactly k successes in n independent trials, built from pascals-triangle's n-choose-k
 - [ ] poisson-distribution — modeling rare, independent events over a fixed window with a single rate λ, as the limit of binomial when n is huge and p is tiny
 - [ ] covariance — how two variables move together in raw units, and why dividing by both standard deviations turns it into correlation
 
