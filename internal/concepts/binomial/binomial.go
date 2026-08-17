@@ -6,6 +6,8 @@
 package binomial
 
 import (
+	"math"
+
 	"mathviz/internal/concept"
 	"mathviz/internal/viz"
 )
@@ -109,6 +111,62 @@ func init() {
 		},
 		Render: render,
 	})
+}
+
+// Choose returns n-choose-k, the number of ways to pick an unordered k-element
+// subset out of n items — the same count pascals-triangle builds row by row.
+// It's computed multiplicatively (rather than via factorials, which overflow
+// fast) and returns 0 for out-of-range k. Exact for the n<=50 this package's
+// Params allow: float64 carries integers exactly up to 2^53, far past the
+// largest value this range produces (n=50: C(50,25)~1.26e14).
+func Choose(n, k int) float64 {
+	if k < 0 || k > n {
+		return 0
+	}
+	if k > n-k {
+		k = n - k // C(n,k) == C(n,n-k); fewer multiplications either way
+	}
+	result := 1.0
+	for i := 0; i < k; i++ {
+		result *= float64(n-i) / float64(i+1)
+	}
+	return result
+}
+
+// PMF returns P(X=k), the probability of exactly k successes in n independent
+// trials each with success probability p: C(n,k) ways to place the successes,
+// times the probability of any one specific placement, p^k(1-p)^(n-k).
+func PMF(n int, p float64, k int) float64 {
+	if k < 0 || k > n {
+		return 0
+	}
+	return Choose(n, k) * math.Pow(p, float64(k)) * math.Pow(1-p, float64(n-k))
+}
+
+// CDF returns P(X<=k), the probability of k or fewer successes in n trials,
+// by summing PMF over every count from 0 to k.
+func CDF(n int, p float64, k int) float64 {
+	if k < 0 {
+		return 0
+	}
+	if k > n {
+		k = n
+	}
+	sum := 0.0
+	for i := 0; i <= k; i++ {
+		sum += PMF(n, p, i)
+	}
+	return sum
+}
+
+// Mean returns the expected count of successes, n*p.
+func Mean(n int, p float64) float64 {
+	return float64(n) * p
+}
+
+// Variance returns the variance of the count of successes, n*p*(1-p).
+func Variance(n int, p float64) float64 {
+	return float64(n) * p * (1 - p)
 }
 
 func render(params map[string]float64) string {
