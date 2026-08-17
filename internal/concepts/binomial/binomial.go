@@ -6,6 +6,7 @@
 package binomial
 
 import (
+	"fmt"
 	"math"
 
 	"mathviz/internal/concept"
@@ -170,6 +171,67 @@ func Variance(n int, p float64) float64 {
 }
 
 func render(params map[string]float64) string {
-	_ = params
-	return viz.New(680, 420, 0, 50, 0, 1).String()
+	n := int(params["n"] + 0.5)
+	if n < 1 {
+		n = 1
+	}
+	p := params["p"]
+	k := int(params["k"] + 0.5)
+	if k < 0 {
+		k = 0
+	}
+	if k > n {
+		k = n
+	}
+
+	// PMF for every count 0..n, and the max bar height so the y-axis fits
+	// this particular n and p tightly instead of always reserving room for
+	// the most extreme case.
+	pmf := make([]float64, n+1)
+	maxP := 0.0
+	for i := 0; i <= n; i++ {
+		pmf[i] = PMF(n, p, i)
+		if pmf[i] > maxP {
+			maxP = pmf[i]
+		}
+	}
+	yMax := maxP * 1.2
+	if yMax <= 0 {
+		yMax = 1
+	}
+
+	c := viz.New(680, 420, -0.5, float64(n)+0.5, 0, yMax)
+	c.Axes()
+	tickStep := 1.0
+	if n > 12 {
+		tickStep = math.Ceil(float64(n) / 10)
+	}
+	for x := 0.0; x <= float64(n); x += tickStep {
+		c.Tick(x, fmt.Sprintf("%.0f", x))
+	}
+
+	mean := Mean(n, p)
+	c.Path([][2]float64{{mean, 0}, {mean, yMax}}, viz.Muted, 1)
+
+	barHalfW := 0.42
+	if n > 30 {
+		barHalfW = 0.48
+	}
+	for i := 0; i <= n; i++ {
+		color := viz.Accent
+		if i == k {
+			color = viz.Warm
+		}
+		x0, x1 := c.X(float64(i)-barHalfW), c.X(float64(i)+barHalfW)
+		y0, y1 := c.Y(0), c.Y(pmf[i])
+		c.Rect(x0, y1, x1-x0, y0-y1, color, 0.8)
+	}
+
+	variance := Variance(n, p)
+	c.Text(16, 24, fmt.Sprintf("n=%d    p=%.2f    mean=n*p=%.2f    variance=n*p*(1-p)=%.2f", n, p, mean, variance),
+		14, viz.Ink, "start")
+	c.Text(16, 44, fmt.Sprintf("P(X=%d) = %.4f    P(X<=%d) = %.4f", k, PMF(n, p, k), k, CDF(n, p, k)),
+		15, viz.Warm, "start")
+
+	return c.String()
 }
