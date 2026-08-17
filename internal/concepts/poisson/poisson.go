@@ -7,6 +7,7 @@
 package poisson
 
 import (
+	"fmt"
 	"math"
 
 	"mathviz/internal/concept"
@@ -170,7 +171,62 @@ func factorial(k int) float64 {
 	return f
 }
 
+// maxK is the fixed right edge of the bar chart's x-axis, matching the
+// "Highlighted count (k)" slider's own Max so the whole slider range stays
+// visible on the plot.
+const maxK = 30
+
 func render(params map[string]float64) string {
-	_ = params
-	return viz.New(680, 420, 0, 30, 0, 1).String()
+	lambda := params["lambda"]
+	if lambda < 0 {
+		lambda = 0
+	}
+	k := int(params["k"] + 0.5)
+	if k < 0 {
+		k = 0
+	}
+	if k > maxK {
+		k = maxK
+	}
+
+	// PMF for every count 0..maxK, and the max bar height so the y-axis
+	// fits this particular lambda tightly instead of always reserving room
+	// for the most extreme case.
+	pmf := make([]float64, maxK+1)
+	maxP := 0.0
+	for i := 0; i <= maxK; i++ {
+		pmf[i] = PMF(lambda, i)
+		if pmf[i] > maxP {
+			maxP = pmf[i]
+		}
+	}
+	yMax := maxP * 1.2
+	if yMax <= 0 {
+		yMax = 1
+	}
+
+	c := viz.New(680, 420, -0.5, float64(maxK)+0.5, 0, yMax)
+	c.Axes()
+	for x := 0.0; x <= maxK; x += 5 {
+		c.Tick(x, fmt.Sprintf("%.0f", x))
+	}
+
+	c.Path([][2]float64{{lambda, 0}, {lambda, yMax}}, viz.Muted, 1)
+
+	for i := 0; i <= maxK; i++ {
+		color := viz.Accent
+		if i == k {
+			color = viz.Warm
+		}
+		x0, x1 := c.X(float64(i)-0.42), c.X(float64(i)+0.42)
+		y0, y1 := c.Y(0), c.Y(pmf[i])
+		c.Rect(x0, y1, x1-x0, y0-y1, color, 0.8)
+	}
+
+	c.Text(16, 24, fmt.Sprintf("lambda=%.1f    mean=lambda=%.1f    variance=lambda=%.1f", lambda, Mean(lambda), Variance(lambda)),
+		14, viz.Ink, "start")
+	c.Text(16, 44, fmt.Sprintf("P(X=%d) = %.4f    P(X<=%d) = %.4f", k, PMF(lambda, k), k, CDF(lambda, k)),
+		15, viz.Warm, "start")
+
+	return c.String()
 }
