@@ -50,9 +50,9 @@ Format: `- [ ] <id> — <one-line description of the concept to visualize>`
 - [x] markov-chains — transition probabilities and the steady-state distribution a random walk settles into
 - [x] binomial-distribution — the probability of exactly k successes in n independent trials, built from pascals-triangle's n-choose-k
 - [x] poisson-distribution — modeling rare, independent events over a fixed window with a single rate λ, as the limit of binomial when n is huge and p is tiny
+- [x] covariance — how two variables move together in raw units, and why dividing by both standard deviations turns it into correlation
 
 ## Up next (statistics & ML intuition)
-- [ ] covariance — how two variables move together in raw units, and why dividing by both standard deviations turns it into correlation
 
 ## Up next (math foundations)
 - [ ] taylor-series — approximating a curve near a point using a polynomial built from its derivatives
