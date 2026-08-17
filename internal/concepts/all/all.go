@@ -14,6 +14,7 @@ import (
 	_ "mathviz/internal/concepts/confusionmatrix"
 	_ "mathviz/internal/concepts/correlation"
 	_ "mathviz/internal/concepts/cosinesimilarity"
+	_ "mathviz/internal/concepts/covariance"
 	_ "mathviz/internal/concepts/derivative"
 	_ "mathviz/internal/concepts/eigen"
 	_ "mathviz/internal/concepts/entropy"
