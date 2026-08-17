@@ -7,6 +7,8 @@
 package poisson
 
 import (
+	"math"
+
 	"mathviz/internal/concept"
 	"mathviz/internal/viz"
 )
@@ -117,6 +119,55 @@ func init() {
 		},
 		Render: render,
 	})
+}
+
+// PMF returns P(X=k), the probability of exactly k events occurring in a
+// window whose average rate is lambda: lambda^k * e^-lambda / k!. Returns 0
+// for k<0 or lambda<0, neither of which a real event count or rate can be.
+func PMF(lambda float64, k int) float64 {
+	if k < 0 || lambda < 0 {
+		return 0
+	}
+	return math.Pow(lambda, float64(k)) * math.Exp(-lambda) / factorial(k)
+}
+
+// CDF returns P(X<=k), the probability of k or fewer events, by summing PMF
+// over every count from 0 to k.
+func CDF(lambda float64, k int) float64 {
+	if k < 0 {
+		return 0
+	}
+	sum := 0.0
+	for i := 0; i <= k; i++ {
+		sum += PMF(lambda, i)
+	}
+	return sum
+}
+
+// Mean returns the expected count of events, which for a Poisson
+// distribution is exactly lambda.
+func Mean(lambda float64) float64 {
+	return lambda
+}
+
+// Variance returns the variance of the count of events, which for a Poisson
+// distribution is also exactly lambda — the same number as Mean, not a
+// separate one; see LEARNINGS.md for why that identity matters.
+func Variance(lambda float64) float64 {
+	return lambda
+}
+
+// factorial returns k! for k>=0. Iterative rather than recursive to avoid
+// stack growth, and float64 (not int) since PMF divides by it and k stays
+// small enough (this package's Params cap k at 30; 30! ~= 2.65e32, well
+// within float64's exponent range even though it's far past exact-integer
+// precision) that the precision loss doesn't matter for a probability.
+func factorial(k int) float64 {
+	f := 1.0
+	for i := 2; i <= k; i++ {
+		f *= float64(i)
+	}
+	return f
 }
 
 func render(params map[string]float64) string {
