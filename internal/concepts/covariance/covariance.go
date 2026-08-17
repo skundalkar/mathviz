@@ -7,6 +7,7 @@
 package covariance
 
 import (
+	"fmt"
 	"math"
 
 	"mathviz/internal/concept"
@@ -232,6 +233,58 @@ func Correlation(xs, ys []float64) float64 {
 }
 
 func render(params map[string]float64) string {
-	_ = params
-	return viz.New(680, 420, -1, 1, -1, 1).String()
+	r, n, scale := params["r"], int(params["n"]), params["scale"]
+	if r > 1 {
+		r = 1
+	}
+	if r < -1 {
+		r = -1
+	}
+	if n < 2 {
+		n = 2
+	}
+	if scale < 1 {
+		scale = 1
+	}
+
+	rawXs, ys := GeneratePoints(r, n)
+	xs := Scale(rawXs, scale)
+
+	cov := Covariance(xs, ys)
+	corr := Correlation(xs, ys)
+
+	// Both axes are standardized before scaling (variance 1), so the y
+	// range stays fixed at a comfortable +-3.6 while the x range stretches
+	// with scale — the same cloud, relabeled onto wider and wider units.
+	const ylim = 3.6
+	xlim := ylim * scale
+	c := viz.New(680, 400, -xlim, xlim, -ylim, ylim)
+	c.Axes()
+	xTick := xlim / 3
+	for x := -xlim; x <= xlim+1e-9; x += xTick {
+		c.Tick(x, fmt.Sprintf("%.1f", x))
+	}
+
+	// Reference lines through the origin.
+	c.Path([][2]float64{{-xlim, 0}, {xlim, 0}}, viz.Muted, 1)
+	c.Path([][2]float64{{0, -ylim}, {0, ylim}}, viz.Muted, 1)
+
+	// The scatter cloud itself: one small square per point.
+	for i := range xs {
+		px, py := c.X(xs[i]), c.Y(ys[i])
+		c.Rect(px-2.5, py-2.5, 5, 5, viz.Accent, 0.55)
+	}
+
+	// The trend line r implies: slope r/scale in these axis units, since y
+	// is standardized but x has been stretched by scale.
+	slope := r / scale
+	c.Path([][2]float64{{-xlim, -xlim * slope}, {xlim, xlim * slope}}, viz.Warm, 2.5)
+
+	c.Text(20, 24, fmt.Sprintf("x-axis units: ×%.0f    covariance = %.3f    correlation r = %.3f", scale, cov, corr),
+		14, viz.Ink, "start")
+	c.Text(20, 44, "covariance grows with the x-axis units — correlation r does not",
+		12, viz.Muted, "start")
+	c.Text(20, 62, fmt.Sprintf("target r = %.2f    n = %d", r, n),
+		12, viz.Muted, "start")
+	return c.String()
 }
