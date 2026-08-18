@@ -52,11 +52,11 @@ Format: `- [ ] <id> — <one-line description of the concept to visualize>`
 - [x] poisson-distribution — modeling rare, independent events over a fixed window with a single rate λ, as the limit of binomial when n is huge and p is tiny
 - [x] covariance — how two variables move together in raw units, and why dividing by both standard deviations turns it into correlation
 - [x] taylor-series — approximating a curve near a point using a polynomial built from its derivatives
+- [x] permutations-vs-combinations — counting arrangements when order matters vs. when it doesn't
 
 ## Up next (statistics & ML intuition)
 
 ## Up next (math foundations)
-- [ ] permutations-vs-combinations — counting arrangements when order matters vs. when it doesn't
 - [ ] random-walk — a 1D random walk's expected position stays at 0 while its spread grows like √n
 
 ## How to add work
