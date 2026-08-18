@@ -35,6 +35,7 @@ import (
 	_ "mathviz/internal/concepts/normalskew"
 	_ "mathviz/internal/concepts/overfitting"
 	_ "mathviz/internal/concepts/pascalstriangle"
+	_ "mathviz/internal/concepts/permutationscombinations"
 	_ "mathviz/internal/concepts/poisson"
 	_ "mathviz/internal/concepts/prauc"
 	_ "mathviz/internal/concepts/precisionrecall"
