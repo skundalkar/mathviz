@@ -6,6 +6,7 @@
 package randomwalk
 
 import (
+	"fmt"
 	"math"
 
 	"mathviz/internal/concept"
@@ -200,7 +201,79 @@ func ExpectedSpread(n int) float64 {
 	return math.Sqrt(float64(n))
 }
 
+// maxSteps is the fixed right edge of the walk's x-axis, matching the
+// "Steps taken (n)" slider's own Max so the whole slider range stays
+// visible on the plot.
+const maxSteps = 300
+
 func render(params map[string]float64) string {
-	_ = params
-	return viz.New(680, 420, -1, 1, -1, 1).String()
+	n := int(params["n"] + 0.5)
+	if n < 1 {
+		n = 1
+	}
+	if n > maxSteps {
+		n = maxSteps
+	}
+	run := int(params["run"] + 0.5)
+	if run < 1 {
+		run = 1
+	}
+
+	series := Positions(maxSteps, run)
+
+	// Fit the y-axis to this run's actual excursion (or the envelope,
+	// whichever reaches farther), so a calm run doesn't reserve pixels for
+	// a worst case it never comes near.
+	maxAbs := 0.0
+	for _, p := range series {
+		if a := math.Abs(p); a > maxAbs {
+			maxAbs = a
+		}
+	}
+	yMax := math.Max(maxAbs, ExpectedSpread(maxSteps)) * 1.25
+	if yMax < 5 {
+		yMax = 5
+	}
+
+	c := viz.New(680, 420, 0, maxSteps, -yMax, yMax)
+	c.Axes()
+	for x := 0.0; x <= maxSteps; x += 50 {
+		c.Tick(x, fmt.Sprintf("%.0f", x))
+	}
+
+	// Zero reference line -- the walk's expected position at every step.
+	c.Path([][2]float64{{0, 0}, {maxSteps, 0}}, viz.Muted, 1)
+
+	// The +-sqrt(t) envelope: the typical spread away from 0 at each step.
+	posEnv := make([][2]float64, maxSteps+1)
+	negEnv := make([][2]float64, maxSteps+1)
+	for t := 0; t <= maxSteps; t++ {
+		s := ExpectedSpread(t)
+		posEnv[t] = [2]float64{float64(t), s}
+		negEnv[t] = [2]float64{float64(t), -s}
+	}
+	c.Path(posEnv, viz.Muted, 1.5)
+	c.Path(negEnv, viz.Muted, 1.5)
+
+	// The walk itself: position after each step, for the selected run.
+	curve := make([][2]float64, maxSteps+1)
+	curve[0] = [2]float64{0, 0}
+	for i, p := range series {
+		curve[i+1] = [2]float64{float64(i + 1), p}
+	}
+	c.Path(curve, viz.Accent, 2)
+
+	// The current n, highlighted.
+	pos := series[n-1]
+	px, py := c.X(float64(n)), c.Y(pos)
+	c.Path([][2]float64{{float64(n), 0}, {float64(n), pos}}, viz.Warm, 1)
+	c.Rect(px-4, py-4, 8, 8, viz.Warm, 1)
+
+	c.Text(16, 24, fmt.Sprintf("run = %d    steps n = %d", run, n), 14, viz.Muted, "start")
+	c.Text(16, 44, fmt.Sprintf("position after n steps: S_n = %.0f    typical spread sqrt(n) = %.2f", pos, ExpectedSpread(n)),
+		15, viz.Warm, "start")
+	c.Text(16, 64, "blue = one walk's position    gray = zero line and +-sqrt(t) envelope",
+		12, viz.Muted, "start")
+
+	return c.String()
 }
