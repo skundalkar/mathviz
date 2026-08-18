@@ -6,6 +6,8 @@
 package taylorseries
 
 import (
+	"math"
+
 	"mathviz/internal/concept"
 	"mathviz/internal/viz"
 )
@@ -120,6 +122,58 @@ func init() {
 		},
 		Render: render,
 	})
+}
+
+// F is the function this concept expands: f(x) = sin(x).
+func F(x float64) float64 {
+	return math.Sin(x)
+}
+
+// SinDerivativeAtZero returns sin's k-th derivative evaluated at x0=0. The
+// derivatives of sin cycle through four values forever — sin, cos, -sin,
+// -cos, sin, ... — so at 0 they cycle through 0, 1, 0, -1 forever. Negative
+// k returns 0 (undefined).
+func SinDerivativeAtZero(k int) float64 {
+	if k < 0 {
+		return 0
+	}
+	cycle := [4]float64{0, 1, 0, -1}
+	return cycle[k%4]
+}
+
+// Factorial returns k! for k>=0 as a float64 (the Taylor coefficient below
+// divides by it, and k stays small enough — this package's order Param
+// caps at 11 — that float64 precision is never a concern). Negative k
+// returns 0 — undefined.
+func Factorial(k int) float64 {
+	if k < 0 {
+		return 0
+	}
+	f := 1.0
+	for i := 2; i <= k; i++ {
+		f *= float64(i)
+	}
+	return f
+}
+
+// TaylorTerm returns the k-th term of sin's Taylor series centered at
+// x0=0, evaluated at x: f^(k)(0)/k! * x^k.
+func TaylorTerm(k int, x float64) float64 {
+	return SinDerivativeAtZero(k) / Factorial(k) * math.Pow(x, float64(k))
+}
+
+// TaylorPolynomial returns the degree-`order` Taylor polynomial of sin
+// (centered at x0=0), evaluated at x: the sum of TaylorTerm(k, x) for
+// k=0..order. Negative order is treated as 0 (the constant term alone).
+func TaylorPolynomial(order int, x float64) float64 {
+	if order < 0 {
+		order = 0
+	}
+	sum := 0.0
+	for k := 0; k <= order; k++ {
+		sum += TaylorTerm(k, x)
+	}
+	return sum
 }
 
 func render(params map[string]float64) string {
