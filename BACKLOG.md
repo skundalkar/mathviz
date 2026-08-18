@@ -53,11 +53,11 @@ Format: `- [ ] <id> — <one-line description of the concept to visualize>`
 - [x] covariance — how two variables move together in raw units, and why dividing by both standard deviations turns it into correlation
 - [x] taylor-series — approximating a curve near a point using a polynomial built from its derivatives
 - [x] permutations-vs-combinations — counting arrangements when order matters vs. when it doesn't
+- [x] random-walk — a 1D random walk's expected position stays at 0 while its spread grows like √n
 
 ## Up next (statistics & ML intuition)
 
 ## Up next (math foundations)
-- [ ] random-walk — a 1D random walk's expected position stays at 0 while its spread grows like √n
 
 ## How to add work
 Append an unchecked line under the right section by hand any time — the loop
