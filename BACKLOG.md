@@ -51,11 +51,11 @@ Format: `- [ ] <id> — <one-line description of the concept to visualize>`
 - [x] binomial-distribution — the probability of exactly k successes in n independent trials, built from pascals-triangle's n-choose-k
 - [x] poisson-distribution — modeling rare, independent events over a fixed window with a single rate λ, as the limit of binomial when n is huge and p is tiny
 - [x] covariance — how two variables move together in raw units, and why dividing by both standard deviations turns it into correlation
+- [x] taylor-series — approximating a curve near a point using a polynomial built from its derivatives
 
 ## Up next (statistics & ML intuition)
 
 ## Up next (math foundations)
-- [ ] taylor-series — approximating a curve near a point using a polynomial built from its derivatives
 - [ ] permutations-vs-combinations — counting arrangements when order matters vs. when it doesn't
 - [ ] random-walk — a 1D random walk's expected position stays at 0 while its spread grows like √n
 
