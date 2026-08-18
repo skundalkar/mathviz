@@ -6,6 +6,7 @@
 package taylorseries
 
 import (
+	"fmt"
 	"math"
 
 	"mathviz/internal/concept"
@@ -176,7 +177,73 @@ func TaylorPolynomial(order int, x float64) float64 {
 	return sum
 }
 
+// plot window: about two full periods of sin(x) each side of the center,
+// with a y range that clips a diverging polynomial at the edges rather than
+// letting it shoot off-canvas.
+const (
+	xlim = 6.5
+	ylim = 2.5
+)
+
+func clamp(y, lo, hi float64) float64 {
+	if y < lo {
+		return lo
+	}
+	if y > hi {
+		return hi
+	}
+	return y
+}
+
 func render(params map[string]float64) string {
-	_ = params
-	return viz.New(680, 420, -1, 1, -1, 1).String()
+	order := int(params["order"] + 0.5)
+	if order < 0 {
+		order = 0
+	}
+	evalX := params["evalX"]
+	if evalX < -xlim {
+		evalX = -xlim
+	}
+	if evalX > xlim {
+		evalX = xlim
+	}
+
+	c := viz.New(680, 420, -xlim, xlim, -ylim, ylim)
+	c.Axes()
+	for x := -xlim; x <= xlim+1e-9; x += xlim / 3 {
+		c.Tick(x, fmt.Sprintf("%.1f", x))
+	}
+
+	// True sin(x), thin and muted -- the target the polynomial is chasing.
+	truth := viz.Sample(-xlim, xlim, 300, F)
+	c.Path(truth, viz.Muted, 1.5)
+
+	// The Taylor polynomial, clamped so a diverging approximation flattens
+	// against the top/bottom edge instead of shooting off-canvas.
+	approxPts := viz.Sample(-xlim, xlim, 300, func(x float64) float64 {
+		return clamp(TaylorPolynomial(order, x), -ylim-0.3, ylim+0.3)
+	})
+	c.Path(approxPts, viz.Accent, 2.5)
+
+	// The center point, x0=0, where every derivative used was measured.
+	cx, cy := c.X(0), c.Y(0)
+	c.Rect(cx-4, cy-4, 8, 8, viz.Ink, 1)
+
+	// The eval point: true value vs. this order's approximation, connected
+	// by a vertical line showing the gap between them.
+	trueVal := F(evalX)
+	approxVal := TaylorPolynomial(order, evalX)
+	c.Path([][2]float64{{evalX, trueVal}, {evalX, clamp(approxVal, -ylim, ylim)}}, viz.Warm, 1.5)
+	tpx, tpy := c.X(evalX), c.Y(trueVal)
+	c.Rect(tpx-3.5, tpy-3.5, 7, 7, viz.Muted, 1)
+	apx, apy := c.X(evalX), c.Y(clamp(approxVal, -ylim, ylim))
+	c.Rect(apx-3.5, apy-3.5, 7, 7, viz.Warm, 1)
+
+	c.Text(16, 24, fmt.Sprintf("Taylor polynomial of sin(x), degree %d, centered at x0=0", order), 14, viz.Ink, "start")
+	c.Text(16, 44, fmt.Sprintf("at x=%.2f: true sin(x) = %.6f    approx = %.6f    error = %.6f",
+		evalX, trueVal, approxVal, approxVal-trueVal), 13, viz.Warm, "start")
+	c.Text(16, 64, "gray = true sin(x)    blue = Taylor polynomial    black square = center x0=0",
+		12, viz.Muted, "start")
+
+	return c.String()
 }
