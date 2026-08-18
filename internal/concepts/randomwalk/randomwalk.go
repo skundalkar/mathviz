@@ -6,6 +6,8 @@
 package randomwalk
 
 import (
+	"math"
+
 	"mathviz/internal/concept"
 	"mathviz/internal/viz"
 )
@@ -121,6 +123,81 @@ func init() {
 		},
 		Render: render,
 	})
+}
+
+// hash01 turns an integer seed into a deterministic pseudo-random number in
+// [0, 1) via a fixed irrational-multiplier trick. It's not a real random
+// number generator -- it's a fixed, reproducible sequence that merely looks
+// patternless, which is exactly what Render needs (pure: same input, same
+// output, no time, no math/rand). Same trick as internal/concepts/lln and
+// internal/concepts/montecarlo.
+func hash01(seed int) float64 {
+	x := math.Sin(float64(seed)*12.9898) * 43758.5453123
+	_, frac := math.Modf(x)
+	if frac < 0 {
+		frac += 1
+	}
+	return frac
+}
+
+// runBase spaces different "run" batches a million seeds apart, far more
+// than any single run's step count ever reaches, so two runs never draw
+// from overlapping parts of the hash01 sequence. Same trick as
+// internal/concepts/montecarlo's SamplePoint.
+const runBase = 1_000_000
+
+// Step returns the `i`-th step (1-indexed) of run `run`: +1 or -1 with
+// equal probability, from a fair coin flip. Deterministic in i and run --
+// the same (i, run) always reproduces the same step, so a whole run of
+// steps can be recomputed exactly, and different runs never collide.
+func Step(i, run int) float64 {
+	seed := run*runBase + i
+	if hash01(seed) < 0.5 {
+		return -1
+	}
+	return 1
+}
+
+// Positions returns the walk's position after each of the first maxN steps
+// of run `run`: result[0] is the position after 1 step, result[i] after
+// i+1 steps. Position 0 (before any steps) is not included -- callers that
+// want it can treat an empty prefix as 0. maxN < 1 is treated as 1.
+func Positions(maxN, run int) []float64 {
+	if maxN < 1 {
+		maxN = 1
+	}
+	out := make([]float64, maxN)
+	pos := 0.0
+	for i := 0; i < maxN; i++ {
+		pos += Step(i+1, run)
+		out[i] = pos
+	}
+	return out
+}
+
+// Position returns the walk's position after n steps of run `run` -- the
+// single value Positions(n,run)'s last entry holds, computed directly for
+// callers that only need one point. n < 1 is treated as 1.
+func Position(n, run int) float64 {
+	if n < 1 {
+		n = 1
+	}
+	pos := 0.0
+	for i := 1; i <= n; i++ {
+		pos += Step(i, run)
+	}
+	return pos
+}
+
+// ExpectedSpread returns the typical (root-mean-square) distance a random
+// walk strays from 0 after n steps: sqrt(n), since each independent +-1
+// step contributes variance 1 and variances of independent steps add.
+// Negative n returns 0 -- there's no walk to speak of.
+func ExpectedSpread(n int) float64 {
+	if n < 0 {
+		return 0
+	}
+	return math.Sqrt(float64(n))
 }
 
 func render(params map[string]float64) string {
