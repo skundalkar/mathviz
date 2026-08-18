@@ -114,6 +114,48 @@ func init() {
 	})
 }
 
+// Factorial returns n! for n>=0 as an int64. Negative n returns 0 —
+// undefined. n stays small in this package (the n Param caps at 10, so
+// 10! = 3,628,800), well within int64 range.
+func Factorial(n int) int64 {
+	if n < 0 {
+		return 0
+	}
+	f := int64(1)
+	for i := 2; i <= n; i++ {
+		f *= int64(i)
+	}
+	return f
+}
+
+// Permutations returns P(n,k) — the number of ordered arrangements of k
+// items chosen from n distinct items: n! / (n-k)!, computed as a direct
+// product n × (n-1) × ... × (n-k+1) so it never divides a huge factorial by
+// another huge factorial. Returns 0 for an out-of-range k (k<0 or k>n).
+func Permutations(n, k int) int64 {
+	if n < 0 || k < 0 || k > n {
+		return 0
+	}
+	p := int64(1)
+	for i := 0; i < k; i++ {
+		p *= int64(n - i)
+	}
+	return p
+}
+
+// Combinations returns C(n,k), "n choose k" — the number of unordered
+// groups of k items chosen from n distinct items: Permutations(n,k) / k!.
+// Returns 0 for an out-of-range k (k<0 or k>n). Same value pascals-triangle
+// builds by addition; this package derives it from Permutations instead,
+// to keep the Permutations-to-Combinations relationship (divide out the k!
+// orderings) explicit in the code, not just in prose.
+func Combinations(n, k int) int64 {
+	if n < 0 || k < 0 || k > n {
+		return 0
+	}
+	return Permutations(n, k) / Factorial(k)
+}
+
 func render(params map[string]float64) string {
 	_ = params
 	return viz.New(680, 420, -1, 1, -1, 1).String()
