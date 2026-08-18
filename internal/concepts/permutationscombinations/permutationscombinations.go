@@ -8,6 +8,9 @@
 package permutationscombinations
 
 import (
+	"fmt"
+	"math"
+
 	"mathviz/internal/concept"
 	"mathviz/internal/viz"
 )
@@ -157,6 +160,72 @@ func Combinations(n, k int) int64 {
 }
 
 func render(params map[string]float64) string {
-	_ = params
-	return viz.New(680, 420, -1, 1, -1, 1).String()
+	n := int(params["n"] + 0.5)
+	if n < 1 {
+		n = 1
+	}
+	if n > 10 {
+		n = 10
+	}
+	k := int(params["k"] + 0.5)
+	if k < 0 {
+		k = 0
+	}
+	if k > n {
+		k = n
+	}
+
+	// Bar heights are sqrt-scaled: P(n,k) can run into the millions while
+	// C(n,k) stays far smaller, and a plain linear axis would flatten every
+	// combination bar to an invisible sliver next to its permutation pair.
+	maxSqrt := 0.0
+	for i := 0; i <= n; i++ {
+		if s := math.Sqrt(float64(Permutations(n, i))); s > maxSqrt {
+			maxSqrt = s
+		}
+	}
+	if maxSqrt <= 0 {
+		maxSqrt = 1
+	}
+	yMax := maxSqrt * 1.2
+
+	c := viz.New(680, 420, -0.5, float64(n)+0.5, 0, yMax)
+	c.Axes()
+	for i := 0; i <= n; i++ {
+		c.Tick(float64(i), fmt.Sprintf("%d", i))
+	}
+
+	for i := 0; i <= n; i++ {
+		if i == k {
+			// Backdrop band marking the highlighted k, drawn before the
+			// bars so it sits behind them.
+			bx0, bx1 := c.X(float64(i)-0.46), c.X(float64(i)+0.46)
+			c.Rect(bx0, c.Y(yMax), bx1-bx0, c.Y(0)-c.Y(yMax), viz.Faint, 1)
+		}
+
+		p, comb := Permutations(n, i), Combinations(n, i)
+
+		// Permutation bar, left half of this k's slot.
+		px0, px1 := c.X(float64(i)-0.42), c.X(float64(i)-0.03)
+		py0, py1 := c.Y(0), c.Y(math.Sqrt(float64(p)))
+		c.Rect(px0, py1, px1-px0, py0-py1, viz.Accent, 0.85)
+
+		// Combination bar, right half of this k's slot.
+		cx0, cx1 := c.X(float64(i)+0.03), c.X(float64(i)+0.42)
+		cy0, cy1 := c.Y(0), c.Y(math.Sqrt(float64(comb)))
+		c.Rect(cx0, cy1, cx1-cx0, cy0-cy1, viz.Warm, 0.85)
+
+		if i == k {
+			c.Text((px0+px1)/2, py1-6, fmt.Sprintf("%d", p), 11, viz.Accent, "middle")
+			c.Text((cx0+cx1)/2, cy1-6, fmt.Sprintf("%d", comb), 11, viz.Warm, "middle")
+		}
+	}
+
+	permK, combK := Permutations(n, k), Combinations(n, k)
+	c.Text(16, 24, fmt.Sprintf("n = %d    k = %d    (blue = permutations P(n,k), orange = combinations C(n,k))", n, k),
+		14, viz.Ink, "start")
+	c.Text(16, 44, fmt.Sprintf("P(%d,%d) = %d    C(%d,%d) = %d    ratio = P/C = %d = %d!",
+		n, k, permK, n, k, combK, Factorial(k), k), 15, viz.Warm, "start")
+
+	return c.String()
 }
