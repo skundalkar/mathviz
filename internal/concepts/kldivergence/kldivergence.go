@@ -6,6 +6,8 @@
 package kldivergence
 
 import (
+	"math"
+
 	"mathviz/internal/concept"
 	"mathviz/internal/viz"
 )
@@ -115,6 +117,53 @@ func init() {
 		},
 		Render: render,
 	})
+}
+
+// BinaryEntropy returns the Shannon entropy, in bits, of a two-outcome
+// distribution with P(heads)=p: H(p) = -p*log2(p) - (1-p)*log2(1-p).
+// Identical to entropy.BinaryEntropy — each concept package is
+// self-contained (see BUILD_CYCLE.md).
+func BinaryEntropy(p float64) float64 {
+	term := func(x float64) float64 {
+		if x <= 0 {
+			return 0
+		}
+		return -x * math.Log2(x)
+	}
+	return term(p) + term(1-p)
+}
+
+// CrossEntropy returns H(P,Q) in bits: the average bits spent encoding
+// outcomes actually drawn from P, using a code built assuming Q instead.
+//
+//	H(P,Q) = -p*log2(q) - (1-p)*log2(1-q)
+//
+// By convention a term with p==0 (or 1-p==0) contributes 0, regardless of q
+// — an outcome P never produces costs nothing to under-prepare for. If Q
+// assigns zero probability to an outcome P does produce, that single
+// mis-prepared outcome costs infinitely many bits, so CrossEntropy returns
+// +Inf.
+func CrossEntropy(p, q float64) float64 {
+	term := func(pi, qi float64) float64 {
+		if pi <= 0 {
+			return 0
+		}
+		if qi <= 0 {
+			return math.Inf(1)
+		}
+		return -pi * math.Log2(qi)
+	}
+	return term(p, q) + term(1-p, 1-q)
+}
+
+// KLDivergence returns KL(P‖Q) in bits: the expected number of extra bits
+// wasted encoding outcomes drawn from the true distribution P using a code
+// built for the approximating distribution Q, beyond what P's own entropy
+// already costs. KL(P‖Q) = CrossEntropy(P,Q) - BinaryEntropy(P), and is
+// never negative (Gibbs' inequality) — it hits exactly 0 only when p==q,
+// i.e. there is no gap left to pay for.
+func KLDivergence(p, q float64) float64 {
+	return CrossEntropy(p, q) - BinaryEntropy(p)
 }
 
 func render(params map[string]float64) string {
