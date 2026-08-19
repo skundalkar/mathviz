@@ -55,9 +55,9 @@ Format: `- [ ] <id> — <one-line description of the concept to visualize>`
 - [x] permutations-vs-combinations — counting arrangements when order matters vs. when it doesn't
 - [x] random-walk — a 1D random walk's expected position stays at 0 while its spread grows like √n
 - [x] principal-component-analysis — finding the directions of maximum variance in a cloud of points, built from covariance and eigenvectors
+- [x] kl-divergence — measuring how far one probability distribution is from another, built from entropy
 
 ## Up next (statistics & ML intuition)
-- [ ] kl-divergence — measuring how far one probability distribution is from another, built from entropy
 - [ ] bias-variance-tradeoff — decomposing prediction error into bias, variance, and irreducible noise as model complexity changes
 
 ## Up next (math foundations)
