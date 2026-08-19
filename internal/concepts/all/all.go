@@ -23,6 +23,7 @@ import (
 	_ "mathviz/internal/concepts/fourier"
 	_ "mathviz/internal/concepts/gradientdescent"
 	_ "mathviz/internal/concepts/integral"
+	_ "mathviz/internal/concepts/kldivergence"
 	_ "mathviz/internal/concepts/kmeans"
 	_ "mathviz/internal/concepts/linreg"
 	_ "mathviz/internal/concepts/lln"
