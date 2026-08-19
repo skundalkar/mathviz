@@ -5,6 +5,7 @@ package all
 
 import (
 	_ "mathviz/internal/concepts/bayestheorem"
+	_ "mathviz/internal/concepts/biasvariance"
 	_ "mathviz/internal/concepts/binomial"
 	_ "mathviz/internal/concepts/birthday"
 	_ "mathviz/internal/concepts/calibration"
