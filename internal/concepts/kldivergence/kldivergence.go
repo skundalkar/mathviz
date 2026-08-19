@@ -6,6 +6,7 @@
 package kldivergence
 
 import (
+	"fmt"
 	"math"
 
 	"mathviz/internal/concept"
@@ -166,7 +167,74 @@ func KLDivergence(p, q float64) float64 {
 	return CrossEntropy(p, q) - BinaryEntropy(p)
 }
 
+// klCap bounds how tall the KL(P‖Q) curve can climb. KL blows up toward
+// infinity as q approaches an outcome P assigns real probability to but Q
+// assigns almost none — capping the curve keeps the picture readable
+// instead of the y-axis needing to stretch to infinity to fit it.
+const klCap = 6.0
+
+func clamp01(x float64) float64 {
+	if x < 0.01 {
+		return 0.01
+	}
+	if x > 0.99 {
+		return 0.99
+	}
+	return x
+}
+
 func render(params map[string]float64) string {
-	_ = params
-	return viz.New(680, 460, -1, 1, -1, 1).String()
+	p, q := clamp01(params["p"]), clamp01(params["q"])
+
+	c := viz.New(680, 460, 0, 1, 0, klCap)
+	c.PadT = 90
+	c.PadB = 250
+	c.Axes()
+	for x := 0.0; x <= 1.0; x += 0.25 {
+		c.Tick(x, fmt.Sprintf("%.2g", x))
+	}
+
+	curve := viz.Sample(0.005, 0.995, 200, func(qq float64) float64 {
+		v := KLDivergence(p, qq)
+		if v > klCap {
+			return klCap // clip so the curve visibly pins at the cap instead of vanishing
+		}
+		return v
+	})
+	c.Path(curve, viz.Accent, 2.5)
+	c.VLine(q, viz.Warm, true)
+
+	klpq, klqp := KLDivergence(p, q), KLDivergence(q, p)
+	hp, hpq := BinaryEntropy(p), CrossEntropy(p, q)
+
+	markY := klpq
+	if markY > klCap {
+		markY = klCap
+	}
+	mx, my := c.X(q), c.Y(markY)
+	c.Rect(mx-4, my-4, 8, 8, viz.Warm, 0.9)
+
+	c.Text(20, 24, fmt.Sprintf("P(heads)=%.2f    Q(heads)=%.2f    KL(P‖Q)=%.3f bits", p, q, klpq),
+		14, viz.Ink, "start")
+	c.Text(20, 44, fmt.Sprintf("H(P)=%.3f bits    H(P,Q)=%.3f bits    KL(P‖Q) = H(P,Q) - H(P)", hp, hpq),
+		12, viz.Muted, "start")
+	c.Text(20, 62, fmt.Sprintf("swapped roles: KL(Q‖P)=%.3f bits -- not the same number", klqp),
+		12, viz.Muted, "start")
+
+	// Below the curve: P's and Q's own heads/tails probabilities, side by side.
+	const barBase, barMaxH, barW = 412.0, 120.0, 60.0
+	c.Text(20, 272, "P vs Q: heads/tails probability", 12, viz.Muted, "start")
+
+	drawBar := func(x float64, prob float64, label, color string) {
+		h := prob * barMaxH
+		c.Rect(x, barBase-h, barW, h, color, 0.75)
+		c.Text(x+barW/2, barBase-h-8, fmt.Sprintf("%.2f", prob), 12, viz.Ink, "middle")
+		c.Text(x+barW/2, barBase+18, label, 12, viz.Muted, "middle")
+	}
+	drawBar(120, p, "P heads", viz.Accent)
+	drawBar(210, 1-p, "P tails", viz.Accent)
+	drawBar(400, q, "Q heads", viz.Warm)
+	drawBar(490, 1-q, "Q tails", viz.Warm)
+
+	return c.String()
 }
