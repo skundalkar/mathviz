@@ -6,6 +6,7 @@
 package pca
 
 import (
+	"fmt"
 	"math"
 
 	"mathviz/internal/concept"
@@ -257,6 +258,87 @@ func ExplainedVarianceRatio(lambda1, lambda2 float64) float64 {
 }
 
 func render(params map[string]float64) string {
-	_ = params
-	return viz.New(680, 460, -1, 1, -1, 1).String()
+	r, n, stretch := params["r"], int(params["n"]), params["stretch"]
+	if r > 1 {
+		r = 1
+	}
+	if r < -1 {
+		r = -1
+	}
+	if n < 2 {
+		n = 2
+	}
+	if stretch < 1 {
+		stretch = 1
+	}
+
+	rawXs, ys := GeneratePoints(r, n)
+	xs := Scale(rawXs, stretch)
+
+	varX, covXY, varY := CovarianceMatrix(xs, ys)
+	l1, l2 := Eigenvalues(varX, covXY, varY)
+	theta1 := PrincipalAngle(varX, covXY, varY)
+	theta2 := theta1 + math.Pi/2
+	ratio := ExplainedVarianceRatio(l1, l2)
+
+	// y stays standardized (variance 1); x stretches with stretch, so the
+	// canvas widens along x the same way covariance's picture does.
+	const ylim = 3.6
+	xlim := ylim * stretch
+	c := viz.New(680, 460, -xlim, xlim, -ylim, ylim)
+	c.Path([][2]float64{{-xlim, 0}, {xlim, 0}}, viz.Muted, 1)
+	c.Path([][2]float64{{0, -ylim}, {0, ylim}}, viz.Muted, 1)
+
+	// The scatter cloud.
+	for i := range xs {
+		px, py := c.X(xs[i]), c.Y(ys[i])
+		c.Rect(px-2.5, py-2.5, 5, 5, viz.Accent, 0.5)
+	}
+
+	// PC1 (green) drawn one standard deviation long, PC2 (orange) likewise
+	// -- both as full lines through the origin so their directions read
+	// clearly against the cloud, plus an arrowhead marking each end.
+	l1sd, l2sd := math.Sqrt(math.Max(l1, 0)), math.Sqrt(math.Max(l2, 0))
+	pc1x, pc1y := l1sd*math.Cos(theta1), l1sd*math.Sin(theta1)
+	pc2x, pc2y := l2sd*math.Cos(theta2), l2sd*math.Sin(theta2)
+	arrow(c, 0, 0, pc1x, pc1y, viz.Good, 2.5)
+	arrow(c, 0, 0, -pc1x, -pc1y, viz.Good, 1.5)
+	arrow(c, 0, 0, pc2x, pc2y, viz.Warm, 2.5)
+	arrow(c, 0, 0, -pc2x, -pc2y, viz.Warm, 1.5)
+
+	c.Text(16, 24, fmt.Sprintf("covariance matrix: [[%.2f, %.2f], [%.2f, %.2f]]", varX, covXY, covXY, varY),
+		14, viz.Ink, "start")
+	c.Text(16, 44, fmt.Sprintf("PC1 (green): θ=%.1f°, λ1=%.2f", theta1*180/math.Pi, l1),
+		14, viz.Good, "start")
+	c.Text(16, 64, fmt.Sprintf("PC2 (orange): θ=%.1f°, λ2=%.2f", theta2*180/math.Pi, l2),
+		14, viz.Warm, "start")
+	c.Text(16, 84, fmt.Sprintf("PC1 explains %.1f%% of total variance", ratio*100),
+		14, viz.Ink, "start")
+
+	return c.String()
+}
+
+// arrow draws a straight line from (x0,y0) to (x1,y1) in data space, with a
+// small V-shaped arrowhead at the end. Identical to eigen.arrow.
+func arrow(c *viz.Canvas, x0, y0, x1, y1 float64, color string, width float64) {
+	c.Path([][2]float64{{x0, y0}, {x1, y1}}, color, width)
+
+	dx, dy := x1-x0, y1-y0
+	length := math.Hypot(dx, dy)
+	if length < 1e-9 {
+		return
+	}
+	ux, uy := dx/length, dy/length
+	const headLen = 0.2
+	const headAngle = 0.5 // radians, ~29 degrees off the shaft on each side
+
+	barb := func(t float64) (float64, float64) {
+		cos, sin := math.Cos(t), math.Sin(t)
+		bx, by := -ux, -uy
+		return bx*cos - by*sin, bx*sin + by*cos
+	}
+	b1x, b1y := barb(headAngle)
+	b2x, b2y := barb(-headAngle)
+	c.Path([][2]float64{{x1, y1}, {x1 + headLen*b1x, y1 + headLen*b1y}}, color, width)
+	c.Path([][2]float64{{x1, y1}, {x1 + headLen*b2x, y1 + headLen*b2y}}, color, width)
 }
