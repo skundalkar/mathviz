@@ -6,6 +6,8 @@
 package pca
 
 import (
+	"math"
+
 	"mathviz/internal/concept"
 	"mathviz/internal/viz"
 )
@@ -131,6 +133,127 @@ func init() {
 		},
 		Render: render,
 	})
+}
+
+// hash01 turns an integer seed into a deterministic, evenly-scattered value in
+// [0, 1). It is a fixed function of its input, not a random-number generator,
+// so GeneratePoints stays pure. Identical to correlation.hash01 and
+// covariance.hash01 — each concept package is self-contained (see
+// BUILD_CYCLE.md) — reused here to build the same kind of scatter cloud.
+func hash01(seed int) float64 {
+	x := math.Sin(float64(seed)*12.9898) * 43758.5453123
+	_, frac := math.Modf(x)
+	if frac < 0 {
+		frac += 1
+	}
+	return frac
+}
+
+// GeneratePoints returns n (x, y) pairs whose population correlation is r,
+// both standardized to mean 0, variance 1 before any Scale is applied.
+// Identical in spirit to covariance.GeneratePoints.
+func GeneratePoints(r float64, n int) (xs, ys []float64) {
+	if n < 1 {
+		n = 1
+	}
+	if r > 1 {
+		r = 1
+	}
+	if r < -1 {
+		r = -1
+	}
+	xs = make([]float64, n)
+	ys = make([]float64, n)
+	tail := math.Sqrt(1 - r*r)
+	for i := 0; i < n; i++ {
+		u1 := hash01(2*i + 1)
+		u2 := hash01(2*i + 2)
+		if u1 < 1e-9 {
+			u1 = 1e-9 // keep log() finite
+		}
+		mag := math.Sqrt(-2 * math.Log(u1))
+		z1 := mag * math.Cos(2*math.Pi*u2)
+		z2 := mag * math.Sin(2*math.Pi*u2)
+		xs[i] = z1
+		ys[i] = r*z1 + tail*z2
+	}
+	return xs, ys
+}
+
+// Scale multiplies every x value by factor — relabeling the x-axis's units,
+// exactly like covariance.Scale.
+func Scale(xs []float64, factor float64) []float64 {
+	out := make([]float64, len(xs))
+	for i, x := range xs {
+		out[i] = x * factor
+	}
+	return out
+}
+
+// Mean returns the arithmetic mean of xs, or 0 for an empty slice.
+func Mean(xs []float64) float64 {
+	if len(xs) == 0 {
+		return 0
+	}
+	sum := 0.0
+	for _, x := range xs {
+		sum += x
+	}
+	return sum / float64(len(xs))
+}
+
+// Covariance returns the population covariance of xs and ys: the average of
+// (x - mean x) * (y - mean y). Returns 0 if the slices are empty or of
+// mismatched length. A variable's covariance with itself is its variance.
+func Covariance(xs, ys []float64) float64 {
+	n := len(xs)
+	if n == 0 || len(ys) != n {
+		return 0
+	}
+	mx, my := Mean(xs), Mean(ys)
+	sum := 0.0
+	for i := 0; i < n; i++ {
+		sum += (xs[i] - mx) * (ys[i] - my)
+	}
+	return sum / float64(n)
+}
+
+// CovarianceMatrix returns the three distinct entries of the symmetric 2x2
+// covariance matrix [[varX, covXY], [covXY, varY]] for (xs, ys).
+func CovarianceMatrix(xs, ys []float64) (varX, covXY, varY float64) {
+	return Covariance(xs, xs), Covariance(xs, ys), Covariance(ys, ys)
+}
+
+// Eigenvalues returns the two eigenvalues of the symmetric 2x2 matrix
+// [[a, b], [b, d]], larger first (lambda1 >= lambda2). Identical closed-form
+// formula to eigen.Eigenvalues — every real symmetric matrix (a covariance
+// matrix always is one) has real eigenvalues, so no complex numbers needed.
+func Eigenvalues(a, b, d float64) (lambda1, lambda2 float64) {
+	mid := (a + d) / 2
+	half := (a - d) / 2
+	disc := math.Sqrt(half*half + b*b)
+	return mid + disc, mid - disc
+}
+
+// PrincipalAngle returns the direction (radians, in [0, π)) of the
+// eigenvector belonging to lambda1 — the larger eigenvalue from
+// Eigenvalues — i.e. the first principal component. Identical closed-form
+// formula to eigen.EigenvectorAngle. The second principal component always
+// sits exactly perpendicular to this one, at angle+π/2.
+func PrincipalAngle(a, b, d float64) float64 {
+	return math.Atan2(2*b, a-d) / 2
+}
+
+// ExplainedVarianceRatio returns lambda1/(lambda1+lambda2): the fraction of
+// the cloud's total variance the first principal component alone accounts
+// for. Returns 0 for a degenerate, zero-variance cloud (both eigenvalues 0)
+// rather than dividing by zero.
+func ExplainedVarianceRatio(lambda1, lambda2 float64) float64 {
+	total := lambda1 + lambda2
+	if total <= 0 {
+		return 0
+	}
+	return lambda1 / total
 }
 
 func render(params map[string]float64) string {
