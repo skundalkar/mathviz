@@ -6,6 +6,7 @@
 package biasvariance
 
 import (
+	"fmt"
 	"math"
 
 	"mathviz/internal/concept"
@@ -342,6 +343,61 @@ func Variance(preds []float64) float64 {
 }
 
 func render(params map[string]float64) string {
-	_ = params
-	return viz.New(680, 460, -1, 1, -1, 1).String()
+	degree, noise, x0 := int(params["degree"]), params["noise"], params["x0"]
+	if x0 < -3.2 {
+		x0 = -3.2
+	}
+	if x0 > 3.2 {
+		x0 = 3.2
+	}
+
+	const xmin, xmax = -3.5, 3.5
+	const ymin, ymax = -2.5, 2.5
+	c := viz.New(680, 460, xmin, xmax, ymin, ymax)
+	c.PadT = 100
+	c.Axes()
+	for x := -3.0; x <= 3.0; x++ {
+		c.Tick(x, fmt.Sprintf("%g", x))
+	}
+
+	trueCurve := viz.Sample(xmin, xmax, 240, TrueFunction)
+	c.Path(trueCurve, viz.Muted, 1.5)
+
+	// One faint curve per independently resampled training run -- the
+	// "spaghetti plot." Low degrees bunch tightly (low variance); high
+	// degrees fan out wildly (high variance).
+	preds := make([]float64, numRuns)
+	for r := 0; r < numRuns; r++ {
+		xs, ys := DataPoints(numPoints, noise, r)
+		coeffs := PolyFit(xs, ys, degree)
+		fitCurve := viz.Sample(xmin, xmax, 120, func(x float64) float64 {
+			return PolyEval(coeffs, x)
+		})
+		c.Path(fitCurve, viz.Accent, 1)
+		preds[r] = PolyEval(coeffs, x0)
+	}
+
+	c.VLine(x0, viz.Warm, true)
+	for _, pred := range preds {
+		if pred < ymin || pred > ymax {
+			continue
+		}
+		px, py := c.X(x0), c.Y(pred)
+		c.Rect(px-2, py-2, 4, 4, viz.Warm, 0.7)
+	}
+
+	trueVal := TrueFunction(x0)
+	bias2 := BiasSquared(preds, trueVal)
+	vari := Variance(preds)
+
+	c.Text(20, 24, fmt.Sprintf("degree = %d    noise = %.2f    x0 = %.1f", degree, noise, x0),
+		14, viz.Ink, "start")
+	c.Text(20, 46, fmt.Sprintf("true value at x0 = %.3f    mean prediction = %.3f", trueVal, Mean(preds)),
+		13, viz.Muted, "start")
+	c.Text(20, 68, fmt.Sprintf("bias² ≈ %.4f    variance ≈ %.4f    total ≈ %.4f", bias2, vari, bias2+vari),
+		14, viz.Ink, "start")
+	c.Text(20, 88, "grey = true pattern    faint blue = 30 resampled fits    orange dots = their predictions at x0",
+		12, viz.Muted, "start")
+
+	return c.String()
 }
