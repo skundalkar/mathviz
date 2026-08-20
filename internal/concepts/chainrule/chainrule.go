@@ -7,6 +7,7 @@
 package chainrule
 
 import (
+	"fmt"
 	"math"
 
 	"mathviz/internal/concept"
@@ -153,7 +154,47 @@ func ComposedPrime(rate, t float64) float64 {
 }
 
 func render(p map[string]float64) string {
-	c := viz.New(560, 400, 0, 6, 0, 30)
+	rate, t0 := p["rate"], p["t0"]
+	if t0 <= 0 {
+		t0 = 0.1
+	}
+
+	const xmin, xmax = 0.0, 6.0
+	ymax := Composed(rate, xmax) * 1.15
+	if ymax < 1 {
+		ymax = 1
+	}
+
+	c := viz.New(680, 400, xmin, xmax, 0, ymax)
 	c.Axes()
+	for x := 0.0; x <= xmax; x += 1 {
+		c.Tick(x, fmt.Sprintf("%g", x))
+	}
+
+	curve := viz.Sample(xmin, xmax, 200, func(t float64) float64 { return Composed(rate, t) })
+	c.Path(curve, viz.Ink, 2)
+
+	v0 := Composed(rate, t0)
+	slope := ComposedPrime(rate, t0)
+	tangent := [][2]float64{
+		{xmin, v0 + slope*(xmin-t0)},
+		{xmax, v0 + slope*(xmax-t0)},
+	}
+	c.Path(tangent, viz.Warm, 2)
+
+	c.VLine(t0, viz.Muted, true)
+	px, py := c.X(t0), c.Y(v0)
+	c.Rect(px-4, py-4, 8, 8, viz.Accent, 1)
+
+	r0 := Radius(rate, t0)
+	dVdr := VolumePrime(r0)
+	drdt := RadiusPrime(rate)
+
+	c.Text(16, 24, fmt.Sprintf("rate (dr/dt) = %.2f cm/s    t0 = %.1fs", rate, t0), 14, viz.Ink, "start")
+	c.Text(16, 44, fmt.Sprintf("r(t0) = %.2f cm    V(t0) = %.2f cm³", r0, v0), 13, viz.Muted, "start")
+	c.Text(16, 62, fmt.Sprintf("dV/dr = %.3f    ×   dr/dt = %.2f   =   dV/dt = %.3f cm³/s",
+		dVdr, drdt, slope), 13, viz.Muted, "start")
+	c.Text(16, 80, "black = V(t) = (4/3)π(rate·t)³    orange = tangent, slope = dV/dt", 12, viz.Muted, "start")
+
 	return c.String()
 }
