@@ -7,6 +7,8 @@
 package matmul
 
 import (
+	"math"
+
 	"mathviz/internal/concept"
 	"mathviz/internal/viz"
 )
@@ -119,6 +121,43 @@ func init() {
 		},
 		Render: render,
 	})
+}
+
+// Matrix is a 2x2 matrix [[A, B], [C, D]] (row-major).
+type Matrix struct {
+	A, B, C, D float64
+}
+
+// Rotation returns the matrix that rotates a vector counterclockwise by
+// angleDeg degrees.
+func Rotation(angleDeg float64) Matrix {
+	rad := angleDeg * math.Pi / 180
+	cos, sin := math.Cos(rad), math.Sin(rad)
+	return Matrix{A: cos, B: -sin, C: sin, D: cos}
+}
+
+// Shear returns the matrix that pushes each point sideways along x by k
+// times its own height (y stays fixed): (x, y) -> (x+k*y, y).
+func Shear(k float64) Matrix {
+	return Matrix{A: 1, B: k, C: 0, D: 1}
+}
+
+// Apply returns M*v for the vector (x, y).
+func Apply(m Matrix, x, y float64) (float64, float64) {
+	return m.A*x + m.B*y, m.C*x + m.D*y
+}
+
+// Mul returns the matrix product m1*m2 — the single matrix that applies m2
+// first, then m1. For any vector v, Apply(Mul(m1, m2), v) equals
+// Apply(m1, Apply(m2, v)) exactly; Mul is generally NOT commutative
+// (Mul(m1, m2) != Mul(m2, m1)).
+func Mul(m1, m2 Matrix) Matrix {
+	return Matrix{
+		A: m1.A*m2.A + m1.B*m2.C,
+		B: m1.A*m2.B + m1.B*m2.D,
+		C: m1.C*m2.A + m1.D*m2.C,
+		D: m1.C*m2.B + m1.D*m2.D,
+	}
 }
 
 func render(p map[string]float64) string {
