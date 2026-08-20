@@ -110,6 +110,42 @@ func init() {
 	})
 }
 
+// F is the function this concept finds a root of: f(x) = x^2 - 2, whose
+// positive root is √2.
+func F(x float64) float64 {
+	return x*x - 2
+}
+
+// FPrime is the exact derivative of F: f'(x) = 2x.
+func FPrime(x float64) float64 {
+	return 2 * x
+}
+
+// NewtonStep returns the next guess: where the tangent line at (x, F(x))
+// crosses zero. Returns x unchanged if the tangent is flat (f'(x) == 0),
+// since the line never crosses zero in that case.
+func NewtonStep(x float64) float64 {
+	slope := FPrime(x)
+	if slope == 0 {
+		return x
+	}
+	return x - F(x)/slope
+}
+
+// Iterates returns x0 followed by `steps` successive Newton steps, so the
+// result always has length steps+1.
+func Iterates(x0 float64, steps int) []float64 {
+	if steps < 0 {
+		steps = 0
+	}
+	out := make([]float64, steps+1)
+	out[0] = x0
+	for i := 1; i <= steps; i++ {
+		out[i] = NewtonStep(out[i-1])
+	}
+	return out
+}
+
 func render(p map[string]float64) string {
 	c := viz.New(560, 400, -0.5, 3, -2, 5)
 	c.Axes()
