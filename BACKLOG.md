@@ -57,11 +57,11 @@ Format: `- [ ] <id> — <one-line description of the concept to visualize>`
 - [x] principal-component-analysis — finding the directions of maximum variance in a cloud of points, built from covariance and eigenvectors
 - [x] kl-divergence — measuring how far one probability distribution is from another, built from entropy
 - [x] bias-variance-tradeoff — decomposing prediction error into bias, variance, and irreducible noise as model complexity changes
+- [x] matrix-multiplication — combining two linear transformations into one, and reading a matrix as what it does to the basis vectors
 
 ## Up next (statistics & ML intuition)
 
 ## Up next (math foundations)
-- [ ] matrix-multiplication — combining two linear transformations into one, and reading a matrix as what it does to the basis vectors
 - [ ] newtons-method — finding a function's root by repeatedly following its tangent line
 - [ ] chain-rule — how the derivative of a composed function multiplies the derivatives of its parts
 
