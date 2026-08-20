@@ -7,6 +7,8 @@
 package chainrule
 
 import (
+	"math"
+
 	"mathviz/internal/concept"
 	"mathviz/internal/viz"
 )
@@ -109,6 +111,45 @@ func init() {
 		},
 		Render: render,
 	})
+}
+
+// Radius is the inner function h(t): a radius growing at a constant rate,
+// r(t) = rate*t.
+func Radius(rate, t float64) float64 {
+	return rate * t
+}
+
+// RadiusPrime is the exact derivative of Radius with respect to t. It's
+// constant, since Radius is linear in t: dr/dt = rate everywhere.
+func RadiusPrime(rate float64) float64 {
+	return rate
+}
+
+// Volume is the outer function g(r): a sphere's volume from its radius,
+// V(r) = (4/3)πr³.
+func Volume(r float64) float64 {
+	return (4.0 / 3.0) * math.Pi * r * r * r
+}
+
+// VolumePrime is the exact derivative of Volume with respect to r:
+// dV/dr = 4πr².
+func VolumePrime(r float64) float64 {
+	return 4 * math.Pi * r * r
+}
+
+// Composed is the composed function V(t) = Volume(Radius(rate, t)) — the
+// volume as a function of time, built by feeding the inner function's
+// output into the outer function.
+func Composed(rate, t float64) float64 {
+	return Volume(Radius(rate, t))
+}
+
+// ComposedPrime is the chain-rule derivative of Composed with respect to t:
+// V'(t) = V'(r(t)) · r'(t) — the outer derivative evaluated at the inner
+// function's value, times the inner derivative.
+func ComposedPrime(rate, t float64) float64 {
+	r := Radius(rate, t)
+	return VolumePrime(r) * RadiusPrime(rate)
 }
 
 func render(p map[string]float64) string {
