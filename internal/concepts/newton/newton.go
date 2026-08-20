@@ -5,6 +5,9 @@
 package newton
 
 import (
+	"fmt"
+	"math"
+
 	"mathviz/internal/concept"
 	"mathviz/internal/viz"
 )
@@ -147,7 +150,70 @@ func Iterates(x0 float64, steps int) []float64 {
 }
 
 func render(p map[string]float64) string {
-	c := viz.New(560, 400, -0.5, 3, -2, 5)
+	x0 := p["x0"]
+	if x0 <= 0 {
+		x0 = 0.05
+	}
+	steps := int(p["steps"] + 0.5)
+
+	const xmin, xmax = -0.5, 3.0
+	const ymin, ymax = -2.5, 6.0
+	c := viz.New(680, 420, xmin, xmax, ymin, ymax)
 	c.Axes()
+	for x := 0.0; x <= xmax; x += 0.5 {
+		c.Tick(x, fmt.Sprintf("%.1f", x))
+	}
+
+	curve := viz.Sample(xmin, xmax, 200, F)
+	c.Path(curve, viz.Ink, 2)
+
+	// The true root, √2, as a reference line.
+	c.VLine(math.Sqrt2, viz.Muted, true)
+	c.Text(c.X(math.Sqrt2), c.PadT+12, "√2", 13, viz.Muted, "middle")
+
+	iters := Iterates(x0, steps)
+
+	// One tangent line per step, from (x_i, F(x_i)) down to the x-axis at
+	// x_{i+1} — the same line NewtonStep solves for.
+	for i := 0; i < steps; i++ {
+		xi := iters[i]
+		fxi := F(xi)
+		slope := FPrime(xi)
+		var tangent [][2]float64
+		if slope == 0 {
+			tangent = [][2]float64{{xi, ymin}, {xi, ymax}}
+		} else {
+			tangent = [][2]float64{
+				{xmin, fxi + slope*(xmin-xi)},
+				{xmax, fxi + slope*(xmax-xi)},
+			}
+		}
+		c.Path(tangent, viz.Warm, 1.5)
+
+		// Vertical drop from the curve down to the x-axis at the current
+		// guess, so each jump reads as "curve point -> tangent -> next guess".
+		c.Path([][2]float64{{xi, fxi}, {xi, 0}}, viz.Faint, 1)
+		px, py := c.X(xi), c.Y(fxi)
+		c.Rect(px-3, py-3, 6, 6, viz.Accent, 1)
+	}
+
+	// Every guess, including the final one, as a labeled dot on the x-axis.
+	for i, xi := range iters {
+		px := c.X(xi)
+		py := c.Y(0)
+		color := viz.Accent
+		if i == len(iters)-1 {
+			color = viz.Good
+		}
+		c.Rect(px-3, py-3, 6, 6, color, 1)
+	}
+
+	last := iters[len(iters)-1]
+	c.Text(20, 24, fmt.Sprintf("x0 = %.3f    steps = %d", x0, steps), 14, viz.Ink, "start")
+	c.Text(20, 44, fmt.Sprintf("current guess x%d = %.6f    error = %.2e", steps, last, math.Abs(last-math.Sqrt2)),
+		13, viz.Muted, "start")
+	c.Text(20, 62, "black = f(x)=x²-2    orange = tangent line at each guess    dashed = true root √2",
+		12, viz.Muted, "start")
+
 	return c.String()
 }
