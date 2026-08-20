@@ -9,6 +9,7 @@ import (
 	_ "mathviz/internal/concepts/binomial"
 	_ "mathviz/internal/concepts/birthday"
 	_ "mathviz/internal/concepts/calibration"
+	_ "mathviz/internal/concepts/chainrule"
 	_ "mathviz/internal/concepts/clt"
 	_ "mathviz/internal/concepts/complexnumbers"
 	_ "mathviz/internal/concepts/confint"
