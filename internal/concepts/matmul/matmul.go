@@ -7,6 +7,7 @@
 package matmul
 
 import (
+	"fmt"
 	"math"
 
 	"mathviz/internal/concept"
@@ -67,13 +68,13 @@ func init() {
 					"angleA sets A, a pure rotation; shearB sets B, a shear along x. order picks " +
 						"which composition C represents: 0 for A after B (C = A·B, shear first, " +
 						"then rotate), 1 for B after A (C = B·A, rotate first, then shear). The " +
-						"faint square is the original unit square; the dashed square is it after " +
-						"the first transformation alone; the solid square is C applied directly to " +
+						"faint square is the original unit square; the blue square is it after the " +
+						"first transformation alone; the orange square is C applied directly to " +
 						"the original — and it always lands exactly where chaining the two steps " +
 						"by hand would put it, because that's what C is built to do. The two green " +
 						"arrows are C's columns: where i and j end up, read straight off the matrix " +
 						"printed in the readout. Flip order at the same angleA/shearB and watch the " +
-						"solid square land somewhere different — the same two building blocks, " +
+						"orange square land somewhere different — the same two building blocks, " +
 						"combined in the other order, is a genuinely different transformation.",
 				},
 			},
@@ -160,8 +161,87 @@ func Mul(m1, m2 Matrix) Matrix {
 	}
 }
 
+// unitSquare is the shape transformed on the canvas: the four corners of the
+// unit square, closed back to the start so Path draws a complete outline.
+var unitSquare = [][2]float64{{0, 0}, {1, 0}, {1, 1}, {0, 1}, {0, 0}}
+
+func transform(m Matrix, pts [][2]float64) [][2]float64 {
+	out := make([][2]float64, len(pts))
+	for i, pt := range pts {
+		x, y := Apply(m, pt[0], pt[1])
+		out[i] = [2]float64{x, y}
+	}
+	return out
+}
+
 func render(p map[string]float64) string {
-	c := viz.New(560, 560, -3, 3, -3, 3)
-	c.Axes()
+	angleA, shearB, order := p["angleA"], p["shearB"], p["order"]
+
+	A := Rotation(angleA)
+	B := Shear(shearB)
+
+	// first is whichever matrix is applied first; second is applied to
+	// first's result. C is the single combined matrix — Mul(second, first)
+	// either way, since Mul(m1,m2) applies m2 first.
+	var first, second Matrix
+	var label string
+	if order < 0.5 {
+		first, second, label = B, A, "C = A·B  (B first, then A)"
+	} else {
+		first, second, label = A, B, "C = B·A  (A first, then B)"
+	}
+	C := Mul(second, first)
+
+	c := viz.New(560, 560, -3.2, 3.2, -3.2, 3.2)
+	c.Path([][2]float64{{c.XMin, 0}, {c.XMax, 0}}, viz.Muted, 1)
+	c.Path([][2]float64{{0, c.YMin}, {0, c.YMax}}, viz.Muted, 1)
+
+	afterFirst := transform(first, unitSquare)
+	afterC := transform(C, unitSquare) // == second applied to afterFirst, pointwise
+
+	c.Path(unitSquare, viz.Faint, 1.5)
+	c.Path(afterFirst, viz.Accent, 2)
+	c.Path(afterC, viz.Warm, 2.5)
+
+	// C's columns: where it sends i=(1,0) and j=(0,1).
+	arrow(c, 0, 0, C.A, C.C, viz.Good, 2.5)
+	arrow(c, 0, 0, C.B, C.D, viz.Good, 2.5)
+
+	c.Text(16, 24, label, 14, viz.Ink, "start")
+	c.Text(16, 44, fmt.Sprintf("A = [[%.2f,%.2f],[%.2f,%.2f]] (rotate %.0f°)",
+		A.A, A.B, A.C, A.D, angleA), 13, viz.Muted, "start")
+	c.Text(16, 62, fmt.Sprintf("B = [[%.2f,%.2f],[%.2f,%.2f]] (shear %.1f)",
+		B.A, B.B, B.C, B.D, shearB), 13, viz.Muted, "start")
+	c.Text(16, 86, fmt.Sprintf("C = [[%.2f,%.2f],[%.2f,%.2f]]", C.A, C.B, C.C, C.D), 14, viz.Ink, "start")
+	c.Text(16, 106, fmt.Sprintf("C·i = (%.2f,%.2f)   C·j = (%.2f,%.2f)  (green arrows = C's columns)",
+		C.A, C.C, C.B, C.D), 13, viz.Muted, "start")
+	c.Text(16, 536, "faint = original square   blue = after first step   orange = C applied directly",
+		12, viz.Muted, "start")
+
 	return c.String()
+}
+
+// arrow draws a straight line from (x0,y0) to (x1,y1) in data space, with a
+// small V-shaped arrowhead at the end.
+func arrow(c *viz.Canvas, x0, y0, x1, y1 float64, color string, width float64) {
+	c.Path([][2]float64{{x0, y0}, {x1, y1}}, color, width)
+
+	dx, dy := x1-x0, y1-y0
+	length := math.Hypot(dx, dy)
+	if length < 1e-9 {
+		return
+	}
+	ux, uy := dx/length, dy/length
+	const headLen = 0.18
+	const headAngle = 0.5 // radians, ~29 degrees off the shaft on each side
+
+	barb := func(t float64) (float64, float64) {
+		cos, sin := math.Cos(t), math.Sin(t)
+		bx, by := -ux, -uy
+		return bx*cos - by*sin, bx*sin + by*cos
+	}
+	b1x, b1y := barb(headAngle)
+	b2x, b2y := barb(-headAngle)
+	c.Path([][2]float64{{x1, y1}, {x1 + headLen*b1x, y1 + headLen*b1y}}, color, width)
+	c.Path([][2]float64{{x1, y1}, {x1 + headLen*b2x, y1 + headLen*b2y}}, color, width)
 }
