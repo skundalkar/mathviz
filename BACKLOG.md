@@ -60,9 +60,9 @@ Format: `- [ ] <id> — <one-line description of the concept to visualize>`
 - [x] matrix-multiplication — combining two linear transformations into one, and reading a matrix as what it does to the basis vectors
 - [x] newtons-method — finding a function's root by repeatedly following its tangent line
 - [x] chain-rule — how the derivative of a composed function multiplies the derivatives of its parts
+- [x] simpsons-paradox — a trend that reverses when subgroups are combined, even though one option wins every subgroup on its own
 
 ## Up next (statistics & ML intuition)
-- [ ] simpsons-paradox — a trend that reverses when subgroups are combined, even though one option wins every subgroup on its own
 - [ ] bootstrap-resampling — estimating a statistic's uncertainty by resampling the data itself instead of assuming a formula/distribution
 - [ ] decision-trees — splitting a dataset by information gain (built from entropy) into a tree of yes/no questions
 - [ ] regularization — how an L1/L2 penalty shrinks coefficients to fight overfitting, built from linear-regression and bias-variance-tradeoff

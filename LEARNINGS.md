@@ -6,6 +6,72 @@ code. Newest entries go at the top.
 
 ---
 
+## simpsons-paradox — when the overall trend runs backwards from every group's own trend
+**Why would you need this?** Two treatments for kidney stones were compared
+in a real 1986 study (Charig et al., BMJ): Treatment A (open surgery) cured
+93% of small-stone patients and 73% of large-stone patients; Treatment B
+cured 87% of small-stone patients and 69% of large-stone patients. A wins
+both. Gut instinct: "A is obviously the better treatment, it won every
+category." But tallied across all 700 patients, A's overall cure rate was
+78% and B's was 83% — B looks better once you stop splitting by stone size.
+How can a treatment lose every single subgroup and still win overall?
+
+**How does it actually work?** It happens because the two treatments didn't
+get identical caseloads. Large stones are simply harder to cure than small
+ones (73% and 69% are both worse than 93% and 87%), and doctors reached for
+open surgery (A) disproportionately for the harder cases:
+- A treated 350 patients: 263 large-stone (75%) and 87 small-stone (25%).
+- B treated 350 patients: 80 large-stone (23%) and 270 small-stone (77%).
+
+Weigh each treatment's per-group rates by its own case mix: A's overall rate
+is 0.75×73% + 0.25×93% ≈ 78%. B's overall rate is 0.23×69% + 0.77×87% ≈ 83%.
+Same per-group numbers as above — the case mix each treatment happened to
+see is doing the work, not which treatment is actually better. In general,
+`CombinedRate(mixLarge, rateSmall, rateLarge) = (1-mixLarge)·rateSmall +
+mixLarge·rateLarge`: change only the mix, hold every per-group rate fixed,
+and the overall ranking can flip without a single patient's outcome
+changing.
+
+**What does the picture show?** Two fixed bar-pairs show each treatment's
+real cure rate on small stones and large stones — A wins both, always. A
+third bar-pair shows the overall rate, driven by two sliders: each
+treatment's share of large-stone patients. At the real study's values (A:
+75%, B: 23%) the overall bars cross over, reproducing the paradox. Pull both
+sliders to the same value and the overall bars snap back into agreement with
+the subgroup bars — A wins again, because now both treatments faced the same
+mix of easy and hard cases.
+
+**What can you do now that you couldn't before?** Before trusting an overall
+percentage — a treatment's cure rate, a school's pass rate, a hiring
+pipeline's offer rate — you can check whether the groups being compared had
+a comparable mix of the underlying cases. If they didn't, the combined
+ranking may be telling you about the mix, not about which option is
+actually better.
+
+**Where does this show up in real life?** The most famous case is the 1973
+UC Berkeley graduate admissions data: men were admitted at a higher overall
+rate than women, which looked like bias — but within almost every individual
+department, women were admitted at an equal or higher rate. Women had
+disproportionately applied to the most competitive departments, which pulled
+their overall number down. The same shape shows up in batting averages (a
+player can out-hit a teammate in both halves of a season and still trail in
+the full-season average, if at-bats differed between halves), in A/B tests
+split unevenly across mobile and desktop traffic, and in hospital
+survival-rate comparisons that don't account for patient severity at
+admission.
+
+**What's the common mistake here?** Say it like this: "Treatment A wins both
+subgroups, but B has the better overall number because A took on far more of
+the hard cases" — naming the case-mix difference as the reason the two
+rankings disagree. Not like this: "the overall number is what matters, so B
+is the better treatment" — treating the combined percentage as the final
+word without asking whether it was computed over comparable groups. It's
+also a mistake to swing the other way and say "always trust the subgroup
+numbers instead" — the right response is to check whether the case mix
+differed, not to blindly prefer one level of aggregation over the other.
+
+---
+
 ## chain-rule — multiplying rates through a composition
 **Why would you need this?** `derivative` showed how to find the slope of a
 curve like p(t)=t² directly. But some quantities aren't handed to you as one
