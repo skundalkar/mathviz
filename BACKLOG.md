@@ -62,8 +62,17 @@ Format: `- [ ] <id> — <one-line description of the concept to visualize>`
 - [x] chain-rule — how the derivative of a composed function multiplies the derivatives of its parts
 
 ## Up next (statistics & ML intuition)
+- [ ] simpsons-paradox — a trend that reverses when subgroups are combined, even though one option wins every subgroup on its own
+- [ ] bootstrap-resampling — estimating a statistic's uncertainty by resampling the data itself instead of assuming a formula/distribution
+- [ ] decision-trees — splitting a dataset by information gain (built from entropy) into a tree of yes/no questions
+- [ ] regularization — how an L1/L2 penalty shrinks coefficients to fight overfitting, built from linear-regression and bias-variance-tradeoff
+- [ ] chi-squared-test — testing whether observed category counts differ from what independence would predict
 
 ## Up next (math foundations)
+- [ ] determinant — a matrix's determinant as the area/volume scaling factor of its linear transformation, built from matrix-multiplication
+- [ ] exponential-distribution — modeling the waiting time between rare events, the continuous counterpart to poisson-distribution
+- [ ] quadratic-formula — completing the square and reading a parabola's discriminant as how many real roots it has
+- [ ] fibonacci-golden-ratio — the Fibonacci sequence's ratio of consecutive terms converging to φ
 
 ## How to add work
 Append an unchecked line under the right section by hand any time — the loop
