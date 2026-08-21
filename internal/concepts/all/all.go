@@ -8,6 +8,7 @@ import (
 	_ "mathviz/internal/concepts/biasvariance"
 	_ "mathviz/internal/concepts/binomial"
 	_ "mathviz/internal/concepts/birthday"
+	_ "mathviz/internal/concepts/bootstrap"
 	_ "mathviz/internal/concepts/calibration"
 	_ "mathviz/internal/concepts/chainrule"
 	_ "mathviz/internal/concepts/clt"
