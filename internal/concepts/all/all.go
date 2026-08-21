@@ -50,6 +50,7 @@ import (
 	_ "mathviz/internal/concepts/randomwalk"
 	_ "mathviz/internal/concepts/rocauc"
 	_ "mathviz/internal/concepts/sigmoidsoftmax"
+	_ "mathviz/internal/concepts/simpsonsparadox"
 	_ "mathviz/internal/concepts/sinecosine"
 	_ "mathviz/internal/concepts/stddev"
 	_ "mathviz/internal/concepts/taylorseries"
