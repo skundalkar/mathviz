@@ -5,6 +5,8 @@
 package decisiontree
 
 import (
+	"math"
+
 	"mathviz/internal/concept"
 	"mathviz/internal/viz"
 )
@@ -105,6 +107,68 @@ func init() {
 		},
 		Render: render,
 	})
+}
+
+// Hours and Pass are the 10 students used throughout this concept: hours
+// studied and whether each one passed (1) or failed (0). Two points break
+// the otherwise-clean trend on purpose — hours=3 passed early, hours=3.5
+// failed late — so the "obviously best" midpoint split isn't actually best.
+var (
+	Hours = []float64{1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5}
+	Pass  = []int{0, 0, 0, 0, 1, 0, 1, 1, 1, 1}
+)
+
+// Entropy is the binary entropy, in bits, of a class with fraction p
+// positive. It's 0 when p is 0 or 1 (no uncertainty at all) and peaks at 1
+// bit when p=0.5 (maximum uncertainty, a coin flip).
+func Entropy(p float64) float64 {
+	if p <= 0 || p >= 1 {
+		return 0
+	}
+	return -p*math.Log2(p) - (1-p)*math.Log2(1-p)
+}
+
+// classEntropy is Entropy applied to a slice of 0/1 labels, using the
+// fraction of 1s as p.
+func classEntropy(labels []int) float64 {
+	if len(labels) == 0 {
+		return 0
+	}
+	pos := 0
+	for _, l := range labels {
+		pos += l
+	}
+	return Entropy(float64(pos) / float64(len(labels)))
+}
+
+// Split partitions labels by whether each example's feature value is at or
+// below threshold (left) or above it (right). hours and labels must be the
+// same length and index-aligned.
+func Split(hours []float64, labels []int, threshold float64) (left, right []int) {
+	for i, h := range hours {
+		if h <= threshold {
+			left = append(left, labels[i])
+		} else {
+			right = append(right, labels[i])
+		}
+	}
+	return
+}
+
+// InfoGain is the information gain of splitting labels into left and right:
+// the parent's entropy minus the size-weighted average of the two children's
+// entropies. It's always >= 0 (a split can never increase uncertainty on
+// average) and equals the parent entropy exactly when the split perfectly
+// separates the two classes (both children pure, entropy 0 each).
+func InfoGain(labels, left, right []int) float64 {
+	parent := classEntropy(labels)
+	n := float64(len(labels))
+	if n == 0 {
+		return 0
+	}
+	wLeft := float64(len(left)) / n
+	wRight := float64(len(right)) / n
+	return parent - (wLeft*classEntropy(left) + wRight*classEntropy(right))
 }
 
 func render(p map[string]float64) string {
