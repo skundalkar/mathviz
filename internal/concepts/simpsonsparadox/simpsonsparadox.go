@@ -8,6 +8,8 @@
 package simpsonsparadox
 
 import (
+	"fmt"
+
 	"mathviz/internal/concept"
 	"mathviz/internal/viz"
 )
@@ -147,6 +149,60 @@ func CombinedRate(mixLarge, rateSmall, rateLarge float64) float64 {
 }
 
 func render(p map[string]float64) string {
-	_ = p
-	return viz.New(680, 400, 0, 1, 0, 1).String()
+	mixA, mixB := p["mixA"], p["mixB"]
+
+	overallA := CombinedRate(mixA, RateASmall, RateALarge)
+	overallB := CombinedRate(mixB, RateBSmall, RateBLarge)
+
+	c := viz.New(680, 430, 0, 1, 0, 1)
+
+	const chartTop, chartBottom = 56.0, 330.0
+	const chartHeight = chartBottom - chartTop
+	const groupW, barW, barGap = 200.0, 64.0, 16.0
+	const startX = 40.0
+
+	bar := func(x, rate float64, color string) {
+		h := rate * chartHeight
+		y := chartBottom - h
+		c.Rect(x, y, barW, h, color, 0.9)
+		c.Text(x+barW/2, y-8, fmt.Sprintf("%.0f%%", rate*100), 13, viz.Ink, "middle")
+	}
+
+	groups := []struct {
+		label        string
+		rateA, rateB float64
+	}{
+		{"Small stones", RateASmall, RateBSmall},
+		{"Large stones", RateALarge, RateBLarge},
+		{"Overall", overallA, overallB},
+	}
+
+	for i, g := range groups {
+		gx := startX + float64(i)*groupW
+		bar(gx, g.rateA, viz.Accent)
+		bar(gx+barW+barGap, g.rateB, viz.Warm)
+		c.Text(gx+barW+(barW+barGap)/2, chartBottom+22, g.label, 13, viz.Ink, "middle")
+	}
+
+	// Baseline under all bars.
+	c.Rect(startX-10, chartBottom, groupW*3-10, 1.5, viz.Ink, 1)
+
+	// Legend.
+	c.Rect(470, 8, 14, 14, viz.Accent, 0.9)
+	c.Text(490, 19, "Treatment A", 13, viz.Ink, "start")
+	c.Rect(470, 28, 14, 14, viz.Warm, 0.9)
+	c.Text(490, 39, "Treatment B", 13, viz.Ink, "start")
+
+	c.Text(20, 19, fmt.Sprintf("A's patients: %.0f%% large-stone", mixA*100), 13, viz.Muted, "start")
+	c.Text(20, 39, fmt.Sprintf("B's patients: %.0f%% large-stone", mixB*100), 13, viz.Muted, "start")
+
+	note := "No paradox: A wins both subgroups and overall"
+	noteColor := viz.Good
+	if overallB > overallA {
+		note = "Paradox: A wins both subgroups, but B wins overall"
+		noteColor = viz.Bad
+	}
+	c.Text(340, 400, note, 14, noteColor, "middle")
+
+	return c.String()
 }
