@@ -7,6 +7,7 @@
 package bootstrap
 
 import (
+	"fmt"
 	"math"
 	"sort"
 
@@ -196,6 +197,60 @@ func PercentileInterval(means []float64, level float64) (lo, hi float64) {
 }
 
 func render(p map[string]float64) string {
-	_ = p
-	return viz.New(680, 400, 0, 1, 0, 1).String()
+	outlier, level := p["outlier"], p["level"]
+
+	data := Sample(outlier)
+	mean := Mean(data)
+	means := BootstrapMeans(data)
+	lo, hi := PercentileInterval(means, level)
+
+	// Fixed x window (covers the full outlier slider range) so the axis
+	// doesn't jump around as the outlier slider moves.
+	const xmin, xmax = 10.0, 95.0
+	const nBins = 20
+	binW := (xmax - xmin) / nBins
+
+	counts := make([]int, nBins)
+	for _, m := range means {
+		idx := int((m - xmin) / binW)
+		if idx < 0 {
+			idx = 0
+		}
+		if idx >= nBins {
+			idx = nBins - 1
+		}
+		counts[idx]++
+	}
+	maxCount := 0
+	for _, ct := range counts {
+		if ct > maxCount {
+			maxCount = ct
+		}
+	}
+
+	c := viz.New(680, 380, xmin, xmax, 0, float64(maxCount)*1.15)
+	c.Axes()
+	for x := 10.0; x <= 90; x += 10 {
+		c.Tick(x, fmt.Sprintf("%g", x))
+	}
+
+	for i := 0; i < nBins; i++ {
+		if counts[i] == 0 {
+			continue
+		}
+		x0, x1 := xmin+float64(i)*binW, xmin+float64(i+1)*binW
+		px0, px1 := c.X(x0), c.X(x1)
+		py, base := c.Y(float64(counts[i])), c.Y(0)
+		c.Rect(px0+1, py, px1-px0-2, base-py, viz.Accent, 0.75)
+	}
+
+	// Percentile interval band (dashed) and the actual sample mean (solid).
+	c.VLine(lo, viz.Warm, true)
+	c.VLine(hi, viz.Warm, true)
+	c.VLine(mean, viz.Ink, false)
+
+	c.Text(20, 22, fmt.Sprintf("sample mean = %.1f min  (5 commutes, last one = %.0f)", mean, outlier), 14, viz.Ink, "start")
+	c.Text(20, 42, fmt.Sprintf("%.0f%% bootstrap interval ≈ [%.1f, %.1f] min  (all %d resamples)", level*100, lo, hi, len(means)), 13, viz.Muted, "start")
+
+	return c.String()
 }
