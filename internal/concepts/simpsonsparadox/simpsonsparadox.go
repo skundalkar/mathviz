@@ -118,6 +118,34 @@ func init() {
 	})
 }
 
+// Real per-subgroup cure rates from the 1986 Charig et al. kidney-stone
+// study (BMJ). Treatment A (open surgery) beats Treatment B (percutaneous
+// nephrolithotomy) on both stone sizes.
+const (
+	RateASmall = 0.93 // Treatment A, small stones
+	RateALarge = 0.73 // Treatment A, large stones
+	RateBSmall = 0.87 // Treatment B, small stones
+	RateBLarge = 0.69 // Treatment B, large stones
+)
+
+// CombinedRate blends a treatment's small-stone and large-stone cure rates
+// into a single overall rate, weighted by mixLarge — the fraction of that
+// treatment's patients who had a large stone. mixLarge=0 returns rateSmall
+// exactly (no large-stone patients); mixLarge=1 returns rateLarge exactly
+// (no small-stone patients); values in between interpolate linearly. This is
+// the whole mechanism behind Simpson's paradox: two treatments can have
+// identical per-group rates yet different overall rates purely because
+// mixLarge differs between them.
+func CombinedRate(mixLarge, rateSmall, rateLarge float64) float64 {
+	if mixLarge < 0 {
+		mixLarge = 0
+	}
+	if mixLarge > 1 {
+		mixLarge = 1
+	}
+	return (1-mixLarge)*rateSmall + mixLarge*rateLarge
+}
+
 func render(p map[string]float64) string {
 	_ = p
 	return viz.New(680, 400, 0, 1, 0, 1).String()
