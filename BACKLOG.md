@@ -61,9 +61,9 @@ Format: `- [ ] <id> — <one-line description of the concept to visualize>`
 - [x] newtons-method — finding a function's root by repeatedly following its tangent line
 - [x] chain-rule — how the derivative of a composed function multiplies the derivatives of its parts
 - [x] simpsons-paradox — a trend that reverses when subgroups are combined, even though one option wins every subgroup on its own
+- [x] bootstrap-resampling — estimating a statistic's uncertainty by resampling the data itself instead of assuming a formula/distribution
 
 ## Up next (statistics & ML intuition)
-- [ ] bootstrap-resampling — estimating a statistic's uncertainty by resampling the data itself instead of assuming a formula/distribution
 - [ ] decision-trees — splitting a dataset by information gain (built from entropy) into a tree of yes/no questions
 - [ ] regularization — how an L1/L2 penalty shrinks coefficients to fight overfitting, built from linear-regression and bias-variance-tradeoff
 - [ ] chi-squared-test — testing whether observed category counts differ from what independence would predict
