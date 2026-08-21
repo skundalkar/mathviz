@@ -5,6 +5,7 @@
 package decisiontree
 
 import (
+	"fmt"
 	"math"
 
 	"mathviz/internal/concept"
@@ -171,7 +172,70 @@ func InfoGain(labels, left, right []int) float64 {
 	return parent - (wLeft*classEntropy(left) + wRight*classEntropy(right))
 }
 
+// bestSplit scans every midpoint between consecutive Hours values and
+// returns the threshold with the highest information gain (the first one
+// found, in case of a tie).
+func bestSplit() (threshold, gain float64) {
+	best := -1.0
+	bestT := 0.0
+	for i := 0; i < len(Hours)-1; i++ {
+		th := (Hours[i] + Hours[i+1]) / 2
+		left, right := Split(Hours, Pass, th)
+		g := InfoGain(Pass, left, right)
+		if g > best {
+			best = g
+			bestT = th
+		}
+	}
+	return bestT, best
+}
+
+func countAndFrac(labels []int) (pos int, frac float64) {
+	for _, l := range labels {
+		pos += l
+	}
+	if len(labels) > 0 {
+		frac = float64(pos) / float64(len(labels))
+	}
+	return
+}
+
 func render(p map[string]float64) string {
-	_ = p
-	return viz.New(680, 400, 0, 1, 0, 1).String()
+	threshold := p["threshold"]
+
+	left, right := Split(Hours, Pass, threshold)
+	parent := classEntropy(Pass)
+	leftPos, leftFrac := countAndFrac(left)
+	rightPos, rightFrac := countAndFrac(right)
+	leftE, rightE := classEntropy(left), classEntropy(right)
+	gain := InfoGain(Pass, left, right)
+	bestT, bestGain := bestSplit()
+
+	c := viz.New(680, 400, 0, 6, 0, 1)
+	c.Axes()
+	for x := 1.0; x <= 5.5; x += 0.5 {
+		c.Tick(x, fmt.Sprintf("%.1f", x))
+	}
+
+	c.Text(10, c.Y(0.72), "pass", 11, viz.Good, "start")
+	c.Text(10, c.Y(0.32), "fail", 11, viz.Bad, "start")
+
+	for i, h := range Hours {
+		y, color := 0.3, viz.Bad
+		if Pass[i] == 1 {
+			y, color = 0.7, viz.Good
+		}
+		px, py := c.X(h), c.Y(y)
+		c.Rect(px-5, py-5, 10, 10, color, 0.9)
+	}
+
+	c.VLine(threshold, viz.Ink, false)
+
+	c.Text(20, 24, fmt.Sprintf("threshold = %.2f hours   parent entropy = %.3f bits (5/10 passed)", threshold, parent), 13, viz.Ink, "start")
+	c.Text(20, 44, fmt.Sprintf("left:  n=%d, %d passed (p=%.2f), entropy=%.3f", len(left), leftPos, leftFrac, leftE), 13, viz.Muted, "start")
+	c.Text(20, 62, fmt.Sprintf("right: n=%d, %d passed (p=%.2f), entropy=%.3f", len(right), rightPos, rightFrac, rightE), 13, viz.Muted, "start")
+	c.Text(20, 88, fmt.Sprintf("information gain = %.3f bits", gain), 15, viz.Accent, "start")
+	c.Text(20, 108, fmt.Sprintf("best possible split: threshold=%.2f hours, gain=%.3f bits", bestT, bestGain), 12, viz.Warm, "start")
+
+	return c.String()
 }
