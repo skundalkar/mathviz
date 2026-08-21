@@ -7,6 +7,9 @@
 package bootstrap
 
 import (
+	"math"
+	"sort"
+
 	"mathviz/internal/concept"
 	"mathviz/internal/viz"
 )
@@ -112,6 +115,84 @@ func init() {
 		},
 		Render: render,
 	})
+}
+
+// Sample builds the 5 commute times used throughout this concept: four fixed
+// values plus one adjustable 5th value (the outlier).
+func Sample(outlier float64) []float64 {
+	return []float64{12, 15, 15, 22, outlier}
+}
+
+// Mean is the plain arithmetic mean of data.
+func Mean(data []float64) float64 {
+	if len(data) == 0 {
+		return 0
+	}
+	sum := 0.0
+	for _, x := range data {
+		sum += x
+	}
+	return sum / float64(len(data))
+}
+
+// BootstrapMeans enumerates every possible resample of data, with
+// replacement, and returns the mean of each one. For a sample of size n
+// there are exactly n^n possible resamples (order matters, since duplicate
+// values are drawn independently at each of the n slots); this walks all of
+// them exactly, so the result is the true bootstrap sampling distribution
+// of the mean rather than a random simulation of it. Kept deterministic
+// (no randomness) so Render, which calls this, stays pure.
+func BootstrapMeans(data []float64) []float64 {
+	n := len(data)
+	if n == 0 {
+		return nil
+	}
+	total := 1
+	for i := 0; i < n; i++ {
+		total *= n
+	}
+	means := make([]float64, 0, total)
+	idx := make([]int, n)
+	var walk func(pos int)
+	walk = func(pos int) {
+		if pos == n {
+			sum := 0.0
+			for _, ix := range idx {
+				sum += data[ix]
+			}
+			means = append(means, sum/float64(n))
+			return
+		}
+		for v := 0; v < n; v++ {
+			idx[pos] = v
+			walk(pos + 1)
+		}
+	}
+	walk(0)
+	return means
+}
+
+// PercentileInterval returns the [lo, hi] band covering the middle `level`
+// fraction of means (e.g. level=0.90 -> the 5th-to-95th percentile band).
+// means need not be pre-sorted; a sorted copy is used internally so the
+// caller's slice is left untouched.
+func PercentileInterval(means []float64, level float64) (lo, hi float64) {
+	if len(means) == 0 {
+		return 0, 0
+	}
+	sorted := append([]float64(nil), means...)
+	sort.Float64s(sorted)
+	if level < 0 {
+		level = 0
+	}
+	if level > 1 {
+		level = 1
+	}
+	tail := (1 - level) / 2
+	last := float64(len(sorted) - 1)
+	loIdx := int(math.Round(tail * last))
+	hiIdx := int(math.Round((1 - tail) * last))
+	return sorted[loIdx], sorted[hiIdx]
 }
 
 func render(p map[string]float64) string {
