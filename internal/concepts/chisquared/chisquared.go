@@ -5,6 +5,8 @@
 package chisquared
 
 import (
+	"math"
+
 	"mathviz/internal/concept"
 	"mathviz/internal/viz"
 )
@@ -122,6 +124,91 @@ func init() {
 		},
 		Render: render,
 	})
+}
+
+// Table2x2 is a 2x2 contingency table: two rows (groups) by two columns
+// (outcomes).
+type Table2x2 [2][2]float64
+
+// RowTotal sums one row of the table.
+func RowTotal(t Table2x2, row int) float64 {
+	return t[row][0] + t[row][1]
+}
+
+// ColTotal sums one column of the table.
+func ColTotal(t Table2x2, col int) float64 {
+	return t[0][col] + t[1][col]
+}
+
+// GrandTotal sums every cell of the table.
+func GrandTotal(t Table2x2) float64 {
+	return RowTotal(t, 0) + RowTotal(t, 1)
+}
+
+// Expected returns the table's expected counts under independence: each
+// cell is (its row total × its column total) ÷ the grand total -- the count
+// that row/column combination would get if the row and column variables
+// were completely unrelated, while keeping the same row and column totals
+// as the observed table.
+func Expected(t Table2x2) Table2x2 {
+	n := GrandTotal(t)
+	var e Table2x2
+	if n == 0 {
+		return e
+	}
+	for r := 0; r < 2; r++ {
+		for c := 0; c < 2; c++ {
+			e[r][c] = RowTotal(t, r) * ColTotal(t, c) / n
+		}
+	}
+	return e
+}
+
+// ChiSquareStat is Pearson's chi-squared statistic Σ(observed−expected)²÷
+// expected, summed over every cell. A cell with 0 expected count is skipped
+// (it can only happen when a whole row or column is entirely empty).
+func ChiSquareStat(observed, expected Table2x2) float64 {
+	sum := 0.0
+	for r := 0; r < 2; r++ {
+		for c := 0; c < 2; c++ {
+			if expected[r][c] == 0 {
+				continue
+			}
+			d := observed[r][c] - expected[r][c]
+			sum += d * d / expected[r][c]
+		}
+	}
+	return sum
+}
+
+// ChiSquareCDFDF1 is the CDF of the chi-squared distribution with 1 degree
+// of freedom, P(χ²≤x). A chi-squared(1) variable is the square of a
+// standard normal, which gives this a closed form via the error function
+// instead of needing a general incomplete-gamma implementation.
+func ChiSquareCDFDF1(x float64) float64 {
+	if x <= 0 {
+		return 0
+	}
+	return math.Erf(math.Sqrt(x / 2))
+}
+
+// PValueDF1 is the upper-tail probability P(χ²≥x) for 1 degree of freedom --
+// the p-value of an observed chi-squared statistic from a 2x2 table.
+func PValueDF1(chi2 float64) float64 {
+	return 1 - ChiSquareCDFDF1(chi2)
+}
+
+// ObservedTable builds the concept's 2x2 observed table from the slider
+// values: n visitors in each of two groups, with pA and pB the fraction of
+// each group that "succeeded" (rounded to the nearest whole count, since a
+// real count can't be fractional).
+func ObservedTable(n int, pA, pB float64) Table2x2 {
+	oA := math.Round(pA * float64(n))
+	oB := math.Round(pB * float64(n))
+	return Table2x2{
+		{oA, float64(n) - oA},
+		{oB, float64(n) - oB},
+	}
 }
 
 func render(p map[string]float64) string {
