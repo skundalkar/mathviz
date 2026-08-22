@@ -6,6 +6,8 @@
 package regularization
 
 import (
+	"math"
+
 	"mathviz/internal/concept"
 	"mathviz/internal/viz"
 )
@@ -132,6 +134,266 @@ func init() {
 		},
 		Render: render,
 	})
+}
+
+// hash01 turns an integer seed into a deterministic, evenly-scattered value
+// in [0, 1). It is a fixed function of its input, not a random-number
+// generator, so everything built on it stays pure. Same formula used across
+// the gallery (see overfitting.hash01, biasvariance.hash01).
+func hash01(seed int) float64 {
+	x := math.Sin(float64(seed)*12.9898) * 43758.5453123
+	_, frac := math.Modf(x)
+	if frac < 0 {
+		frac += 1
+	}
+	return frac
+}
+
+// numSamples is the fixed size of the synthetic dataset every fit in this
+// concept is trained on.
+const numSamples = 24
+
+// TrueCoeffs are the coefficients that actually generate y: only x1 and x2
+// (indices 0, 1) truly drive the outcome; x3..x6 (indices 2..5) are pure
+// noise features, included exactly the way an irrelevant measurement would
+// be in a real dataset.
+var TrueCoeffs = []float64{3, -2, 0, 0, 0, 0}
+
+// Features returns n fixed synthetic rows of 6 candidate input signals, each
+// in [-2, 2), generated deterministically (via hash01) so the same "dataset"
+// renders identically on every call -- no globals, no time, no randomness.
+func Features(n int) [][]float64 {
+	p := len(TrueCoeffs)
+	X := make([][]float64, n)
+	for i := 0; i < n; i++ {
+		row := make([]float64, p)
+		for j := 0; j < p; j++ {
+			row[j] = hash01(i*17+j*101+7)*4 - 2
+		}
+		X[i] = row
+	}
+	return X
+}
+
+// Targets returns the noisy outcome y = X·TrueCoeffs + noise for every row
+// of X, with noise deterministically drawn from [-noiseAmp, noiseAmp].
+func Targets(X [][]float64, noiseAmp float64) []float64 {
+	y := make([]float64, len(X))
+	for i, row := range X {
+		v := 0.0
+		for j, coef := range TrueCoeffs {
+			v += coef * row[j]
+		}
+		noise := (hash01(i*53+911)*2 - 1) * noiseAmp
+		y[i] = v + noise
+	}
+	return y
+}
+
+// Predict evaluates coeffs (intercept followed by one weight per feature) on
+// one feature row.
+func Predict(coeffs, row []float64) float64 {
+	v := coeffs[0]
+	for j, c := range coeffs[1:] {
+		v += c * row[j]
+	}
+	return v
+}
+
+// SSE is the total squared error of coeffs' predictions across every row of
+// X against the matching y.
+func SSE(coeffs []float64, X [][]float64, y []float64) float64 {
+	s := 0.0
+	for i, row := range X {
+		d := y[i] - Predict(coeffs, row)
+		s += d * d
+	}
+	return s
+}
+
+// RidgeFit fits [intercept, c1..cp] minimizing SSE(coeffs) + lambda *
+// sum(cj^2 for j>=1) by solving the ridge normal equations directly:
+// (XᵀX + λD)c = Xᵀy, where D is the identity with a 0 in the intercept's
+// row/column so the intercept itself is never penalized.
+func RidgeFit(X [][]float64, y []float64, lambda float64) []float64 {
+	n := len(X)
+	p := len(X[0])
+	k := p + 1
+	A := make([][]float64, k)
+	for i := range A {
+		A[i] = make([]float64, k)
+	}
+	b := make([]float64, k)
+	for i := 0; i < n; i++ {
+		d := make([]float64, k)
+		d[0] = 1
+		copy(d[1:], X[i])
+		for a := 0; a < k; a++ {
+			for c := 0; c < k; c++ {
+				A[a][c] += d[a] * d[c]
+			}
+			b[a] += d[a] * y[i]
+		}
+	}
+	for i := 1; i < k; i++ {
+		A[i][i] += lambda
+	}
+	return solveLinearSystem(A, b)
+}
+
+// solveLinearSystem solves Ax = b for a small square system via Gaussian
+// elimination with partial pivoting. Returns a zero vector for a singular
+// column. Same algorithm as biasvariance.solveLinearSystem and
+// overfitting.solveLinearSystem.
+func solveLinearSystem(A [][]float64, b []float64) []float64 {
+	k := len(b)
+	m := make([][]float64, k)
+	for i := range m {
+		m[i] = append([]float64(nil), A[i]...)
+	}
+	v := append([]float64(nil), b...)
+
+	for col := 0; col < k; col++ {
+		pivot := col
+		for r := col + 1; r < k; r++ {
+			if math.Abs(m[r][col]) > math.Abs(m[pivot][col]) {
+				pivot = r
+			}
+		}
+		m[col], m[pivot] = m[pivot], m[col]
+		v[col], v[pivot] = v[pivot], v[col]
+
+		if math.Abs(m[col][col]) < 1e-12 {
+			continue // singular in this column; leave the coefficient at 0
+		}
+		for r := col + 1; r < k; r++ {
+			f := m[r][col] / m[col][col]
+			for c := col; c < k; c++ {
+				m[r][c] -= f * m[col][c]
+			}
+			v[r] -= f * v[col]
+		}
+	}
+
+	x := make([]float64, k)
+	for i := k - 1; i >= 0; i-- {
+		sum := v[i]
+		for j := i + 1; j < k; j++ {
+			sum -= m[i][j] * x[j]
+		}
+		if math.Abs(m[i][i]) < 1e-12 {
+			x[i] = 0
+			continue
+		}
+		x[i] = sum / m[i][i]
+	}
+	return x
+}
+
+// softThreshold is the core of L1 shrinkage: it moves z toward 0 by gamma,
+// clamping to exactly 0 rather than crossing it. This clamp is what lets
+// Lasso zero a coefficient out entirely, unlike Ridge's smooth shrink.
+func softThreshold(z, gamma float64) float64 {
+	if z > gamma {
+		return z - gamma
+	}
+	if z < -gamma {
+		return z + gamma
+	}
+	return 0
+}
+
+// lassoIterations is the fixed number of coordinate-descent sweeps LassoFit
+// runs -- enough for this dataset's size and scale to converge to a stable
+// fixed point (checked in the tests below), with no early-stopping check so
+// the function stays a plain, deterministic loop.
+const lassoIterations = 300
+
+// LassoFit fits [intercept, c1..cp] minimizing SSE(coeffs) + lambda *
+// sum(|cj| for j>=1) by cyclic coordinate descent: repeatedly hold every
+// coefficient but one fixed, solve for that one coefficient's optimum via
+// soft-thresholding, and sweep over every coefficient lassoIterations times.
+func LassoFit(X [][]float64, y []float64, lambda float64) []float64 {
+	n := len(X)
+	p := len(X[0])
+	k := p + 1
+	design := make([][]float64, n)
+	for i := 0; i < n; i++ {
+		d := make([]float64, k)
+		d[0] = 1
+		copy(d[1:], X[i])
+		design[i] = d
+	}
+	colNormSq := make([]float64, k)
+	for j := 0; j < k; j++ {
+		s := 0.0
+		for i := 0; i < n; i++ {
+			s += design[i][j] * design[i][j]
+		}
+		colNormSq[j] = s
+	}
+
+	coeffs := make([]float64, k)
+	residual := append([]float64(nil), y...)
+	for iter := 0; iter < lassoIterations; iter++ {
+		for j := 0; j < k; j++ {
+			if colNormSq[j] < 1e-12 {
+				continue
+			}
+			// Add feature j's current contribution back into the residual
+			// so rho measures how strongly j still correlates with what's
+			// left unexplained by every OTHER coefficient.
+			for i := 0; i < n; i++ {
+				residual[i] += design[i][j] * coeffs[j]
+			}
+			rho := 0.0
+			for i := 0; i < n; i++ {
+				rho += design[i][j] * residual[i]
+			}
+			var next float64
+			if j == 0 {
+				next = rho / colNormSq[j] // intercept: never penalized
+			} else {
+				next = softThreshold(rho, lambda) / colNormSq[j]
+			}
+			coeffs[j] = next
+			for i := 0; i < n; i++ {
+				residual[i] -= design[i][j] * coeffs[j]
+			}
+		}
+	}
+	return coeffs
+}
+
+// L1Penalty is the sum of absolute values of every non-intercept
+// coefficient -- what Lasso minimizes alongside SSE.
+func L1Penalty(coeffs []float64) float64 {
+	s := 0.0
+	for _, c := range coeffs[1:] {
+		s += math.Abs(c)
+	}
+	return s
+}
+
+// L2Penalty is the sum of squares of every non-intercept coefficient --
+// what Ridge minimizes alongside SSE.
+func L2Penalty(coeffs []float64) float64 {
+	s := 0.0
+	for _, c := range coeffs[1:] {
+		s += c * c
+	}
+	return s
+}
+
+// CountNearZero reports how many of coeffs[from:] have magnitude below tol.
+func CountNearZero(coeffs []float64, from int, tol float64) int {
+	n := 0
+	for _, c := range coeffs[from:] {
+		if math.Abs(c) < tol {
+			n++
+		}
+	}
+	return n
 }
 
 func render(p map[string]float64) string {
