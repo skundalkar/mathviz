@@ -6,6 +6,7 @@
 package regularization
 
 import (
+	"fmt"
 	"math"
 
 	"mathviz/internal/concept"
@@ -396,7 +397,98 @@ func CountNearZero(coeffs []float64, from int, tol float64) int {
 	return n
 }
 
+// barChartScale converts a coefficient magnitude into pixels. Fixed rather
+// than dynamically rescaled per-frame, so a bar's height means the same
+// thing (and stays comparable) at every slider setting.
+const barChartScale = 55.0
+
 func render(p map[string]float64) string {
-	_ = p
-	return viz.New(680, 460, 0, 1, 0, 1).String()
+	lambda := p["lambda"]
+	noiseAmp := p["noise"]
+	lasso := p["penalty"] >= 0.5
+
+	X := Features(numSamples)
+	y := Targets(X, noiseAmp)
+
+	ols := RidgeFit(X, y, 0)
+	var fit []float64
+	var penaltyName string
+	if lasso {
+		fit = LassoFit(X, y, lambda)
+		penaltyName = "Lasso (L1)"
+	} else {
+		fit = RidgeFit(X, y, lambda)
+		penaltyName = "Ridge (L2)"
+	}
+
+	const w, h = 680, 460
+	// This is a custom bar chart, not a cartesian data plot, so the canvas's
+	// data-space mapping (c.X/c.Y) is left unused; every shape below is
+	// placed directly in pixel coordinates via Rect/Text.
+	c := viz.New(w, h, 0, 1, 0, 1)
+
+	const (
+		baseline  = 300.0 // y=0 pixel row
+		groupLeft = 40.0
+		groupW    = 100.0
+		barW      = 26.0
+		barGap    = 4.0
+	)
+	numGroups := len(fit) - 1 // exclude the intercept
+
+	c.Rect(groupLeft-10, baseline-1, groupW*float64(numGroups)+20, 2, viz.Ink, 1)
+
+	bar := func(centerX, value float64, color string, opacity float64) {
+		hpx := math.Abs(value) * barChartScale
+		if value >= 0 {
+			c.Rect(centerX, baseline-hpx, barW, hpx, color, opacity)
+		} else {
+			c.Rect(centerX, baseline, barW, hpx, color, opacity)
+		}
+	}
+
+	for i := 0; i < numGroups; i++ {
+		groupCenter := groupLeft + groupW*(float64(i)+0.5)
+		ghostX := groupCenter - barW - barGap/2
+		solidX := groupCenter + barGap/2
+
+		bar(ghostX, ols[i+1], viz.Muted, 0.4)
+
+		color := viz.Warm // x3..x6: pure-noise features
+		if i < 2 {
+			color = viz.Accent // x1, x2: the two genuinely predictive features
+		}
+		bar(solidX, fit[i+1], color, 0.9)
+
+		// True-coefficient reference tick, only meaningful for x1/x2 -- the
+		// noise features' true coefficient is 0, which already coincides
+		// with the baseline.
+		if i < 2 {
+			trueY := baseline - TrueCoeffs[i]*barChartScale
+			c.Rect(groupCenter-barW-barGap/2-2, trueY-1, barW*2+barGap+4, 2, viz.Good, 0.8)
+		}
+
+		c.Text(groupCenter, baseline+22, fmt.Sprintf("x%d", i+1), 13, viz.Ink, "middle")
+	}
+
+	c.Text(20, 24, fmt.Sprintf("λ = %.2f    penalty = %s    noise = %.2f", lambda, penaltyName, noiseAmp),
+		14, viz.Ink, "start")
+	c.Text(20, 44, "blue = signal (x1,x2)    orange = noise (x3-x6)    grey ghost = unpenalized OLS    green tick = true coefficient",
+		12, viz.Muted, "start")
+
+	sse := SSE(fit, X, y)
+	zeros := CountNearZero(fit, 3, 1e-9)
+	var penaltyTerm float64
+	var penaltyLabel string
+	if lasso {
+		penaltyTerm = L1Penalty(fit)
+		penaltyLabel = "Σ|coefficient|"
+	} else {
+		penaltyTerm = L2Penalty(fit)
+		penaltyLabel = "Σcoefficient²"
+	}
+	c.Text(20, h-20, fmt.Sprintf("SSE = %.3f    penalty term (%s) = %.3f    noise coefficients exactly zero = %d of 4",
+		sse, penaltyLabel, penaltyTerm, zeros), 13, viz.Ink, "start")
+
+	return c.String()
 }
