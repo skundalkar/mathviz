@@ -6,6 +6,98 @@ code. Newest entries go at the top.
 
 ---
 
+## determinant — the signed area/volume scaling factor of a matrix
+**Why would you need this?** `matrix-multiplication` showed a matrix as a
+machine that sends the unit square somewhere else — rotated, sheared,
+stretched. But "somewhere else" hides a question that composing
+transformations never had to answer: did that transformation make shapes
+bigger, smaller, or exactly the same size? A rotation obviously doesn't grow
+or shrink a shape's area; a pure horizontal stretch obviously does. But for
+an arbitrary matrix that mixes rotation, shearing, and stretching all at
+once, how much does area change, exactly — is there one number, computed
+straight from a matrix's four entries, that answers this without actually
+transforming a shape and measuring the result?
+
+**How does it actually work?** Take M = [[2,1],[0,1]] and apply it to the
+unit square's four corners: (0,0)→(0,0), (1,0)→(2,0), (0,1)→(1,1),
+(1,1)→(3,1). The result is a parallelogram sitting on a base of length 2
+(along the x-axis, from (0,0) to (2,0)) with a "height" of 1 (how far the
+top edge sits above the bottom) — base × height = 2×1 = 2. Compute the same
+thing algebraically instead, straight from M's entries a=2, b=1, c=0, d=1:
+ad−bc = 2×1 − 1×0 = 2. Same answer — this ad−bc formula is the determinant,
+det(M).
+
+Two more matrices show what the formula catches that eyeballing area alone
+would miss. Swap i and j with M = [[0,1],[1,0]]: det = 0×0 − 1×1 = −1. The
+resulting shape still has area 1, but i and j have traded places — what used
+to be the counterclockwise order (i, then j) is now clockwise. A negative
+determinant means the transformation flips orientation, on top of scaling
+area by its magnitude. And M = [[2,1],[4,2]] (second row is exactly double
+the first): det = 2×2 − 1×4 = 0. Every corner of the unit square lands
+somewhere on the single line y=2x — the square has been flattened to a line
+segment with zero area, and there's no way to undo that flattening (many
+different starting points now land on the same spot), so a matrix with
+det=0 has no inverse.
+
+One more property, straight from `matrix-multiplication`'s own worked
+example: A = 90° rotation, [[0,−1],[1,0]], has det(A) = 0×0 − (−1)×1 = 1
+(rotations never change area). B = shear k=1, [[1,1],[0,1]], has det(B) =
+1×1 − 1×0 = 1. Their product C = A·B = [[0,−1],[1,1]] has det(C) = 0×1 −
+(−1)×1 = 1 — and 1 = det(A) × det(B) exactly. Determinants multiply the same
+way the matrices themselves combine: det(A·B) = det(A)·det(B), always.
+
+**What does the picture show?** The four sliders a, b, c, d are M's entries
+directly. The faint square is the original unit square; the colored outline
+is M applied to it — green when det>0 (orientation preserved), red when
+det<0 (orientation flipped), grey and flattened when det≈0 (collapsed to a
+line). The two green arrows are M's columns — where it sends i=(1,0) and
+j=(0,1) — which are literally the two sides of that parallelogram. The
+readout reports det = ad−bc alongside the shape's area computed
+independently by the shoelace formula (½|Σ(x_i·y_{i+1} − x_{i+1}·y_i)|), so
+you can see the two methods land on the exact same number every time.
+
+**What can you do now that you couldn't before?** Read off exactly how a
+linear transformation scales area (or, in 3D, volume) without applying it to
+anything and measuring — and tell instantly whether a matrix is invertible:
+det=0 exactly means the transformation destroys information (multiple
+inputs collapse to the same output), so no inverse can exist, while any
+nonzero determinant guarantees one does. For a chain of transformations,
+det(A·B)=det(A)det(B) means the combined area-scaling factor can be read off
+by multiplying each step's determinant, without first computing the
+combined matrix C the way `matrix-multiplication` had to.
+
+**Where does this show up in real life?** A system of linear equations has a
+unique solution exactly when its coefficient matrix's determinant is
+nonzero — det=0 is the algebraic signature of the same "collapsed to a
+line" picture above, meaning the equations don't pin down a single answer.
+Map projections and other coordinate changes use the determinant of their
+local linear approximation (the Jacobian) to say exactly how much a
+region's area gets stretched or shrunk at each point — why Greenland looks
+so much bigger than it really is on a Mercator map. Physical simulations
+(fluid flow, material deformation) track a deformation's determinant to
+detect when a material has been compressed to zero volume, which signals a
+breakdown in the simulation.
+
+**What's the common mistake here?** Say it like this: "det=0 means the
+transformation destroys information — points that used to be spread across
+the whole square now sit on a single line, so the original position can't
+be recovered from the result" — anchoring the claim on what the picture
+actually shows collapsing. Not like this: "a bigger determinant always
+means a matrix with bigger entries," or the reverse. M = [[2,1],[4,2]]
+above has entries up to 4 but det=0 exactly, because its rows point in the
+same direction; a matrix whose rows are long and close to perpendicular can
+have a large determinant with modest-looking entries. The determinant
+measures how the rows/columns relate to each other geometrically, not how
+large any single entry is.
+
+*Scope note: covers only 2x2 matrices (a single ad−bc formula), where the
+geometric story — signed area of a parallelogram — is easiest to see
+directly; the same idea extends to n×n determinants and n-dimensional
+volume, but that needs cofactor expansion or row reduction instead of one
+closed-form product.*
+
+---
+
 ## chi-squared-test — testing whether category counts line up with independence
 **Why would you need this?** You test two versions of a signup page: version
 A converts 15 of 50 visitors (30%), version B converts 25 of 50 (50%). That's
