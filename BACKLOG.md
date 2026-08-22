@@ -63,9 +63,9 @@ Format: `- [ ] <id> — <one-line description of the concept to visualize>`
 - [x] simpsons-paradox — a trend that reverses when subgroups are combined, even though one option wins every subgroup on its own
 - [x] bootstrap-resampling — estimating a statistic's uncertainty by resampling the data itself instead of assuming a formula/distribution
 - [x] decision-trees — splitting a dataset by information gain (built from entropy) into a tree of yes/no questions
+- [x] regularization — how an L1/L2 penalty shrinks coefficients to fight overfitting, built from linear-regression and bias-variance-tradeoff
 
 ## Up next (statistics & ML intuition)
-- [ ] regularization — how an L1/L2 penalty shrinks coefficients to fight overfitting, built from linear-regression and bias-variance-tradeoff
 - [ ] chi-squared-test — testing whether observed category counts differ from what independence would predict
 
 ## Up next (math foundations)
