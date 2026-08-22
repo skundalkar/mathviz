@@ -21,6 +21,7 @@ import (
 	_ "mathviz/internal/concepts/covariance"
 	_ "mathviz/internal/concepts/decisiontree"
 	_ "mathviz/internal/concepts/derivative"
+	_ "mathviz/internal/concepts/determinant"
 	_ "mathviz/internal/concepts/eigen"
 	_ "mathviz/internal/concepts/entropy"
 	_ "mathviz/internal/concepts/evalplaybook"
