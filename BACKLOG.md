@@ -64,9 +64,9 @@ Format: `- [ ] <id> — <one-line description of the concept to visualize>`
 - [x] bootstrap-resampling — estimating a statistic's uncertainty by resampling the data itself instead of assuming a formula/distribution
 - [x] decision-trees — splitting a dataset by information gain (built from entropy) into a tree of yes/no questions
 - [x] regularization — how an L1/L2 penalty shrinks coefficients to fight overfitting, built from linear-regression and bias-variance-tradeoff
+- [x] chi-squared-test — testing whether observed category counts differ from what independence would predict
 
 ## Up next (statistics & ML intuition)
-- [ ] chi-squared-test — testing whether observed category counts differ from what independence would predict
 
 ## Up next (math foundations)
 - [ ] determinant — a matrix's determinant as the area/volume scaling factor of its linear transformation, built from matrix-multiplication
