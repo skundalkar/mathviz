@@ -5,6 +5,7 @@
 package chisquared
 
 import (
+	"fmt"
 	"math"
 
 	"mathviz/internal/concept"
@@ -211,7 +212,87 @@ func ObservedTable(n int, pA, pB float64) Table2x2 {
 	}
 }
 
+// critAlpha05, critAlpha01 are the standard chi-squared(1) critical values
+// for the conventional 0.05 and 0.01 significance thresholds -- the same
+// numbers most statistics textbooks print in a critical-value table, here
+// produced directly from PValueDF1 instead of looked up (see the tests).
+const (
+	critAlpha05 = 3.841
+	critAlpha01 = 6.635
+)
+
 func render(p map[string]float64) string {
-	_ = p
-	return viz.New(680, 460, 0, 1, 0, 1).String()
+	n := int(p["n"])
+	if n < 1 {
+		n = 1
+	}
+	pA, pB := p["pA"], p["pB"]
+
+	observed := ObservedTable(n, pA, pB)
+	expected := Expected(observed)
+	chi2 := ChiSquareStat(observed, expected)
+	pval := PValueDF1(chi2)
+
+	const w, h = 680, 460
+	// xmax grows with the observed statistic so extreme slider settings
+	// (e.g. 0% vs 100%) never push the marker off the chart.
+	xmax := 15.0
+	if chi2*1.15 > xmax {
+		xmax = chi2 * 1.15
+	}
+	c := viz.New(w, h, 0, xmax, 0, 1.05)
+	c.PadT = 175
+	c.Axes()
+	c.Tick(0, "0")
+	c.Tick(critAlpha05, "3.841")
+	c.Tick(critAlpha01, "6.635")
+	if xmax > critAlpha01*1.5 {
+		c.Tick(xmax, fmt.Sprintf("%.0f", xmax))
+	}
+
+	// The tail-probability curve P(chi2 >= x): smooth and monotonically
+	// decreasing, so it's a well-behaved curve to plot (unlike the
+	// chi-squared PDF itself, which has an unbounded spike at x=0).
+	curve := viz.Sample(0, xmax, 200, func(x float64) float64 {
+		return PValueDF1(x)
+	})
+	c.Path(curve, viz.Accent, 2.5)
+
+	// Conventional significance-threshold reference lines.
+	c.VLine(critAlpha05, viz.Muted, true)
+	c.VLine(critAlpha01, viz.Muted, true)
+
+	// Observed statistic, and a dashed readout from the curve back to the
+	// y-axis showing exactly where the p-value sits.
+	c.VLine(chi2, viz.Warm, false)
+	py := c.Y(pval)
+	c.Rect(c.PadL, py-1, c.X(chi2)-c.PadL, 2, viz.Warm, 0.6)
+	c.Text(c.X(chi2)+6, py-8, fmt.Sprintf("p = %.4f", pval), 13, viz.Warm, "start")
+
+	// Observed vs. expected table, drawn as plain text rows above the plot.
+	oA, fA := observed[0][0], observed[0][1]
+	oB, fB := observed[1][0], observed[1][1]
+	eA, eAf := expected[0][0], expected[0][1]
+	eB, eBf := expected[1][0], expected[1][1]
+
+	c.Text(20, 24, fmt.Sprintf("n = %d per group    Group A rate = %.0f%%    Group B rate = %.0f%%",
+		n, pA*100, pB*100), 14, viz.Ink, "start")
+	c.Text(20, 50, fmt.Sprintf("Observed  —  Group A: %.0f success, %.0f failure    Group B: %.0f success, %.0f failure",
+		oA, fA, oB, fB), 13, viz.Ink, "start")
+	c.Text(20, 70, fmt.Sprintf("Expected (if unrelated)  —  Group A: %.1f, %.1f    Group B: %.1f, %.1f",
+		eA, eAf, eB, eBf), 13, viz.Muted, "start")
+	c.Text(20, 96, fmt.Sprintf("chi² = Σ(observed−expected)²/expected = %.3f    degrees of freedom = 1", chi2),
+		14, viz.Ink, "start")
+
+	verdict := "not significant at α=0.05"
+	if pval < 0.01 {
+		verdict = "significant at α=0.01"
+	} else if pval < 0.05 {
+		verdict = "significant at α=0.05"
+	}
+	c.Text(20, 118, fmt.Sprintf("p-value = %.4f  →  %s", pval, verdict), 14, viz.Warm, "start")
+	c.Text(20, 140, "curve = P(χ² ≥ x), the tail probability    dashed grey = 0.05 / 0.01 critical values",
+		12, viz.Muted, "start")
+
+	return c.String()
 }
