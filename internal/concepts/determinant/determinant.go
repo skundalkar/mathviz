@@ -6,6 +6,8 @@
 package determinant
 
 import (
+	"math"
+
 	"mathviz/internal/concept"
 	"mathviz/internal/viz"
 )
@@ -130,6 +132,88 @@ func init() {
 		},
 		Render: render,
 	})
+}
+
+// Matrix is a 2x2 matrix [[A, B], [C, D]] (row-major). Same convention as
+// matrix-multiplication.Matrix, duplicated here so this package stays
+// self-contained (see BUILD_CYCLE.md).
+type Matrix struct {
+	A, B, C, D float64
+}
+
+// Determinant is ad-bc: the signed factor by which M scales area. Its
+// magnitude is how much area (or, in 3D, volume) any shape gets scaled by
+// after applying M; its sign says whether M also flips orientation
+// (negative) or preserves it (positive). Exactly 0 means M collapses every
+// shape onto a lower-dimensional line (or point), so M has no inverse.
+func Determinant(m Matrix) float64 {
+	return m.A*m.D - m.B*m.C
+}
+
+// Rotation returns the matrix that rotates a vector counterclockwise by
+// angleDeg degrees. Identical to matrix-multiplication.Rotation.
+func Rotation(angleDeg float64) Matrix {
+	rad := angleDeg * math.Pi / 180
+	cos, sin := math.Cos(rad), math.Sin(rad)
+	return Matrix{A: cos, B: -sin, C: sin, D: cos}
+}
+
+// Shear returns the matrix that pushes each point sideways along x by k
+// times its own height. Identical to matrix-multiplication.Shear.
+func Shear(k float64) Matrix {
+	return Matrix{A: 1, B: k, C: 0, D: 1}
+}
+
+// Apply returns M*v for the vector (x, y). Identical to
+// matrix-multiplication.Apply.
+func Apply(m Matrix, x, y float64) (float64, float64) {
+	return m.A*x + m.B*y, m.C*x + m.D*y
+}
+
+// Mul returns the matrix product m1*m2 -- the single matrix that applies m2
+// first, then m1. Identical to matrix-multiplication.Mul.
+func Mul(m1, m2 Matrix) Matrix {
+	return Matrix{
+		A: m1.A*m2.A + m1.B*m2.C,
+		B: m1.A*m2.B + m1.B*m2.D,
+		C: m1.C*m2.A + m1.D*m2.C,
+		D: m1.C*m2.B + m1.D*m2.D,
+	}
+}
+
+// unitSquareCorners is the unit square's four corners, in order, NOT closed
+// back to the start -- the shape used for area math (ShoelaceArea assumes
+// this open form and wraps around internally). See unitSquare below for the
+// closed form used when drawing.
+var unitSquareCorners = [][2]float64{{0, 0}, {1, 0}, {1, 1}, {0, 1}}
+
+// transform applies M to every point in pts, returning the image.
+func transform(m Matrix, pts [][2]float64) [][2]float64 {
+	out := make([][2]float64, len(pts))
+	for i, pt := range pts {
+		x, y := Apply(m, pt[0], pt[1])
+		out[i] = [2]float64{x, y}
+	}
+	return out
+}
+
+// ShoelaceArea returns the area enclosed by a simple polygon given as an
+// ordered (but not explicitly closed -- the last point does not repeat the
+// first) list of vertices, via the shoelace formula: half the absolute
+// value of the signed sum Σ(x_i·y_{i+1} - x_{i+1}·y_i), wrapping the last
+// vertex back to the first. This is a geometric area computation completely
+// independent of Determinant, used to cross-check it (see the tests below).
+func ShoelaceArea(pts [][2]float64) float64 {
+	n := len(pts)
+	if n < 3 {
+		return 0
+	}
+	sum := 0.0
+	for i := 0; i < n; i++ {
+		j := (i + 1) % n
+		sum += pts[i][0]*pts[j][1] - pts[j][0]*pts[i][1]
+	}
+	return math.Abs(sum) / 2
 }
 
 func render(p map[string]float64) string {
