@@ -6,6 +6,7 @@
 package determinant
 
 import (
+	"fmt"
 	"math"
 
 	"mathviz/internal/concept"
@@ -187,6 +188,11 @@ func Mul(m1, m2 Matrix) Matrix {
 // closed form used when drawing.
 var unitSquareCorners = [][2]float64{{0, 0}, {1, 0}, {1, 1}, {0, 1}}
 
+// unitSquare is unitSquareCorners closed back to the start, for drawing a
+// complete outline with Path (which just connects consecutive points --
+// without the repeated closing point, the last edge wouldn't be drawn).
+var unitSquare = [][2]float64{{0, 0}, {1, 0}, {1, 1}, {0, 1}, {0, 0}}
+
 // transform applies M to every point in pts, returning the image.
 func transform(m Matrix, pts [][2]float64) [][2]float64 {
 	out := make([][2]float64, len(pts))
@@ -217,6 +223,77 @@ func ShoelaceArea(pts [][2]float64) float64 {
 }
 
 func render(p map[string]float64) string {
-	_ = p
-	return viz.New(560, 560, -3.2, 3.2, -3.2, 3.2).String()
+	M := Matrix{A: p["a"], B: p["b"], C: p["c"], D: p["d"]}
+	det := Determinant(M)
+
+	c := viz.New(560, 560, -3.2, 3.2, -3.2, 3.2)
+	c.Path([][2]float64{{c.XMin, 0}, {c.XMax, 0}}, viz.Muted, 1)
+	c.Path([][2]float64{{0, c.YMin}, {0, c.YMax}}, viz.Muted, 1)
+
+	image := transform(M, unitSquare)
+
+	color := viz.Good
+	switch {
+	case math.Abs(det) < 1e-9:
+		color = viz.Muted
+	case det < 0:
+		color = viz.Bad
+	}
+
+	c.Path(unitSquare, viz.Faint, 1.5)
+	c.Path(image, color, 2.5)
+
+	// M's columns: where it sends i=(1,0) and j=(0,1) -- the parallelogram's
+	// own two sides.
+	arrow(c, 0, 0, M.A, M.C, viz.Good, 2.5)
+	arrow(c, 0, 0, M.B, M.D, viz.Good, 2.5)
+
+	area := ShoelaceArea(transform(M, unitSquareCorners))
+
+	var interp string
+	switch {
+	case math.Abs(det) < 1e-9:
+		interp = "det ≈ 0 — the square collapses onto a line: no inverse exists"
+	case det > 0:
+		interp = fmt.Sprintf("area scales by %.2f×, orientation preserved", math.Abs(det))
+	default:
+		interp = fmt.Sprintf("area scales by %.2f×, orientation FLIPPED (negative)", math.Abs(det))
+	}
+
+	c.Text(16, 24, fmt.Sprintf("M = [[%.2f,%.2f],[%.2f,%.2f]]", M.A, M.B, M.C, M.D), 14, viz.Ink, "start")
+	c.Text(16, 44, fmt.Sprintf("det(M) = ad−bc = %.2f×%.2f − %.2f×%.2f = %.3f", M.A, M.D, M.B, M.C, det),
+		13, viz.Muted, "start")
+	c.Text(16, 64, fmt.Sprintf("shoelace area of M's image = %.3f    |det(M)| = %.3f", area, math.Abs(det)),
+		13, viz.Muted, "start")
+	c.Text(16, 88, interp, 14, viz.Ink, "start")
+	c.Text(16, 536, "faint = original unit square    colored outline = M applied to it    green arrows = M's columns",
+		12, viz.Muted, "start")
+
+	return c.String()
+}
+
+// arrow draws a straight line from (x0,y0) to (x1,y1) in data space, with a
+// small V-shaped arrowhead at the end. Identical to
+// matrix-multiplication.arrow.
+func arrow(c *viz.Canvas, x0, y0, x1, y1 float64, color string, width float64) {
+	c.Path([][2]float64{{x0, y0}, {x1, y1}}, color, width)
+
+	dx, dy := x1-x0, y1-y0
+	length := math.Hypot(dx, dy)
+	if length < 1e-9 {
+		return
+	}
+	ux, uy := dx/length, dy/length
+	const headLen = 0.18
+	const headAngle = 0.5 // radians, ~29 degrees off the shaft on each side
+
+	barb := func(t float64) (float64, float64) {
+		cos, sin := math.Cos(t), math.Sin(t)
+		bx, by := -ux, -uy
+		return bx*cos - by*sin, bx*sin + by*cos
+	}
+	b1x, b1y := barb(headAngle)
+	b2x, b2y := barb(-headAngle)
+	c.Path([][2]float64{{x1, y1}, {x1 + headLen*b1x, y1 + headLen*b1y}}, color, width)
+	c.Path([][2]float64{{x1, y1}, {x1 + headLen*b2x, y1 + headLen*b2y}}, color, width)
 }
