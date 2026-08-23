@@ -6,6 +6,8 @@
 package quadratic
 
 import (
+	"fmt"
+	"math"
 	"math/cmplx"
 
 	"mathviz/internal/concept"
@@ -157,6 +159,88 @@ func Roots(a, b, c float64) (r1, r2 complex128) {
 }
 
 func render(p map[string]float64) string {
-	_ = p
-	return viz.New(640, 420, -4, 4, -4, 4).String()
+	a, b, cc := p["a"], p["b"], p["c"]
+	if math.Abs(a) < 0.2 {
+		a = math.Copysign(0.2, a)
+		if a == 0 {
+			a = 0.2
+		}
+	}
+
+	d := Discriminant(a, b, cc)
+	h, k := Vertex(a, b, cc)
+
+	// Window wide enough to show both real roots with room to spare, or a
+	// fixed default width when there are none to anchor on.
+	xHalf := 4.0
+	if d >= 0 {
+		spread := math.Sqrt(d) / math.Abs(a)
+		xHalf = math.Max(4, spread*1.3+1.5)
+	}
+	xMin, xMax := h-xHalf, h+xHalf
+
+	curve := viz.Sample(xMin, xMax, 200, func(x float64) float64 {
+		return Evaluate(a, b, cc, x)
+	})
+
+	yLo, yHi := 0.0, 0.0
+	for _, pt := range curve {
+		if pt[1] < yLo {
+			yLo = pt[1]
+		}
+		if pt[1] > yHi {
+			yHi = pt[1]
+		}
+	}
+	if k < yLo {
+		yLo = k
+	}
+	if k > yHi {
+		yHi = k
+	}
+	padY := (yHi - yLo) * 0.12
+	if padY == 0 {
+		padY = 1
+	}
+	yLo -= padY
+	yHi += padY
+
+	c := viz.New(640, 420, xMin, xMax, yLo, yHi)
+	c.Axes()
+	xStep := (xMax - xMin) / 8
+	for x := xMin; x <= xMax; x += xStep {
+		c.Tick(x, fmt.Sprintf("%.1f", x))
+	}
+
+	c.Path(curve, viz.Accent, 2.5)
+	c.VLine(h, viz.Muted, true)
+
+	vpx, vpy := c.X(h), c.Y(k)
+	c.Rect(vpx-4, vpy-4, 8, 8, viz.Ink, 0.9)
+
+	r1, r2 := Roots(a, b, cc)
+	var rootText string
+	switch {
+	case d > 1e-9:
+		x1, x2 := real(r1), real(r2)
+		for _, rx := range []float64{x1, x2} {
+			px, py := c.X(rx), c.Y(0)
+			c.Rect(px-4, py-4, 8, 8, viz.Good, 1)
+		}
+		rootText = fmt.Sprintf("two real roots: x = %.3f, %.3f", x1, x2)
+	case d > -1e-9:
+		x1 := real(r1)
+		px, py := c.X(x1), c.Y(0)
+		c.Rect(px-4, py-4, 8, 8, viz.Good, 1)
+		rootText = fmt.Sprintf("one repeated real root: x = %.3f (touches the x-axis)", x1)
+	default:
+		rootText = fmt.Sprintf("no real roots: x = %.3f ± %.3fi", real(r1), math.Abs(imag(r1)))
+	}
+
+	c.Text(16, 24, fmt.Sprintf("y = %.2fx² + %.2fx + %.2f", a, b, cc), 14, viz.Ink, "start")
+	c.Text(16, 44, fmt.Sprintf("D = b²−4ac = %.2f² − 4×%.2f×%.2f = %.3f", b, a, cc, d), 13, viz.Muted, "start")
+	c.Text(16, 64, rootText, 14, viz.Warm, "start")
+	c.Text(16, 84, fmt.Sprintf("vertex (h,k) = (%.3f, %.3f)", h, k), 13, viz.Muted, "start")
+
+	return c.String()
 }
