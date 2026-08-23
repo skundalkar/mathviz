@@ -6,6 +6,7 @@
 package fibonacci
 
 import (
+	"fmt"
 	"math"
 
 	"mathviz/internal/concept"
@@ -159,7 +160,67 @@ func FixedPointStep(x float64) float64 {
 	return 1 + 1/x
 }
 
+// maxN is the fixed right edge of the convergence curve's x-axis, matching
+// the "Term index (n)" slider's own Max so the whole slider range stays
+// visible on the plot.
+const maxN = 20
+
 func render(p map[string]float64) string {
-	_ = p
-	return viz.New(680, 380, 0, 20, 0, 2).String()
+	n := int(p["n"] + 0.5)
+	if n < 1 {
+		n = 1
+	}
+	if n > maxN {
+		n = maxN
+	}
+
+	ratios := make([]float64, maxN)
+	yLo, yHi := Phi, Phi
+	for i := 1; i <= maxN; i++ {
+		r := Ratio(i)
+		ratios[i-1] = r
+		if r < yLo {
+			yLo = r
+		}
+		if r > yHi {
+			yHi = r
+		}
+	}
+	padY := (yHi - yLo) * 0.12
+	if padY == 0 {
+		padY = 0.1
+	}
+	yLo -= padY
+	yHi += padY
+
+	c := viz.New(680, 380, 1, float64(maxN), yLo, yHi)
+	c.Axes()
+	for x := 1.0; x <= maxN; x += 2 {
+		c.Tick(x, fmt.Sprintf("%.0f", x))
+	}
+
+	// Phi itself, as a reference line the ratio is converging toward.
+	c.Path([][2]float64{{1, Phi}, {float64(maxN), Phi}}, viz.Muted, 1)
+
+	curve := make([][2]float64, maxN)
+	for i, r := range ratios {
+		curve[i] = [2]float64{float64(i + 1), r}
+	}
+	c.Path(curve, viz.Accent, 2)
+
+	// The current n, highlighted.
+	rn := Ratio(n)
+	c.Path([][2]float64{{float64(n), yLo}, {float64(n), rn}}, viz.Faint, 1)
+	px, py := c.X(float64(n)), c.Y(rn)
+	c.Rect(px-4, py-4, 8, 8, viz.Warm, 1)
+
+	fn := Fibonacci(n)
+	fn1 := Fibonacci(n + 1)
+	diff := rn - Phi
+
+	c.Text(16, 24, fmt.Sprintf("n = %d    F(n) = %d    F(n+1) = %d", n, fn, fn1), 14, viz.Ink, "start")
+	c.Text(16, 44, fmt.Sprintf("ratio = F(n+1)/F(n) = %d/%d = %.7f", fn1, fn, rn), 13, viz.Muted, "start")
+	c.Text(16, 64, fmt.Sprintf("φ = (1+√5)/2 = %.7f    ratio − φ = %+.7f", Phi, diff), 13, viz.Muted, "start")
+
+	return c.String()
 }
