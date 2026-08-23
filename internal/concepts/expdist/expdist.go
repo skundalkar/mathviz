@@ -7,6 +7,8 @@
 package expdist
 
 import (
+	"math"
+
 	"mathviz/internal/concept"
 	"mathviz/internal/viz"
 )
@@ -120,6 +122,59 @@ func init() {
 		},
 		Render: render,
 	})
+}
+
+// PDF returns the exponential distribution's probability density at t:
+// λ·e^(−λt) for t>=0, or 0 for t<0 (a wait can't be negative) or λ<=0 (not a
+// valid rate).
+func PDF(lambda, t float64) float64 {
+	if lambda <= 0 || t < 0 {
+		return 0
+	}
+	return lambda * math.Exp(-lambda*t)
+}
+
+// CDF returns P(wait <= t): the probability the next event has already
+// arrived by time t, 1 − e^(−λt) for t>=0.
+func CDF(lambda, t float64) float64 {
+	if t < 0 {
+		return 0
+	}
+	return 1 - Survival(lambda, t)
+}
+
+// Survival returns P(wait > t): the probability nothing has arrived yet by
+// time t, e^(−λt). This is exactly poisson-distribution's PMF(λt, 0) — "zero
+// events in a window of length t" — which is the whole derivation of this
+// distribution (see LEARNINGS.md).
+func Survival(lambda, t float64) float64 {
+	if lambda <= 0 {
+		return 1
+	}
+	if t < 0 {
+		return 1
+	}
+	return math.Exp(-lambda * t)
+}
+
+// Mean returns the average wait, 1/λ. Returns 0 for λ<=0 (not a valid rate).
+func Mean(lambda float64) float64 {
+	if lambda <= 0 {
+		return 0
+	}
+	return 1 / lambda
+}
+
+// ConditionalSurvival returns P(wait > s+t | wait > s): given the wait has
+// already exceeded s with nothing arriving, the probability it exceeds s+t.
+// Used to demonstrate memorylessness — see the test asserting this always
+// equals Survival(lambda, t), independent of s.
+func ConditionalSurvival(lambda, s, t float64) float64 {
+	denom := Survival(lambda, s)
+	if denom == 0 {
+		return 0
+	}
+	return Survival(lambda, s+t) / denom
 }
 
 func render(p map[string]float64) string {
