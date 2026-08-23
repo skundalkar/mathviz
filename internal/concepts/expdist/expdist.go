@@ -7,6 +7,7 @@
 package expdist
 
 import (
+	"fmt"
 	"math"
 
 	"mathviz/internal/concept"
@@ -178,6 +179,50 @@ func ConditionalSurvival(lambda, s, t float64) float64 {
 }
 
 func render(p map[string]float64) string {
-	_ = p
-	return viz.New(680, 360, 0, 4, 0, 1).String()
+	lambda := p["lambda"]
+	if lambda <= 0 {
+		lambda = 0.2
+	}
+	t := p["t"]
+	if t < 0 {
+		t = 0
+	}
+
+	mean := Mean(lambda)
+	xMax := math.Max(4/lambda, t*1.3+0.5)
+	peak := PDF(lambda, 0)
+
+	c := viz.New(680, 360, 0, xMax, 0, peak*1.15)
+	c.Axes()
+	step := xMax / 8
+	for x := 0.0; x <= xMax; x += step {
+		c.Tick(x, fmt.Sprintf("%.1f", x))
+	}
+
+	curve := viz.Sample(0, xMax, 240, func(x float64) float64 {
+		return PDF(lambda, x)
+	})
+
+	c.Area(curve, 0, t, viz.Accent, 0.18)
+	c.Path(curve, viz.Accent, 2.5)
+	c.VLine(mean, viz.Ink, false)
+	if t > 0 {
+		c.VLine(t, viz.Muted, true)
+	}
+
+	// Re-derive memorylessness live: wait one mean interval first (s=mean),
+	// then compare P(wait > s+t | wait > s) against plain P(wait > t).
+	s := mean
+	condSurv := ConditionalSurvival(lambda, s, t)
+	plainSurv := Survival(lambda, t)
+
+	c.Text(16, 24, fmt.Sprintf("λ = %.2f events/window    mean wait = 1/λ = %.2f", lambda, mean),
+		14, viz.Ink, "start")
+	c.Text(16, 44, fmt.Sprintf("P(wait ≤ t=%.2f) = 1−e^(−λt) = %.3f    P(wait > t) = e^(−λt) = %.3f",
+		t, CDF(lambda, t), plainSurv), 13, viz.Muted, "start")
+	c.Text(16, 64, fmt.Sprintf("already waited s=%.2f (one mean interval), nothing yet: P(wait>s+t|wait>s) = %.3f",
+		s, condSurv), 13, viz.Muted, "start")
+	c.Text(16, 84, "same number either way — no memory of the wait so far", 13, viz.Warm, "start")
+
+	return c.String()
 }
