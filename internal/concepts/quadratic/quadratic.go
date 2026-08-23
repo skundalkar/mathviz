@@ -6,6 +6,8 @@
 package quadratic
 
 import (
+	"math/cmplx"
+
 	"mathviz/internal/concept"
 	"mathviz/internal/viz"
 )
@@ -116,6 +118,42 @@ func init() {
 		},
 		Render: render,
 	})
+}
+
+// Discriminant returns b²−4ac, whose sign says how many real roots
+// ax²+bx+c=0 has: positive means two, zero means one repeated, negative
+// means none (only a complex pair).
+func Discriminant(a, b, c float64) float64 {
+	return b*b - 4*a*c
+}
+
+// Evaluate returns ax²+bx+c at x — the parabola's height, used both to draw
+// the curve and to verify a computed root actually zeroes the expression.
+func Evaluate(a, b, c, x float64) float64 {
+	return a*x*x + b*x + c
+}
+
+// Vertex returns the parabola's turning point (h, k): h = −b/(2a) is the
+// axis of symmetry, k = Evaluate(a,b,c,h) is the minimum (a>0) or maximum
+// (a<0) value. a=0 isn't a quadratic; callers keep a away from 0.
+func Vertex(a, b, c float64) (h, k float64) {
+	h = -b / (2 * a)
+	k = Evaluate(a, b, c, h)
+	return h, k
+}
+
+// Roots returns both solutions of ax²+bx+c=0 via the quadratic formula,
+// x = (−b ± √(b²−4ac)) / (2a), as complex128 so the same formula handles
+// every discriminant sign uniformly: real (possibly equal) roots come back
+// with a zero imaginary part when D>=0, a genuine complex conjugate pair
+// when D<0. a=0 isn't a quadratic; callers keep a away from 0.
+func Roots(a, b, c float64) (r1, r2 complex128) {
+	d := complex(Discriminant(a, b, c), 0)
+	sqrtD := cmplx.Sqrt(d)
+	denom := complex(2*a, 0)
+	r1 = (complex(-b, 0) + sqrtD) / denom
+	r2 = (complex(-b, 0) - sqrtD) / denom
+	return r1, r2
 }
 
 func render(p map[string]float64) string {
