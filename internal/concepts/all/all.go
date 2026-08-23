@@ -25,6 +25,7 @@ import (
 	_ "mathviz/internal/concepts/eigen"
 	_ "mathviz/internal/concepts/entropy"
 	_ "mathviz/internal/concepts/evalplaybook"
+	_ "mathviz/internal/concepts/expdist"
 	_ "mathviz/internal/concepts/expgrowth"
 	_ "mathviz/internal/concepts/fourier"
 	_ "mathviz/internal/concepts/gradientdescent"
