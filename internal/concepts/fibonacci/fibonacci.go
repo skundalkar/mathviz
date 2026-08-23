@@ -6,9 +6,15 @@
 package fibonacci
 
 import (
+	"math"
+
 	"mathviz/internal/concept"
 	"mathviz/internal/viz"
 )
+
+// Phi is the golden ratio, (1+√5)/2 — the positive root of x²−x−1=0, the
+// fixed point of x ↦ 1+1/x that the Fibonacci ratio converges to.
+var Phi = (1 + math.Sqrt(5)) / 2
 
 func init() {
 	concept.Register(concept.Concept{
@@ -116,6 +122,41 @@ func init() {
 		},
 		Render: render,
 	})
+}
+
+// Fibonacci returns F(n) for n>=0: F(0)=0, F(1)=1, F(n)=F(n-1)+F(n-2).
+// Iterative, not recursive, so it stays O(n) with no repeated work.
+func Fibonacci(n int) int64 {
+	if n <= 0 {
+		return 0
+	}
+	if n == 1 {
+		return 1
+	}
+	a, b := int64(0), int64(1)
+	for i := 2; i <= n; i++ {
+		a, b = b, a+b
+	}
+	return b
+}
+
+// Ratio returns F(n+1)/F(n), the ratio of consecutive Fibonacci terms. n
+// must be >=1 (F(0)=0 makes the ratio undefined at n=0); returns 0 for n<1.
+func Ratio(n int) float64 {
+	if n < 1 {
+		return 0
+	}
+	return float64(Fibonacci(n+1)) / float64(Fibonacci(n))
+}
+
+// FixedPointStep applies x ↦ 1+1/x, the map the Fibonacci ratio recurrence
+// reduces to (r(n) = 1 + 1/r(n-1)). Its only fixed point among positive
+// numbers is Phi: FixedPointStep(Phi) == Phi, up to floating-point error.
+func FixedPointStep(x float64) float64 {
+	if x == 0 {
+		return math.Inf(1)
+	}
+	return 1 + 1/x
 }
 
 func render(p map[string]float64) string {
