@@ -67,11 +67,11 @@ Format: `- [ ] <id> — <one-line description of the concept to visualize>`
 - [x] chi-squared-test — testing whether observed category counts differ from what independence would predict
 - [x] determinant — a matrix's determinant as the area/volume scaling factor of its linear transformation, built from matrix-multiplication
 - [x] exponential-distribution — modeling the waiting time between rare events, the continuous counterpart to poisson-distribution
+- [x] quadratic-formula — completing the square and reading a parabola's discriminant as how many real roots it has
 
 ## Up next (statistics & ML intuition)
 
 ## Up next (math foundations)
-- [ ] quadratic-formula — completing the square and reading a parabola's discriminant as how many real roots it has
 - [ ] fibonacci-golden-ratio — the Fibonacci sequence's ratio of consecutive terms converging to φ
 
 ## How to add work
