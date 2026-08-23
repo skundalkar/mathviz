@@ -68,11 +68,11 @@ Format: `- [ ] <id> — <one-line description of the concept to visualize>`
 - [x] determinant — a matrix's determinant as the area/volume scaling factor of its linear transformation, built from matrix-multiplication
 - [x] exponential-distribution — modeling the waiting time between rare events, the continuous counterpart to poisson-distribution
 - [x] quadratic-formula — completing the square and reading a parabola's discriminant as how many real roots it has
+- [x] fibonacci-golden-ratio — the Fibonacci sequence's ratio of consecutive terms converging to φ
 
 ## Up next (statistics & ML intuition)
 
 ## Up next (math foundations)
-- [ ] fibonacci-golden-ratio — the Fibonacci sequence's ratio of consecutive terms converging to φ
 
 ## How to add work
 Append an unchecked line under the right section by hand any time — the loop
