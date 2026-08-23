@@ -52,6 +52,7 @@ import (
 	_ "mathviz/internal/concepts/precisionrecall"
 	_ "mathviz/internal/concepts/primesieve"
 	_ "mathviz/internal/concepts/pvalue"
+	_ "mathviz/internal/concepts/quadratic"
 	_ "mathviz/internal/concepts/randomwalk"
 	_ "mathviz/internal/concepts/regularization"
 	_ "mathviz/internal/concepts/rocauc"
