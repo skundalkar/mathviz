@@ -66,11 +66,11 @@ Format: `- [ ] <id> — <one-line description of the concept to visualize>`
 - [x] regularization — how an L1/L2 penalty shrinks coefficients to fight overfitting, built from linear-regression and bias-variance-tradeoff
 - [x] chi-squared-test — testing whether observed category counts differ from what independence would predict
 - [x] determinant — a matrix's determinant as the area/volume scaling factor of its linear transformation, built from matrix-multiplication
+- [x] exponential-distribution — modeling the waiting time between rare events, the continuous counterpart to poisson-distribution
 
 ## Up next (statistics & ML intuition)
 
 ## Up next (math foundations)
-- [ ] exponential-distribution — modeling the waiting time between rare events, the continuous counterpart to poisson-distribution
 - [ ] quadratic-formula — completing the square and reading a parabola's discriminant as how many real roots it has
 - [ ] fibonacci-golden-ratio — the Fibonacci sequence's ratio of consecutive terms converging to φ
 
