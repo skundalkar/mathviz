@@ -7,6 +7,8 @@
 package tdist
 
 import (
+	"math"
+
 	"mathviz/internal/concept"
 	"mathviz/internal/viz"
 )
@@ -114,6 +116,93 @@ func init() {
 		},
 		Render: render,
 	})
+}
+
+// StudentTPDF is the probability density of Student's t-distribution with df
+// degrees of freedom:
+//
+//	f(t) = Γ((df+1)/2) / (√(df·π)·Γ(df/2)) · (1 + t²/df)^(-(df+1)/2)
+//
+// df must be > 0; StudentTPDF returns 0 otherwise. Computed in log space
+// (via math.Lgamma) rather than evaluating Γ directly and dividing — Γ(x)
+// overflows float64 once x exceeds about 171, which a large df (a big
+// sample) reaches immediately, and Inf/Inf would silently produce NaN.
+func StudentTPDF(t, df float64) float64 {
+	if df <= 0 {
+		return 0
+	}
+	logNum, _ := math.Lgamma((df + 1) / 2)
+	logDen, _ := math.Lgamma(df / 2)
+	logCoef := logNum - logDen - 0.5*math.Log(df*math.Pi)
+	logDensity := logCoef - (df+1)/2*math.Log(1+t*t/df)
+	return math.Exp(logDensity)
+}
+
+// StdNormalPDF is the probability density of the standard normal
+// distribution — the curve StudentTPDF converges to as df grows.
+func StdNormalPDF(x float64) float64 {
+	return math.Exp(-x*x/2) / math.Sqrt(2*math.Pi)
+}
+
+// tIntegrand is StudentTPDF pulled back through the substitution t = tan(θ),
+// θ ∈ (-π/2, π/2): tIntegrand(θ,df) = StudentTPDF(tan θ, df)·sec²θ. This
+// substitution maps the t-distribution's infinite domain onto the finite
+// interval (-π/2, π/2), so StudentTCDF below can integrate it with a plain
+// composite Simpson's rule instead of picking an arbitrary truncation bound
+// for the tails (which, for small df, decay too slowly to truncate safely).
+// The integrand stays bounded even at the endpoints: as θ→±π/2, t→±∞ and
+// StudentTPDF(t,df)·(1+t²) tends to a finite limit (0 for df>1, 1/π for
+// df=1, the Cauchy case) rather than blowing up.
+func tIntegrand(theta, df float64) float64 {
+	t := math.Tan(theta)
+	return StudentTPDF(t, df) * (1 + t*t)
+}
+
+// StudentTCDF returns P(T ≤ t) for a t-distributed T with df degrees of
+// freedom, via composite Simpson's rule on tIntegrand over the substituted,
+// finite domain described above.
+func StudentTCDF(t, df float64) float64 {
+	if df <= 0 {
+		return 0
+	}
+	const n = 2000 // even, for Simpson's rule
+	lo, hi := -math.Pi/2+1e-9, math.Atan(t)
+	h := (hi - lo) / n
+	sum := tIntegrand(lo, df) + tIntegrand(hi, df)
+	for i := 1; i < n; i++ {
+		theta := lo + float64(i)*h
+		weight := 4.0
+		if i%2 == 0 {
+			weight = 2.0
+		}
+		sum += weight * tIntegrand(theta, df)
+	}
+	area := sum * h / 3
+	if area < 0 {
+		return 0
+	}
+	if area > 1 {
+		return 1
+	}
+	return area
+}
+
+// CriticalValue returns t* such that a two-tailed interval [-t*, t*] holds
+// exactly 1-alpha of the t-distribution's probability at the given df —
+// e.g. CriticalValue(5, 0.05) ≈ 2.571, the 95% critical value at df=5. Found
+// by bisecting StudentTCDF, which is continuous and strictly increasing in t.
+func CriticalValue(df, alpha float64) float64 {
+	target := 1 - alpha/2
+	lo, hi := 0.0, 1000.0
+	for i := 0; i < 60; i++ {
+		mid := (lo + hi) / 2
+		if StudentTCDF(mid, df) < target {
+			lo = mid
+		} else {
+			hi = mid
+		}
+	}
+	return (lo + hi) / 2
 }
 
 func render(p map[string]float64) string {
