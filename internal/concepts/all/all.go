@@ -35,6 +35,7 @@ import (
 	_ "mathviz/internal/concepts/kmeans"
 	_ "mathviz/internal/concepts/linreg"
 	_ "mathviz/internal/concepts/lln"
+	_ "mathviz/internal/concepts/logreg"
 	_ "mathviz/internal/concepts/logscale"
 	_ "mathviz/internal/concepts/markov"
 	_ "mathviz/internal/concepts/matmul"
