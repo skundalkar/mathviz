@@ -117,6 +117,86 @@ func init() {
 	})
 }
 
+// GCD returns the greatest common divisor of a and b via the Euclidean
+// algorithm: repeatedly replace (a,b) with (b, a mod b) until b hits 0.
+// GCD(a,0)=a for any a≥0, so GCD(0,0)=0.
+func GCD(a, b int) int {
+	if a < 0 {
+		a = -a
+	}
+	if b < 0 {
+		b = -b
+	}
+	for b != 0 {
+		a, b = b, a%b
+	}
+	return a
+}
+
+// Step is one division the Euclidean algorithm performs while reducing
+// gcd(Dividend,Divisor): Dividend = Quotient×Divisor + Remainder.
+type Step struct {
+	Dividend, Divisor, Quotient, Remainder int
+}
+
+// Steps returns every division step the Euclidean algorithm takes computing
+// gcd(a,b), in order, stopping once a remainder of 0 is reached. The last
+// step's Divisor is the GCD.
+func Steps(a, b int) []Step {
+	var steps []Step
+	for b != 0 {
+		q, r := a/b, a%b
+		steps = append(steps, Step{a, b, q, r})
+		a, b = b, r
+	}
+	return steps
+}
+
+// Square is one square tile placed by the Euclidean algorithm's geometric
+// interpretation: tiling an a×b rectangle with squares the size of the
+// smaller side leaves a strictly smaller rectangle (the remainder) to
+// recurse into, alternating which side is tiled each time. X,Y is the
+// square's top-left corner in the same units as a,b; Step is which
+// division step (matching Steps above, 0-based) placed it.
+type Square struct {
+	X, Y, Side float64
+	Step       int
+}
+
+// TileSquares returns, in placement order, every square the rectangle-
+// tiling interpretation of the Euclidean algorithm places while reducing
+// gcd(a,b) -- including the final gcd×gcd square. The squares exactly tile
+// the original a×b rectangle with no gaps or overlaps: summing Side*Side
+// over the result always equals a*b.
+func TileSquares(a, b int) []Square {
+	if a <= 0 || b <= 0 {
+		return nil
+	}
+	var squares []Square
+	x, y := 0.0, 0.0
+	w, h := float64(a), float64(b)
+	step := 0
+	for w > 1e-9 && h > 1e-9 {
+		if w >= h {
+			side, q := h, int(w/h)
+			for k := 0; k < q; k++ {
+				squares = append(squares, Square{x + float64(k)*side, y, side, step})
+			}
+			w -= float64(q) * side
+			x += float64(q) * side
+		} else {
+			side, q := w, int(h/w)
+			for k := 0; k < q; k++ {
+				squares = append(squares, Square{x, y + float64(k)*side, side, step})
+			}
+			h -= float64(q) * side
+			y += float64(q) * side
+		}
+		step++
+	}
+	return squares
+}
+
 func render(p map[string]float64) string {
 	_ = p
 	return viz.New(680, 320, -1, 1, -1, 1).String()
