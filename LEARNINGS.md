@@ -6,6 +6,90 @@ code. Newest entries go at the top.
 
 ---
 
+## euclidean-algorithm — finding GCD by remainders, not by searching
+**Why would you need this?** `modular-arithmetic` introduced "a mod n", the
+remainder left over once a wraps around n. Now put that remainder to work:
+to simplify the fraction 1071/462 to lowest terms, or to check whether two
+numbers picked for a cryptographic key accidentally share a common factor,
+you need the greatest common divisor (GCD) of two numbers — the largest
+number that divides both evenly. The obvious approach is to list every
+divisor of each number and compare, but that means testing candidates up to
+min(a,b) one by one. For 1071 and 462 that's already tedious by hand; real
+cryptographic numbers run to hundreds of digits, where a divisor-by-divisor
+search would never finish. Is there a way to find the GCD without checking
+every possible divisor?
+
+**How does it actually work?** Euclid's algorithm (Elements, Book VII, c.
+300 BC): gcd(a,b) = gcd(b, a mod b), repeated until the remainder hits 0 —
+the last nonzero value is the answer. This works because any number that
+divides both a and b also divides a mod b (since a mod b is just a minus
+some multiple of b), so swapping in the remainder never changes what the
+GCD is — it only ever shrinks the numbers you're working with, and a mod b
+is always strictly smaller than b, so the process can't run forever.
+
+Walk gcd(1071, 462):
+- 1071 = 2×462 + 147, so gcd(1071,462) = gcd(462,147)
+- 462 = 3×147 + 21, so gcd(462,147) = gcd(147,21)
+- 147 = 7×21 + 0 — remainder hits 0, so gcd(1071,462) = 21, the last
+  nonzero remainder
+
+Three remainder steps found the GCD of two four-digit-ish numbers — nowhere
+near testing all 462 candidate divisors. The algorithm's worst case is
+exactly `fibonacci-golden-ratio`'s sequence: gcd(13,8) — consecutive
+Fibonacci numbers — takes 5 steps despite being much smaller than 1071 and
+462, because each Fibonacci remainder shrinks as slowly as possible (this is
+Lamé's theorem). Even that worst case only needs a number of steps
+proportional to the number of digits in the smaller number, never anything
+close to a full divisor search.
+
+**What does the picture show?** An a×b rectangle, tiled with squares: lay
+b×b squares along the long side (one color per division step) until less
+than a full square's-width is left over, then recurse into that leftover
+strip exactly the way the remainder step above does — the same
+1071=2×462+147 arithmetic, now drawn as "2 blue squares of side 462, with a
+147-wide strip left over." The tiling alternates horizontal and vertical as
+it recurses, spiraling inward, and always finishes on one last square — side
+length exactly gcd(a,b) — that tiles its remaining strip perfectly, with
+nothing left over.
+
+|step|dividend = quotient×divisor + remainder|squares placed|
+|---|---|---|
+|1|1071 = 2×462 + 147|2 squares, side 462|
+|2|462 = 3×147 + 21|3 squares, side 147|
+|3|147 = 7×21 + 0|7 squares, side 21 (the final gcd square)|
+
+That's 2+3+7 = 12 squares total; their areas sum to exactly 1071×462 =
+494,802 — the tiling has no gaps and no overlaps.
+
+**What can you do now that you couldn't before?** Compute the GCD of
+numbers with hundreds of digits in a handful of steps instead of an
+impossibly long divisor search — the core speed-up every fraction-reduction
+routine and cryptographic library relies on. It's also the base case of the
+extended Euclidean algorithm, which back-substitutes through these same
+remainder steps to find modular inverses — the exact operation
+`modular-arithmetic`'s real-life section pointed to as load-bearing for RSA
+key generation.
+
+**Where does this show up in real life?** Every time software reduces a
+fraction to lowest terms (3/9 → 1/3), it divides both numbers by their GCD,
+found this way. RSA key generation repeatedly needs GCDs (checking that a
+chosen exponent is coprime to another number) and uses the extended version
+to compute modular inverses. It's also one of the oldest algorithms still in
+everyday use — documented over 2,300 years ago and essentially unchanged
+since.
+
+**What's the common mistake here?** Say it like this: "gcd(1071,462)=21,
+because 1071 mod 462=147, 462 mod 147=21, and 147 mod 21=0 — the last
+nonzero remainder is the answer," naming the actual remainder chain rather
+than just the final number. Not like this: reaching for "list all the
+divisors of each number and find the biggest one in common" as a general
+method — it's correct, but it's the slow approach this algorithm exists to
+replace, and it becomes completely impractical once the numbers get large.
+A second common slip: forgetting the base case gcd(a,0)=a, which is exactly
+what the last step above (147 mod 21=0) relies on to stop.
+
+---
+
 ## logistic-regression — fitting a probability instead of a straight line
 **Why would you need this?** `linear-regression` fits the best straight line
 through a scatter of points — great when the answer is a continuous number
