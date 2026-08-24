@@ -69,9 +69,9 @@ Format: `- [ ] <id> — <one-line description of the concept to visualize>`
 - [x] exponential-distribution — modeling the waiting time between rare events, the continuous counterpart to poisson-distribution
 - [x] quadratic-formula — completing the square and reading a parabola's discriminant as how many real roots it has
 - [x] fibonacci-golden-ratio — the Fibonacci sequence's ratio of consecutive terms converging to φ
+- [x] t-distribution — how estimating σ from a small sample fattens the normal's tails, and why small-sample confidence intervals need a wider critical value than z
 
 ## Up next (statistics & ML intuition)
-- [ ] t-distribution — how estimating σ from a small sample fattens the normal's tails, and why small-sample confidence intervals need a wider critical value than z, built from confidence-interval
 - [ ] logistic-regression — fitting a decision boundary by modeling class probability directly with sigmoid(wx+b) via gradient descent on log-loss, built from sigmoid-softmax and gradient-descent
 
 ## Up next (math foundations)
