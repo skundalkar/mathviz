@@ -7,6 +7,7 @@
 package tdist
 
 import (
+	"fmt"
 	"math"
 
 	"mathviz/internal/concept"
@@ -206,6 +207,42 @@ func CriticalValue(df, alpha float64) float64 {
 }
 
 func render(p map[string]float64) string {
-	_ = p
-	return viz.New(680, 320, -1, 1, -1, 1).String()
+	df := p["df"]
+	if df < 1 {
+		df = 1
+	}
+
+	const xmin, xmax = -8.0, 8.0
+	peak := StudentTPDF(0, df) // the mode of a symmetric, unimodal density
+	c := viz.New(680, 340, xmin, xmax, 0, peak*1.15)
+	c.PadT = 56
+	c.Axes()
+	for x := -8.0; x <= 8.0; x += 2 {
+		c.Tick(x, fmt.Sprintf("%g", x))
+	}
+
+	// Dashed standard normal behind the solid t-curve, so the two are easy
+	// to compare directly -- the whole lesson is how close (or not) they are.
+	normalCurve := viz.Sample(xmin, xmax, 240, StdNormalPDF)
+	c.Path(normalCurve, viz.Muted, 1.5)
+
+	tCurve := viz.Sample(xmin, xmax, 240, func(x float64) float64 {
+		return StudentTPDF(x, df)
+	})
+
+	tStar := CriticalValue(df, 0.05)
+	c.Area(tCurve, -tStar, tStar, viz.Accent, 0.18)
+	c.Path(tCurve, viz.Accent, 2.5)
+	c.VLine(-tStar, viz.Warm, true)
+	c.VLine(tStar, viz.Warm, true)
+
+	const zStar = 1.959964 // 95% two-tailed critical value of the standard normal
+	widerPct := (tStar/zStar - 1) * 100
+
+	c.Text(20, 20, fmt.Sprintf("df = %.0f    t* (95%%, two-tailed) = %.3f    z* = %.3f",
+		df, tStar, zStar), 14, viz.Ink, "start")
+	c.Text(20, 40, fmt.Sprintf("shaded band ±t* holds 95%% of this curve -- %.1f%% wider than ±z* would be",
+		widerPct), 12, viz.Muted, "start")
+
+	return c.String()
 }
