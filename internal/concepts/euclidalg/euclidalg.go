@@ -7,6 +7,8 @@
 package euclidalg
 
 import (
+	"fmt"
+
 	"mathviz/internal/concept"
 	"mathviz/internal/viz"
 )
@@ -197,7 +199,74 @@ func TileSquares(a, b int) []Square {
 	return squares
 }
 
+// stepColors cycles one color per Euclidean-algorithm division step, so the
+// tiling picture visually separates "these squares came from step 1" from
+// "these came from step 2" and so on.
+var stepColors = []string{viz.Accent, viz.Warm, viz.Good, viz.Bad, viz.Muted, viz.Ink}
+
+// Layout constants for the square-tiling diagram, in pixels. The diagram
+// and the remainder-chain text sit side by side so neither has to guess how
+// much vertical room the other needs.
+const (
+	diagX, diagY         = 20.0, 60.0
+	diagW, diagH         = 380.0, 340.0
+	stepListX, stepListY = 430.0, 80.0
+	stepLineHeight       = 20.0
+	maxStepLines         = 13
+)
+
 func render(p map[string]float64) string {
-	_ = p
-	return viz.New(680, 320, -1, 1, -1, 1).String()
+	a, b := int(p["a"]), int(p["b"])
+	if a < 1 {
+		a = 1
+	}
+	if b < 1 {
+		b = 1
+	}
+
+	steps := Steps(a, b)
+	gcd := GCD(a, b)
+	squares := TileSquares(a, b)
+
+	// A 1x1 canvas we never call Axes()/Sample() on -- every draw call
+	// below is in raw pixel space, since the diagram is a tiling of
+	// rectangles, not a function plot.
+	c := viz.New(680, 420, 0, 1, 0, 1)
+
+	scale := diagW / float64(a)
+	if s := diagH / float64(b); s < scale {
+		scale = s
+	}
+
+	for _, sq := range squares {
+		side := sq.Side * scale
+		const gap = 1.0
+		w := side - gap
+		if w < 0.5 {
+			w = side // squares too small for a visible gap just touch instead
+		}
+		c.Rect(diagX+sq.X*scale, diagY+sq.Y*scale, w, w, stepColors[sq.Step%len(stepColors)], 0.75)
+	}
+
+	c.Text(20, 24, fmt.Sprintf("a = %d    b = %d    gcd(a,b) = %d", a, b, gcd), 15, viz.Ink, "start")
+	c.Text(20, 44, fmt.Sprintf("%d division step(s) -- one color per step, ending on the %d×%d square",
+		len(steps), gcd, gcd), 12, viz.Muted, "start")
+
+	shown := steps
+	truncated := false
+	if len(shown) > maxStepLines {
+		shown = shown[:maxStepLines]
+		truncated = true
+	}
+	for i, st := range shown {
+		y := stepListY + float64(i)*stepLineHeight
+		c.Text(stepListX, y, fmt.Sprintf("%d = %d×%d + %d", st.Dividend, st.Quotient, st.Divisor, st.Remainder),
+			12, stepColors[i%len(stepColors)], "start")
+	}
+	if truncated {
+		y := stepListY + float64(len(shown))*stepLineHeight
+		c.Text(stepListX, y, fmt.Sprintf("... %d more step(s)", len(steps)-maxStepLines), 12, viz.Muted, "start")
+	}
+
+	return c.String()
 }
