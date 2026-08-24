@@ -6,6 +6,7 @@
 package logreg
 
 import (
+	"fmt"
 	"math"
 
 	"mathviz/internal/concept"
@@ -72,8 +73,8 @@ func init() {
 						"green S-curve is the fitted model from the worked example (w≈2.59, " +
 						"b≈-8.43); the blue S-curve is your own guess, built from the slope and " +
 						"intercept sliders — drag either one and watch both the curve's shape and " +
-						"the 'your log-loss' readout change immediately. The dashed horizontal line " +
-						"at 0.5 is the decision threshold (the same idea `precision-recall` used to " +
+						"the 'your log-loss' readout change immediately. The horizontal gray line at " +
+						"0.5 is the decision threshold (the same idea `precision-recall` used to " +
 						"turn a probability into a yes/no call); the vertical dashed line marks " +
 						"where your current curve crosses it — the hours value your model treats as " +
 						"the pass/fail cutoff.",
@@ -211,7 +212,58 @@ func DecisionBoundary(w, b, threshold float64) float64 {
 	return (logit - b) / w
 }
 
+// fitIters and fitLR are the fixed gradient-descent settings used to compute
+// the "best fit" reference curve on every render -- deterministic (same
+// inputs every call), so Render stays pure. See LEARNINGS.md for the
+// resulting w,b this converges to.
+const (
+	fitIters = 10000
+	fitLR    = 0.5
+)
+
 func render(p map[string]float64) string {
-	_ = p
-	return viz.New(680, 320, -1, 1, -1, 1).String()
+	guessW, guessB := p["guessW"], p["guessB"]
+	bestW, bestB := FitLogisticRegression(HoursStudied, Passed, fitIters, fitLR)
+
+	const xmin, xmax = 0.0, 6.0
+	const ymin, ymax = -0.12, 1.12
+	c := viz.New(680, 420, xmin, xmax, ymin, ymax)
+	c.PadT = 90
+	c.Axes()
+	for x := 0.0; x <= xmax; x++ {
+		c.Tick(x, fmt.Sprintf("%g", x))
+	}
+
+	// The 0.5 decision threshold, as a horizontal reference line.
+	c.Path([][2]float64{{xmin, 0.5}, {xmax, 0.5}}, viz.Muted, 1)
+
+	bestCurve := viz.Sample(xmin, xmax, 120, func(x float64) float64 { return Predict(bestW, bestB, x) })
+	guessCurve := viz.Sample(xmin, xmax, 120, func(x float64) float64 { return Predict(guessW, guessB, x) })
+	c.Path(bestCurve, viz.Good, 2.5)
+	c.Path(guessCurve, viz.Accent, 2)
+
+	// Your guess's decision boundary: where your curve crosses p=0.5.
+	if guessBoundary := DecisionBoundary(guessW, guessB, 0.5); !math.IsNaN(guessBoundary) &&
+		guessBoundary >= xmin && guessBoundary <= xmax {
+		c.VLine(guessBoundary, viz.Accent, true)
+	}
+
+	for i, x := range HoursStudied {
+		px, py := c.X(x), c.Y(Passed[i])
+		c.Rect(px-4, py-4, 8, 8, viz.Ink, 1)
+	}
+
+	lossBest := LogLoss(HoursStudied, Passed, bestW, bestB)
+	lossGuess := LogLoss(HoursStudied, Passed, guessW, guessB)
+
+	c.Text(20, 22, fmt.Sprintf("best fit (green): w=%.2f b=%.2f    log-loss(best) = %.3f",
+		bestW, bestB, lossBest), 14, viz.Good, "start")
+	c.Text(20, 44, fmt.Sprintf("your guess (blue): w=%.2f b=%.2f    log-loss(yours) = %.3f",
+		guessW, guessB, lossGuess), 14, viz.Accent, "start")
+	c.Text(20, 64, "black squares = 10 students (0=failed, 1=passed)    gray line = 0.5 decision threshold",
+		12, viz.Muted, "start")
+	c.Text(20, 84, "lower log-loss is better; try to close the gap to log-loss(best)",
+		12, viz.Muted, "start")
+
+	return c.String()
 }
