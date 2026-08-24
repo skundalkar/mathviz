@@ -70,9 +70,9 @@ Format: `- [ ] <id> — <one-line description of the concept to visualize>`
 - [x] quadratic-formula — completing the square and reading a parabola's discriminant as how many real roots it has
 - [x] fibonacci-golden-ratio — the Fibonacci sequence's ratio of consecutive terms converging to φ
 - [x] t-distribution — how estimating σ from a small sample fattens the normal's tails, and why small-sample confidence intervals need a wider critical value than z
+- [x] logistic-regression — fitting a decision boundary by modeling class probability directly with sigmoid(wx+b) via gradient descent on log-loss, built from sigmoid-softmax and gradient-descent
 
 ## Up next (statistics & ML intuition)
-- [ ] logistic-regression — fitting a decision boundary by modeling class probability directly with sigmoid(wx+b) via gradient descent on log-loss, built from sigmoid-softmax and gradient-descent
 
 ## Up next (math foundations)
 - [ ] euclidean-algorithm — finding the greatest common divisor by repeated remainders, and why it terminates in so few steps, built from modular-arithmetic
