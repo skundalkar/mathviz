@@ -71,8 +71,13 @@ Format: `- [ ] <id> — <one-line description of the concept to visualize>`
 - [x] fibonacci-golden-ratio — the Fibonacci sequence's ratio of consecutive terms converging to φ
 
 ## Up next (statistics & ML intuition)
+- [ ] t-distribution — how estimating σ from a small sample fattens the normal's tails, and why small-sample confidence intervals need a wider critical value than z, built from confidence-interval
+- [ ] logistic-regression — fitting a decision boundary by modeling class probability directly with sigmoid(wx+b) via gradient descent on log-loss, built from sigmoid-softmax and gradient-descent
 
 ## Up next (math foundations)
+- [ ] euclidean-algorithm — finding the greatest common divisor by repeated remainders, and why it terminates in so few steps, built from modular-arithmetic
+- [ ] singular-value-decomposition — decomposing any matrix into rotate-scale-rotate (UΣVᵀ), generalizing eigendecomposition to non-square matrices, built from eigenvectors-eigenvalues and matrix-multiplication
+- [ ] mutual-information — how much knowing one variable reduces uncertainty about another, built from entropy and kl-divergence
 
 ## How to add work
 Append an unchecked line under the right section by hand any time — the loop
