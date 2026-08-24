@@ -6,6 +6,8 @@
 package logreg
 
 import (
+	"math"
+
 	"mathviz/internal/concept"
 	"mathviz/internal/viz"
 )
@@ -51,17 +53,24 @@ func init() {
 						"the average log-loss across all 10 students, the same way it found the " +
 						"bottom of a bowl-shaped valley elsewhere — just aimed at this loss instead " +
 						"of squared error. Starting from w=0, b=0 and taking 10,000 small downhill " +
-						"steps on this exact dataset converges to w≈1.10, b≈-3.10, average log-loss " +
-						"≈0.325 — versus 0.693 (=-log(0.5)) at the untrained w=0,b=0 starting point, " +
+						"steps on this exact dataset converges to w≈2.59, b≈-8.43, average log-loss " +
+						"≈0.251 — versus 0.693 (=-log(0.5)) at the untrained w=0,b=0 starting point, " +
 						"where the model has no information and guesses 50/50 for everyone.",
+					"Two students break the overall trend: at 3.0 hours the student passed even " +
+						"though fewer-hours students failed, and at 3.5 hours the student failed " +
+						"even though more-hours students passed. The fitted curve gives them p=0.34 " +
+						"and p=0.66 — on the wrong side of the 0.5 threshold both times. That's not " +
+						"a bug: the fitted curve traces the overall trend across all 10 students, " +
+						"not the two individual flips against it, the same 'smooth trend beats " +
+						"chasing every point' idea `overfitting` covers for continuous data.",
 				},
 			},
 			{
 				Heading: "What does the picture show?",
 				Body: []string{
 					"Ten black squares are the fixed (hours studied, passed) data points. The " +
-						"green S-curve is the fitted model from the worked example (w≈1.10, " +
-						"b≈-3.10); the blue S-curve is your own guess, built from the slope and " +
+						"green S-curve is the fitted model from the worked example (w≈2.59, " +
+						"b≈-8.43); the blue S-curve is your own guess, built from the slope and " +
 						"intercept sliders — drag either one and watch both the curve's shape and " +
 						"the 'your log-loss' readout change immediately. The dashed horizontal line " +
 						"at 0.5 is the decision threshold (the same idea `precision-recall` used to " +
@@ -112,6 +121,94 @@ func init() {
 		},
 		Render: render,
 	})
+}
+
+// HoursStudied and Passed are ten fixed (hours studied, passed exam)
+// observations -- the worked example every Section above and LEARNINGS.md
+// refer to. Passed entries are 0 (failed) or 1 (passed).
+var (
+	HoursStudied = []float64{0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0}
+	Passed       = []float64{0, 0, 0, 0, 0, 1, 0, 1, 1, 1}
+)
+
+// Sigmoid squashes any real-valued z into (0,1): 1/(1+e^-z).
+func Sigmoid(z float64) float64 {
+	return 1 / (1 + math.Exp(-z))
+}
+
+// Predict returns the model's predicted probability of the positive class
+// at x: sigmoid(w*x + b).
+func Predict(w, b, x float64) float64 {
+	return Sigmoid(w*x + b)
+}
+
+// logLossEps keeps LogLoss finite when a prediction saturates to exactly 0
+// or 1 (log(0) is -Inf) -- clamped just far enough that it never changes a
+// realistic loss value, only guards the boundary.
+const logLossEps = 1e-12
+
+// LogLoss returns the average binary cross-entropy (log) loss of
+// Predict(w,b,xs[i]) against labels ys[i] (each 0 or 1): -log(p) for an
+// actual positive, -log(1-p) for an actual negative, averaged over every
+// example. Confident-and-wrong predictions cost far more than
+// confident-and-right ones cost little -- e.g. -log(0.98)≈0.02 vs
+// -log(0.02)≈3.91.
+func LogLoss(xs, ys []float64, w, b float64) float64 {
+	if len(xs) == 0 {
+		return 0
+	}
+	var total float64
+	for i := range xs {
+		p := Predict(w, b, xs[i])
+		if p < logLossEps {
+			p = logLossEps
+		}
+		if p > 1-logLossEps {
+			p = 1 - logLossEps
+		}
+		if ys[i] == 1 {
+			total -= math.Log(p)
+		} else {
+			total -= math.Log(1 - p)
+		}
+	}
+	return total / float64(len(xs))
+}
+
+// FitLogisticRegression fits w,b by batch gradient descent on the average
+// log-loss, starting from w=0,b=0 and taking a fixed `iters` steps of size
+// `lr`. Pure and deterministic -- same inputs always produce the same
+// output, no randomness -- so it can stand in for "the best fit" the same
+// way linreg's closed-form least-squares line does, just reached by
+// gradient-descent's stepping mechanism instead of a formula (logistic
+// regression's loss has no closed-form minimizer).
+func FitLogisticRegression(xs, ys []float64, iters int, lr float64) (w, b float64) {
+	n := float64(len(xs))
+	if n == 0 {
+		return 0, 0
+	}
+	for i := 0; i < iters; i++ {
+		var gw, gb float64
+		for j := range xs {
+			err := Predict(w, b, xs[j]) - ys[j]
+			gw += err * xs[j]
+			gb += err
+		}
+		w -= lr * gw / n
+		b -= lr * gb / n
+	}
+	return w, b
+}
+
+// DecisionBoundary returns the x at which Predict(w,b,x) == threshold, i.e.
+// where the model's classification flips. Returns NaN if w==0, since a flat
+// prediction never crosses a threshold strictly between 0 and 1.
+func DecisionBoundary(w, b, threshold float64) float64 {
+	if w == 0 {
+		return math.NaN()
+	}
+	logit := math.Log(threshold / (1 - threshold))
+	return (logit - b) / w
 }
 
 func render(p map[string]float64) string {
