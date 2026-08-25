@@ -7,6 +7,7 @@
 package mutualinfo
 
 import (
+	"fmt"
 	"math"
 
 	"mathviz/internal/concept"
@@ -218,7 +219,68 @@ func clamp01(x float64) float64 {
 	return x
 }
 
+// Layout constants for the two side-by-side mosaic panels, in pixels.
+const (
+	panelW, panelH = 260.0, 260.0
+	panel1X        = 40.0
+	panelGap       = 60.0
+	panelY         = 160.0
+)
+
 func render(p map[string]float64) string {
-	_ = p
-	return viz.New(680, 480, 0, 1, 0, 1).String()
+	px, py1, py0 := clamp01(p["px"]), clamp01(p["py1"]), clamp01(p["py0"])
+
+	j := NewJoint(px, py1, py0)
+	py := j.MarginalY()
+	hx, hy := BinaryEntropy(j.MarginalX()), BinaryEntropy(py)
+	hxy := j.JointEntropy()
+	mi := j.MutualInformation()
+
+	c := viz.New(680, 480, 0, 1, 0, 1)
+
+	panel2X := panel1X + panelW + panelGap
+	drawMosaic(c, panel1X, panelY, py1, py0, px)
+	drawMosaic(c, panel2X, panelY, py, py, px) // "as if independent": both columns split at the marginal
+
+	c.Text(panel1X+panelW/2, panelY-14, "actual joint P(X,Y)", 13, viz.Ink, "middle")
+	c.Text(panel2X+panelW/2, panelY-14, "if X, Y independent", 13, viz.Ink, "middle")
+
+	// Orange reference line at the marginal P(Y=1), spanning both panels --
+	// any vertical jump between this line and the left mosaic's own column
+	// boundaries is mutual information made visible.
+	refY := panelY + py*panelH
+	c.Rect(panel1X, refY-0.75, panel2X+panelW-panel1X, 1.5, viz.Warm, 0.9)
+
+	c.Text(20, 24, fmt.Sprintf("P(rain)=%.2f   P(umbrella|rain)=%.2f   P(umbrella|no rain)=%.2f", px, py1, py0),
+		14, viz.Ink, "start")
+	c.Text(20, 44, fmt.Sprintf("H(X)=%.3f bits   H(Y)=%.3f bits   H(X,Y)=%.3f bits", hx, hy, hxy),
+		13, viz.Muted, "start")
+	c.Text(20, 62, fmt.Sprintf("I(X;Y) = H(X)+H(Y)-H(X,Y) = %.3f bits", mi), 15, viz.Good, "start")
+	c.Text(20, 80, "blue = P(umbrella)   orange line = marginal P(umbrella), same on both panels",
+		12, viz.Muted, "start")
+
+	return c.String()
+}
+
+// drawMosaic draws one mosaic plot with its top-left corner at (x0,y0): an
+// X=1 column of width px*panelW on the left and an X=0 column of width
+// (1-px)*panelW on the right, each split vertically into a Y=1 region
+// (top, height = its own column's conditional probability * panelH) and a
+// Y=0 region (bottom). Passing the same value for yGivenX1 and yGivenX0
+// draws the "as if independent" baseline, where both columns split at
+// the same height.
+func drawMosaic(c *viz.Canvas, x0, y0, yGivenX1, yGivenX0, px float64) {
+	x1w := px * panelW
+	x0w := panelW - x1w
+
+	y1h := yGivenX1 * panelH
+	c.Rect(x0, y0, x1w, y1h, viz.Accent, 0.8)
+	c.Rect(x0, y0+y1h, x1w, panelH-y1h, viz.Faint, 1)
+
+	y0h := yGivenX0 * panelH
+	c.Rect(x0+x1w, y0, x0w, y0h, viz.Accent, 0.8)
+	c.Rect(x0+x1w, y0+y0h, x0w, panelH-y0h, viz.Faint, 1)
+
+	c.Text(x0+x1w/2, y0+panelH+18, "X=1 (rain)", 12, viz.Muted, "middle")
+	c.Text(x0+x1w+x0w/2, y0+panelH+18, "X=0 (no rain)", 12, viz.Muted, "middle")
 }
