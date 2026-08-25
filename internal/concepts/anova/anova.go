@@ -8,6 +8,7 @@
 package anova
 
 import (
+	"fmt"
 	"math"
 
 	"mathviz/internal/concept"
@@ -233,7 +234,79 @@ func Run(groups [][]float64) Result {
 	return Result{ssb, ssw, dfb, dfw, msb, msw, f}
 }
 
+// jitterX spreads each group's points out slightly around its own x
+// position (1, 2, or 3) so all len(baseOffsets) dots are visible instead
+// of stacking on top of each other.
+var jitterX = []float64{-0.18, -0.09, 0, 0.09, 0.18}
+
+var groupColors = []string{viz.Accent, viz.Warm, viz.Good}
+var groupNames = []string{"A", "B", "C"}
+
 func render(p map[string]float64) string {
-	_ = p
-	return viz.New(680, 420, 0, 4, 0, 100).String()
+	spread := p["spread"]
+	groups := [][]float64{
+		GroupSamples(p["meanA"], spread),
+		GroupSamples(p["meanB"], spread),
+		GroupSamples(p["meanC"], spread),
+	}
+	r := Run(groups)
+
+	var pooled []float64
+	for _, g := range groups {
+		pooled = append(pooled, g...)
+	}
+	grand := Mean(pooled)
+
+	// Size the y-range to whatever's actually on screen, so an extreme
+	// mean or spread slider never draws a point off the edge of the canvas.
+	ymin, ymax := pooled[0], pooled[0]
+	for _, v := range pooled {
+		if v < ymin {
+			ymin = v
+		}
+		if v > ymax {
+			ymax = v
+		}
+	}
+	pad := (ymax - ymin) * 0.2
+	if pad < 5 {
+		pad = 5
+	}
+	ymin -= pad
+	ymax += pad
+
+	c := viz.New(680, 420, 0.5, 3.5, ymin, ymax)
+	c.PadT = 96
+	c.Axes()
+	for i, name := range groupNames {
+		c.Tick(float64(i+1), name)
+	}
+
+	// Dashed grand-mean line, spanning the full plot width.
+	c.Path([][2]float64{{c.XMin, grand}, {c.XMax, grand}}, viz.Muted, 1.5)
+
+	for gi, g := range groups {
+		x := float64(gi + 1)
+		color := groupColors[gi]
+		for i, y := range g {
+			px, py := c.X(x+jitterX[i]), c.Y(y)
+			c.Rect(px-4, py-4, 8, 8, color, 0.85)
+		}
+		// Short tick marking this group's own mean.
+		gm := Mean(g)
+		c.Path([][2]float64{{x - 0.28, gm}, {x + 0.28, gm}}, color, 3)
+	}
+
+	fStr := fmt.Sprintf("%.2f", r.F)
+	if math.IsInf(r.F, 1) {
+		fStr = "+Inf"
+	}
+	c.Text(20, 24, fmt.Sprintf("SSbetween=%.2f (df=%d)   SSwithin=%.2f (df=%d)",
+		r.SSBetween, r.DFBetween, r.SSWithin, r.DFWithin), 13, viz.Ink, "start")
+	c.Text(20, 44, fmt.Sprintf("MSbetween=%.2f   MSwithin=%.2f   F = MSbetween/MSwithin = %s",
+		r.MSBetween, r.MSWithin, fStr), 14, viz.Good, "start")
+	c.Text(20, 64, fmt.Sprintf("grand mean = %.2f (gray dashed line)   dots = each group's %d scores   thick tick = group mean",
+		grand, len(baseOffsets)), 12, viz.Muted, "start")
+
+	return c.String()
 }
