@@ -8,6 +8,8 @@
 package anova
 
 import (
+	"math"
+
 	"mathviz/internal/concept"
 	"mathviz/internal/viz"
 )
@@ -124,6 +126,111 @@ func init() {
 		},
 		Render: render,
 	})
+}
+
+// baseOffsets is a small, fixed set of deviations (summing to 0) that every
+// group's samples are built from. Keeping it as a literal -- rather than
+// generating it with randomness, which Render must never do -- keeps the
+// picture concrete and reproducible: these are "quiz score" style deltas,
+// not noise (mirrors variance-vs-stddev's baseSample).
+var baseOffsets = []float64{-2, -1, 0, 1, 2}
+
+// GroupSamples returns len(baseOffsets) scores centered on mean, spread
+// out by spread: mean + baseOffsets[i]*spread. Pure function: same inputs
+// always produce the same slice.
+func GroupSamples(mean, spread float64) []float64 {
+	xs := make([]float64, len(baseOffsets))
+	for i, o := range baseOffsets {
+		xs[i] = mean + o*spread
+	}
+	return xs
+}
+
+// Mean is the arithmetic mean of xs. Returns 0 for an empty slice.
+func Mean(xs []float64) float64 {
+	if len(xs) == 0 {
+		return 0
+	}
+	sum := 0.0
+	for _, x := range xs {
+		sum += x
+	}
+	return sum / float64(len(xs))
+}
+
+// SSBetween returns the between-group sum of squares: how far each group's
+// own mean sits from the grand mean (the mean of every group's samples
+// pooled together), weighted by group size.
+func SSBetween(groups [][]float64) float64 {
+	var pooled []float64
+	for _, g := range groups {
+		pooled = append(pooled, g...)
+	}
+	grand := Mean(pooled)
+	ss := 0.0
+	for _, g := range groups {
+		d := Mean(g) - grand
+		ss += float64(len(g)) * d * d
+	}
+	return ss
+}
+
+// SSWithin returns the within-group sum of squares: how far each
+// individual sample sits from its own group's mean, added up across every
+// group.
+func SSWithin(groups [][]float64) float64 {
+	ss := 0.0
+	for _, g := range groups {
+		gm := Mean(g)
+		for _, x := range g {
+			d := x - gm
+			ss += d * d
+		}
+	}
+	return ss
+}
+
+// Result holds the pieces of a one-way ANOVA: the between- and
+// within-group sums of squares, their degrees of freedom, the mean
+// squares each reduces to, and the F-ratio (MSBetween/MSWithin) that
+// summarizes the whole test.
+type Result struct {
+	SSBetween, SSWithin float64
+	DFBetween, DFWithin int
+	MSBetween, MSWithin float64
+	F                   float64
+}
+
+// Run performs a one-way ANOVA across groups (each a slice of samples for
+// one group). It panics if fewer than 2 groups or fewer than 1 total
+// sample is given -- an ANOVA needs at least two groups to compare.
+func Run(groups [][]float64) Result {
+	if len(groups) < 2 {
+		panic("anova: Run needs at least 2 groups")
+	}
+	n := 0
+	for _, g := range groups {
+		n += len(g)
+	}
+	k := len(groups)
+	ssb, ssw := SSBetween(groups), SSWithin(groups)
+	dfb, dfw := k-1, n-k
+
+	msb := ssb / float64(dfb)
+	var msw, f float64
+	if dfw > 0 {
+		msw = ssw / float64(dfw)
+	}
+	switch {
+	case msw > 1e-12:
+		f = msb / msw
+	case msb > 1e-12:
+		f = math.Inf(1) // zero within-group noise but real between-group spread
+	default:
+		f = 0 // everything's identical -- no spread anywhere to report
+	}
+
+	return Result{ssb, ssw, dfb, dfw, msb, msw, f}
 }
 
 func render(p map[string]float64) string {
