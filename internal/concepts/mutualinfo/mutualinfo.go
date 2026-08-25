@@ -7,6 +7,8 @@
 package mutualinfo
 
 import (
+	"math"
+
 	"mathviz/internal/concept"
 	"mathviz/internal/viz"
 )
@@ -127,6 +129,93 @@ func init() {
 		},
 		Render: render,
 	})
+}
+
+// BinaryEntropy returns the Shannon entropy, in bits, of a two-outcome
+// distribution with P(true)=p: H(p) = -p*log2(p) - (1-p)*log2(1-p).
+// Identical to entropy.BinaryEntropy -- each concept package is
+// self-contained (see BUILD_CYCLE.md).
+func BinaryEntropy(p float64) float64 {
+	term := func(x float64) float64 {
+		if x <= 0 {
+			return 0
+		}
+		return -x * math.Log2(x)
+	}
+	return term(p) + term(1-p)
+}
+
+// Joint is the 2x2 joint probability table for two binary variables X
+// (e.g. "did it rain") and Y (e.g. "did they carry an umbrella"): P11 =
+// P(X=1,Y=1), P10 = P(X=1,Y=0), P01 = P(X=0,Y=1), P00 = P(X=0,Y=0). The
+// four entries always sum to 1.
+type Joint struct{ P11, P10, P01, P00 float64 }
+
+// NewJoint builds the joint distribution from P(X=1)=px and the two
+// conditionals P(Y=1|X=1)=py1, P(Y=1|X=0)=py0.
+func NewJoint(px, py1, py0 float64) Joint {
+	return Joint{
+		P11: px * py1,
+		P10: px * (1 - py1),
+		P01: (1 - px) * py0,
+		P00: (1 - px) * (1 - py0),
+	}
+}
+
+// MarginalX returns P(X=1).
+func (j Joint) MarginalX() float64 { return j.P11 + j.P10 }
+
+// MarginalY returns P(Y=1).
+func (j Joint) MarginalY() float64 { return j.P11 + j.P01 }
+
+// JointEntropy returns H(X,Y) in bits: -Σ p(x,y)*log2(p(x,y)) over all
+// four joint outcomes (a p==0 cell contributes 0, the same convention
+// BinaryEntropy uses).
+func (j Joint) JointEntropy() float64 {
+	term := func(x float64) float64 {
+		if x <= 0 {
+			return 0
+		}
+		return -x * math.Log2(x)
+	}
+	return term(j.P11) + term(j.P10) + term(j.P01) + term(j.P00)
+}
+
+// MutualInformation returns I(X;Y) in bits, computed as
+// H(X)+H(Y)-H(X,Y): the bits saved by describing X and Y together instead
+// of paying for each variable's uncertainty separately. Never negative
+// (H(X,Y) can never exceed H(X)+H(Y)), and exactly 0 only when X and Y are
+// independent.
+func (j Joint) MutualInformation() float64 {
+	return BinaryEntropy(j.MarginalX()) + BinaryEntropy(j.MarginalY()) - j.JointEntropy()
+}
+
+// MutualInformationViaKL computes I(X;Y) the other way described in
+// LEARNINGS.md: as KL(P(X,Y) ‖ P(X)*P(Y)), summing
+// p(x,y)*log2(p(x,y)/(p(x)*p(y))) over all four cells, where p(x)*p(y) is
+// the joint distribution X and Y would have if they were independent. This
+// should agree with MutualInformation up to floating-point error -- see
+// TestMutualInformationMatchesKLFormula.
+func (j Joint) MutualInformationViaKL() float64 {
+	px, py := j.MarginalX(), j.MarginalY()
+	term := func(pxy, qxy float64) float64 {
+		if pxy <= 0 {
+			return 0
+		}
+		return pxy * math.Log2(pxy/qxy)
+	}
+	return term(j.P11, px*py) + term(j.P10, px*(1-py)) +
+		term(j.P01, (1-px)*py) + term(j.P00, (1-px)*(1-py))
+}
+
+func clamp01(x float64) float64 {
+	if x < 0.01 {
+		return 0.01
+	}
+	if x > 0.99 {
+		return 0.99
+	}
+	return x
 }
 
 func render(p map[string]float64) string {
