@@ -7,6 +7,8 @@
 package svd
 
 import (
+	"math"
+
 	"mathviz/internal/concept"
 	"mathviz/internal/viz"
 )
@@ -125,6 +127,96 @@ func init() {
 		},
 		Render: render,
 	})
+}
+
+// Matrix is a 2x2 matrix [[A,B],[C,D]] (row-major).
+type Matrix struct{ A, B, C, D float64 }
+
+// Vec2 is a 2D vector.
+type Vec2 struct{ X, Y float64 }
+
+// Apply returns M*v.
+func Apply(m Matrix, v Vec2) Vec2 {
+	return Vec2{m.A*v.X + m.B*v.Y, m.C*v.X + m.D*v.Y}
+}
+
+// SVD holds a 2x2 matrix's singular value decomposition M = U·Σ·Vᵀ: two
+// singular values (Sigma1 >= Sigma2 >= 0) and the orthonormal right
+// singular vectors (V1, V2 — columns of V, the special input directions)
+// and left singular vectors (U1, U2 — columns of U, where those
+// directions land) that go with them, so that Apply(m, V1) == Sigma1*U1
+// and Apply(m, V2) == Sigma2*U2.
+type SVD struct {
+	Sigma1, Sigma2 float64
+	V1, V2         Vec2
+	U1, U2         Vec2
+}
+
+// Decompose computes the singular value decomposition of the 2x2 matrix m.
+// It works for every matrix — square or not, symmetric or not, singular or
+// not — unlike eigenvectors-eigenvalues, which needs a square matrix and
+// can fail to produce two independent directions at all.
+//
+// The method: MᵀM is always symmetric and positive semi-definite, so
+// (mirroring eigenvectors-eigenvalues' closed-form 2x2 formula) it always
+// has two real, non-negative eigenvalues and perpendicular eigenvectors.
+// Those eigenvectors are V; the square roots of their eigenvalues are the
+// singular values; and the matching output directions U are recovered by
+// pushing each V direction through M and rescaling back to unit length:
+// U_i = M·V_i / Sigma_i.
+func Decompose(m Matrix) SVD {
+	p := m.A*m.A + m.C*m.C
+	q := m.A*m.B + m.C*m.D
+	r := m.B*m.B + m.D*m.D
+
+	mid := (p + r) / 2
+	half := (p - r) / 2
+	disc := math.Sqrt(half*half + q*q)
+	lambda1, lambda2 := mid+disc, mid-disc
+	if lambda2 < 0 {
+		lambda2 = 0 // clamp float noise -- MᵀM is PSD, so this is never a real negative
+	}
+	sigma1, sigma2 := math.Sqrt(lambda1), math.Sqrt(lambda2)
+
+	var thetaV float64
+	if p != r || q != 0 {
+		thetaV = math.Atan2(2*q, p-r) / 2
+	} // else MᵀM is a multiple of the identity: any orthonormal basis works, thetaV=0
+	v1 := Vec2{math.Cos(thetaV), math.Sin(thetaV)}
+	v2 := Vec2{-math.Sin(thetaV), math.Cos(thetaV)}
+
+	var u1, u2 Vec2
+	if sigma1 < 1e-9 {
+		// M collapses everything to (near) zero -- there's no image
+		// direction to normalize, so fall back to a default basis.
+		u1, u2 = Vec2{1, 0}, Vec2{0, 1}
+	} else {
+		mv1 := Apply(m, v1)
+		u1 = Vec2{mv1.X / sigma1, mv1.Y / sigma1}
+		if sigma2 < 1e-9 {
+			// M collapses this one direction to (near) nothing -- complete
+			// the orthonormal basis by rotating u1 by 90° instead of
+			// dividing by a near-zero sigma2.
+			u2 = Vec2{-u1.Y, u1.X}
+		} else {
+			mv2 := Apply(m, v2)
+			u2 = Vec2{mv2.X / sigma2, mv2.Y / sigma2}
+		}
+	}
+
+	return SVD{sigma1, sigma2, v1, v2, u1, u2}
+}
+
+// Reconstruct rebuilds M = U·Σ·Vᵀ from a decomposition (as
+// Sigma1*outer(U1,V1) + Sigma2*outer(U2,V2)), so callers can confirm the
+// pieces really do multiply back to the original matrix.
+func Reconstruct(s SVD) Matrix {
+	return Matrix{
+		A: s.Sigma1*s.U1.X*s.V1.X + s.Sigma2*s.U2.X*s.V2.X,
+		B: s.Sigma1*s.U1.X*s.V1.Y + s.Sigma2*s.U2.X*s.V2.Y,
+		C: s.Sigma1*s.U1.Y*s.V1.X + s.Sigma2*s.U2.Y*s.V2.X,
+		D: s.Sigma1*s.U1.Y*s.V1.Y + s.Sigma2*s.U2.Y*s.V2.Y,
+	}
 }
 
 func render(p map[string]float64) string {
