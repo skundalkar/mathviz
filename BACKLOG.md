@@ -72,11 +72,11 @@ Format: `- [ ] <id> — <one-line description of the concept to visualize>`
 - [x] t-distribution — how estimating σ from a small sample fattens the normal's tails, and why small-sample confidence intervals need a wider critical value than z
 - [x] logistic-regression — fitting a decision boundary by modeling class probability directly with sigmoid(wx+b) via gradient descent on log-loss, built from sigmoid-softmax and gradient-descent
 - [x] euclidean-algorithm — finding the greatest common divisor by repeated remainders, and why it terminates in so few steps, built from modular-arithmetic
+- [x] singular-value-decomposition — decomposing any matrix into rotate-scale-rotate (UΣVᵀ), generalizing eigendecomposition to non-square matrices, built from eigenvectors-eigenvalues and matrix-multiplication
 
 ## Up next (statistics & ML intuition)
 
 ## Up next (math foundations)
-- [ ] singular-value-decomposition — decomposing any matrix into rotate-scale-rotate (UΣVᵀ), generalizing eigendecomposition to non-square matrices, built from eigenvectors-eigenvalues and matrix-multiplication
 - [ ] mutual-information — how much knowing one variable reduces uncertainty about another, built from entropy and kl-divergence
 
 ## Up next (statistics & ML intuition, batch 2)
