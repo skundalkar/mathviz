@@ -43,6 +43,7 @@ import (
 	_ "mathviz/internal/concepts/meanmedianmode"
 	_ "mathviz/internal/concepts/modulararithmetic"
 	_ "mathviz/internal/concepts/montecarlo"
+	_ "mathviz/internal/concepts/mutualinfo"
 	_ "mathviz/internal/concepts/naivebayes"
 	_ "mathviz/internal/concepts/newton"
 	_ "mathviz/internal/concepts/normalskew"
