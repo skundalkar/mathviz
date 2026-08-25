@@ -7,6 +7,7 @@
 package svd
 
 import (
+	"fmt"
 	"math"
 
 	"mathviz/internal/concept"
@@ -219,7 +220,70 @@ func Reconstruct(s SVD) Matrix {
 	}
 }
 
+// circleSteps is how finely the unit circle (and its image under M, the
+// ellipse) is sampled for drawing.
+const circleSteps = 96
+
 func render(p map[string]float64) string {
-	_ = p
-	return viz.New(560, 560, -5, 5, -5, 5).String()
+	m := Matrix{A: p["a"], B: p["b"], C: p["c"], D: p["d"]}
+	s := Decompose(m)
+
+	c := viz.New(560, 560, -5, 5, -5, 5)
+	c.Path([][2]float64{{c.XMin, 0}, {c.XMax, 0}}, viz.Muted, 1)
+	c.Path([][2]float64{{0, c.YMin}, {0, c.YMax}}, viz.Muted, 1)
+
+	circle := make([][2]float64, circleSteps+1)
+	ellipse := make([][2]float64, circleSteps+1)
+	for i := range circle {
+		t := 2 * math.Pi * float64(i) / circleSteps
+		v := Vec2{math.Cos(t), math.Sin(t)}
+		circle[i] = [2]float64{v.X, v.Y}
+		img := Apply(m, v)
+		ellipse[i] = [2]float64{img.X, img.Y}
+	}
+	c.Path(circle, viz.Faint, 1.5)
+	c.Path(ellipse, viz.Warm, 2.5)
+
+	// Blue: V, the two special input directions, still on the unit circle.
+	arrow(c, 0, 0, s.V1.X, s.V1.Y, viz.Accent, 2.5)
+	arrow(c, 0, 0, s.V2.X, s.V2.Y, viz.Accent, 2.5)
+	// Green: Sigma*U, where those directions land -- the ellipse's axes.
+	arrow(c, 0, 0, s.Sigma1*s.U1.X, s.Sigma1*s.U1.Y, viz.Good, 2.5)
+	arrow(c, 0, 0, s.Sigma2*s.U2.X, s.Sigma2*s.U2.Y, viz.Good, 2.5)
+
+	c.Text(16, 24, fmt.Sprintf("M = [[%.2f,%.2f],[%.2f,%.2f]]", m.A, m.B, m.C, m.D), 14, viz.Ink, "start")
+	c.Text(16, 44, fmt.Sprintf("σ1 = %.3f   σ2 = %.3f", s.Sigma1, s.Sigma2), 14, viz.Ink, "start")
+	c.Text(16, 64, fmt.Sprintf("V1 = (%.2f,%.2f)   V2 = (%.2f,%.2f)  (blue -- special input directions)",
+		s.V1.X, s.V1.Y, s.V2.X, s.V2.Y), 12, viz.Accent, "start")
+	c.Text(16, 82, fmt.Sprintf("σ1·U1 = (%.2f,%.2f)   σ2·U2 = (%.2f,%.2f)  (green -- the ellipse's axes)",
+		s.Sigma1*s.U1.X, s.Sigma1*s.U1.Y, s.Sigma2*s.U2.X, s.Sigma2*s.U2.Y), 12, viz.Good, "start")
+	c.Text(16, 536, "faint = unit circle   orange = M applied to it (an ellipse)   blue = V   green = Σ·U",
+		12, viz.Muted, "start")
+
+	return c.String()
+}
+
+// arrow draws a straight line from (x0,y0) to (x1,y1) in data space, with a
+// small V-shaped arrowhead at the end.
+func arrow(c *viz.Canvas, x0, y0, x1, y1 float64, color string, width float64) {
+	c.Path([][2]float64{{x0, y0}, {x1, y1}}, color, width)
+
+	dx, dy := x1-x0, y1-y0
+	length := math.Hypot(dx, dy)
+	if length < 1e-9 {
+		return
+	}
+	ux, uy := dx/length, dy/length
+	const headLen = 0.28
+	const headAngle = 0.5 // radians, ~29 degrees off the shaft on each side
+
+	barb := func(t float64) (float64, float64) {
+		cos, sin := math.Cos(t), math.Sin(t)
+		bx, by := -ux, -uy
+		return bx*cos - by*sin, bx*sin + by*cos
+	}
+	b1x, b1y := barb(headAngle)
+	b2x, b2y := barb(-headAngle)
+	c.Path([][2]float64{{x1, y1}, {x1 + headLen*b1x, y1 + headLen*b1y}}, color, width)
+	c.Path([][2]float64{{x1, y1}, {x1 + headLen*b2x, y1 + headLen*b2y}}, color, width)
 }
