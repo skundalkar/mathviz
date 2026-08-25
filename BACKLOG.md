@@ -73,11 +73,11 @@ Format: `- [ ] <id> — <one-line description of the concept to visualize>`
 - [x] logistic-regression — fitting a decision boundary by modeling class probability directly with sigmoid(wx+b) via gradient descent on log-loss, built from sigmoid-softmax and gradient-descent
 - [x] euclidean-algorithm — finding the greatest common divisor by repeated remainders, and why it terminates in so few steps, built from modular-arithmetic
 - [x] singular-value-decomposition — decomposing any matrix into rotate-scale-rotate (UΣVᵀ), generalizing eigendecomposition to non-square matrices, built from eigenvectors-eigenvalues and matrix-multiplication
+- [x] mutual-information — how much knowing one variable reduces uncertainty about another, built from entropy and kl-divergence
 
 ## Up next (statistics & ML intuition)
 
 ## Up next (math foundations)
-- [ ] mutual-information — how much knowing one variable reduces uncertainty about another, built from entropy and kl-divergence
 
 ## Up next (statistics & ML intuition, batch 2)
 - [ ] anova — comparing means across three or more groups by partitioning total variance into between-group and within-group components, built from variance-vs-stddev
