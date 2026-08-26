@@ -6,6 +6,8 @@
 package crossentropyloss
 
 import (
+	"math"
+
 	"mathviz/internal/concept"
 	"mathviz/internal/viz"
 )
@@ -111,6 +113,55 @@ func init() {
 		},
 		Render: render,
 	})
+}
+
+// Emails is the small worked dataset used throughout this concept: 4 emails'
+// true spam labels (1=spam, 0=not spam) and a model's predicted P(spam).
+var (
+	Labels = []float64{1, 1, 0, 1}
+	Preds  = []float64{0.9, 0.55, 0.2, 0.1}
+)
+
+// log2Safe returns -log2(x), treating x<=0 as +Inf (an infinitely surprising,
+// infinitely costly event) instead of NaN, so Loss stays well-defined even at
+// the extreme ends of a probability slider.
+func log2Safe(x float64) float64 {
+	if x <= 0 {
+		return math.Inf(1)
+	}
+	return -math.Log2(x)
+}
+
+// Loss returns the binary cross-entropy ("log") loss, in bits, of predicting
+// P(y=1)=phat against a true hard label y (0 or 1):
+//
+//	Loss(1, phat) = -log2(phat)
+//	Loss(0, phat) = -log2(1-phat)
+//
+// It's 0 only in the limit of a perfectly confident, perfectly correct
+// prediction, and grows without bound as phat confidently disagrees with y —
+// a single wrong-and-confident prediction can outweigh many merely-unsure
+// correct ones (see the worked example above).
+func Loss(y, phat float64) float64 {
+	if y >= 0.5 {
+		return log2Safe(phat)
+	}
+	return log2Safe(1 - phat)
+}
+
+// AverageLoss returns the mean Loss across every (label, prediction) pair —
+// the actual quantity a classifier's training loop tries to drive toward
+// zero. labels and preds must be the same length and index-aligned; returns
+// 0 for an empty dataset.
+func AverageLoss(labels, preds []float64) float64 {
+	if len(labels) == 0 {
+		return 0
+	}
+	sum := 0.0
+	for i, y := range labels {
+		sum += Loss(y, preds[i])
+	}
+	return sum / float64(len(labels))
 }
 
 func render(p map[string]float64) string {
