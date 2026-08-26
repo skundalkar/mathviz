@@ -76,13 +76,13 @@ Format: `- [ ] <id> — <one-line description of the concept to visualize>`
 - [x] mutual-information — how much knowing one variable reduces uncertainty about another, built from entropy and kl-divergence
 - [x] anova — comparing means across three or more groups by partitioning total variance into between-group and within-group components, built from variance-vs-stddev
 - [x] cross-entropy-loss — the loss function that scores a predicted probability against a true label, and why minimizing it is the same as minimizing KL-divergence to the true distribution, built from entropy and kl-divergence
+- [x] random-forest — bagging many decision trees on bootstrap-resampled data and averaging their votes to cut variance without adding bias, built from decision-trees and bootstrap-resampling
 
 ## Up next (statistics & ML intuition)
 
 ## Up next (math foundations)
 
 ## Up next (statistics & ML intuition, batch 2)
-- [ ] random-forest — bagging many decision trees on bootstrap-resampled data and averaging their votes to cut variance without adding bias, built from decision-trees and bootstrap-resampling
 
 ## How to add work
 Append an unchecked line under the right section by hand any time — the loop
