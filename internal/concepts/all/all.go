@@ -20,6 +20,7 @@ import (
 	_ "mathviz/internal/concepts/correlation"
 	_ "mathviz/internal/concepts/cosinesimilarity"
 	_ "mathviz/internal/concepts/covariance"
+	_ "mathviz/internal/concepts/crossentropyloss"
 	_ "mathviz/internal/concepts/decisiontree"
 	_ "mathviz/internal/concepts/derivative"
 	_ "mathviz/internal/concepts/determinant"
