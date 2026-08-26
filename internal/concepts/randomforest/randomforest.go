@@ -8,6 +8,7 @@
 package randomforest
 
 import (
+	"fmt"
 	"math"
 	"sort"
 
@@ -293,6 +294,53 @@ func VoteFraction(trees []Tree, hours float64) float64 {
 }
 
 func render(p map[string]float64) string {
-	_ = p
-	return viz.New(680, 420, 0, 1, 0, 1).String()
+	numTrees := int(p["numTrees"])
+	trees := Forest(numTrees)
+
+	// y-range: [0,1] holds the vote-fraction staircase; the strip below 0
+	// holds a data rug (true labels) and each active tree's own threshold
+	// tick, so both stay visible without overlapping the curve.
+	c := viz.New(680, 440, 1, 5.5, -0.22, 1.08)
+	c.PadT = 90
+	c.PadB = 40
+	c.Axes()
+	for x := 1.0; x <= 5.5; x += 0.5 {
+		c.Tick(x, fmt.Sprintf("%.1f", x))
+	}
+
+	curve := viz.Sample(1, 5.5, 400, func(x float64) float64 { return VoteFraction(trees, x) })
+	c.Path(curve, viz.Accent, 2.5)
+
+	// Each active tree's own split threshold, as a small tick below the axis.
+	for _, tr := range trees {
+		px, py := c.X(tr.Threshold), c.Y(-0.18)
+		c.Rect(px-2, py-5, 4, 10, viz.Warm, 0.8)
+	}
+
+	// The original 10 students, colored by true pass/fail, as a rug plot.
+	for i, h := range Hours {
+		color := viz.Bad
+		if Pass[i] == 1 {
+			color = viz.Good
+		}
+		px, py := c.X(h), c.Y(-0.08)
+		c.Rect(px-4, py-4, 8, 8, color, 0.85)
+	}
+
+	minT, maxT := trees[0].Threshold, trees[0].Threshold
+	for _, tr := range trees {
+		if tr.Threshold < minT {
+			minT = tr.Threshold
+		}
+		if tr.Threshold > maxT {
+			maxT = tr.Threshold
+		}
+	}
+
+	c.Text(20, 24, fmt.Sprintf("%d tree(s) active   individual thresholds range %.2f-%.2f hours", numTrees, minT, maxT), 13, viz.Ink, "start")
+	c.Text(20, 44, fmt.Sprintf("forest vote-fraction(pass) at hours=3.0: %.0f%%    at hours=3.5: %.0f%%",
+		VoteFraction(trees, 3.0)*100, VoteFraction(trees, 3.5)*100), 13, viz.Muted, "start")
+	c.Text(20, 64, "accent staircase = fraction of active trees voting pass   orange ticks = each tree's own split", 12, viz.Muted, "start")
+
+	return c.String()
 }
