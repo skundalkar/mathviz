@@ -6,6 +6,7 @@
 package crossentropyloss
 
 import (
+	"fmt"
 	"math"
 
 	"mathviz/internal/concept"
@@ -115,8 +116,9 @@ func init() {
 	})
 }
 
-// Emails is the small worked dataset used throughout this concept: 4 emails'
-// true spam labels (1=spam, 0=not spam) and a model's predicted P(spam).
+// Labels and Preds are the small worked dataset used throughout this
+// concept: 4 emails' true spam labels (1=spam, 0=not spam) and a model's
+// predicted P(spam), index-aligned.
 var (
 	Labels = []float64{1, 1, 0, 1}
 	Preds  = []float64{0.9, 0.55, 0.2, 0.1}
@@ -164,7 +166,74 @@ func AverageLoss(labels, preds []float64) float64 {
 	return sum / float64(len(labels))
 }
 
+// lossCap bounds how tall the loss curves can climb -- Loss shoots toward
+// infinity as a prediction confidently disagrees with the label, so capping
+// the curve keeps the picture readable instead of the y-axis needing to
+// stretch to infinity to fit it (same idea as kldivergence's klCap).
+const lossCap = 6.0
+
+func clampCap(v float64) float64 {
+	if v > lossCap {
+		return lossCap
+	}
+	return v
+}
+
 func render(p map[string]float64) string {
-	_ = p
-	return viz.New(680, 420, 0, 1, 0, 1).String()
+	y, phat := p["y"], p["phat"]
+	active := y >= 0.5
+
+	c := viz.New(680, 440, 0, 1, 0, lossCap)
+	c.PadT = 90
+	c.PadB = 90
+	c.Axes()
+	for x := 0.0; x <= 1.0; x += 0.25 {
+		c.Tick(x, fmt.Sprintf("%.2g", x))
+	}
+
+	y1Curve := viz.Sample(0.005, 0.995, 200, func(x float64) float64 { return clampCap(Loss(1, x)) })
+	y0Curve := viz.Sample(0.005, 0.995, 200, func(x float64) float64 { return clampCap(Loss(0, x)) })
+
+	// Draw the inactive curve first, muted, so the active one visibly sits on
+	// top of it in the accent color.
+	if active {
+		c.Path(y0Curve, viz.Muted, 1.5)
+		c.Path(y1Curve, viz.Accent, 2.5)
+	} else {
+		c.Path(y1Curve, viz.Muted, 1.5)
+		c.Path(y0Curve, viz.Accent, 2.5)
+	}
+
+	c.VLine(phat, viz.Warm, true)
+	loss := Loss(y, phat)
+	mx, my := c.X(phat), c.Y(clampCap(loss))
+	c.Rect(mx-4, my-4, 8, 8, viz.Warm, 0.9)
+
+	// The 4 worked-example emails, plotted on whichever curve their own
+	// label belongs to, so the picture ties directly back to the numbers in
+	// "How does it actually work?".
+	for i, lbl := range Labels {
+		ex, ey := Preds[i], clampCap(Loss(lbl, Preds[i]))
+		px, py := c.X(ex), c.Y(ey)
+		color := viz.Accent
+		if lbl < 0.5 {
+			color = viz.Good
+		}
+		c.Rect(px-3, py-3, 6, 6, color, 0.85)
+		c.Text(px+6, py-6, fmt.Sprintf("e%d", i+1), 11, viz.Muted, "start")
+	}
+
+	label := "y=0 (curve: -log2(1-p̂))"
+	if active {
+		label = "y=1 (curve: -log2(p̂))"
+	}
+	lossStr := fmt.Sprintf("%.3f", loss)
+	if math.IsInf(loss, 1) {
+		lossStr = "+Inf"
+	}
+	c.Text(20, 24, fmt.Sprintf("true label %s   p̂=%.2f   loss=%s bits", label, phat, lossStr), 14, viz.Ink, "start")
+	c.Text(20, 44, "accent curve = active label's loss; muted curve = the other label, for comparison", 12, viz.Muted, "start")
+	c.Text(20, 64, fmt.Sprintf("worked example (e1-e4): average loss over the 4 emails = %.3f bits", AverageLoss(Labels, Preds)), 12, viz.Muted, "start")
+
+	return c.String()
 }
