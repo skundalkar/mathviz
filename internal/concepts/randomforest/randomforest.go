@@ -8,6 +8,9 @@
 package randomforest
 
 import (
+	"math"
+	"sort"
+
 	"mathviz/internal/concept"
 	"mathviz/internal/viz"
 )
@@ -119,6 +122,174 @@ func init() {
 		},
 		Render: render,
 	})
+}
+
+// Hours and Pass are the same 10 students `decision-trees` used: hours
+// studied and whether each one passed (1) or failed (0). Kept as its own
+// copy here -- each concept package is self-contained (see BUILD_CYCLE.md).
+var (
+	Hours = []float64{1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5}
+	Pass  = []int{0, 0, 0, 0, 1, 0, 1, 1, 1, 1}
+)
+
+// treeSamples is 9 fixed, hand-picked bootstrap resamples of Hours/Pass --
+// each a list of 10 indices into Hours/Pass, drawn with replacement. Kept as
+// literals (like anova's baseOffsets) rather than generated with math/rand
+// at Render time, since Render must be pure: same input, same output, no
+// randomness. Sample 0 is the original, unresampled data -- exactly what
+// decision-trees fit its single split on -- so the forest's first tree
+// always matches decision-trees's own answer.
+var treeSamples = [][]int{
+	{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, // original data, unresampled
+	{0, 1, 2, 3, 4, 4, 4, 6, 7, 9}, // triples the 3h pass, drops the 3.5h fail
+	{0, 1, 2, 3, 5, 5, 5, 6, 7, 9}, // triples the 3.5h fail, drops the 3h pass
+	{0, 0, 1, 2, 3, 6, 7, 8, 9, 9},
+	{1, 2, 3, 4, 4, 5, 5, 6, 8, 9},
+	{0, 1, 3, 4, 6, 7, 7, 8, 9, 9},
+	{0, 2, 2, 4, 5, 6, 7, 8, 9, 9},
+	{0, 1, 2, 3, 4, 5, 6, 7, 7, 8},
+	{1, 1, 2, 3, 4, 5, 6, 8, 9, 9},
+}
+
+// Entropy is the binary entropy, in bits, of a class with fraction p
+// positive -- 0 when p is 0 or 1, peaking at 1 bit when p=0.5.
+func Entropy(p float64) float64 {
+	if p <= 0 || p >= 1 {
+		return 0
+	}
+	return -p*math.Log2(p) - (1-p)*math.Log2(1-p)
+}
+
+func classEntropy(labels []int) float64 {
+	if len(labels) == 0 {
+		return 0
+	}
+	pos := 0
+	for _, l := range labels {
+		pos += l
+	}
+	return Entropy(float64(pos) / float64(len(labels)))
+}
+
+// Split partitions labels by whether each example's feature value is at or
+// below threshold (left) or above it (right). hours and labels must be the
+// same length and index-aligned.
+func Split(hours []float64, labels []int, threshold float64) (left, right []int) {
+	for i, h := range hours {
+		if h <= threshold {
+			left = append(left, labels[i])
+		} else {
+			right = append(right, labels[i])
+		}
+	}
+	return
+}
+
+// InfoGain is the information gain of splitting labels into left and right:
+// the parent's entropy minus the size-weighted average of the two children's
+// entropies.
+func InfoGain(labels, left, right []int) float64 {
+	parent := classEntropy(labels)
+	n := float64(len(labels))
+	if n == 0 {
+		return 0
+	}
+	wLeft := float64(len(left)) / n
+	wRight := float64(len(right)) / n
+	return parent - (wLeft*classEntropy(left) + wRight*classEntropy(right))
+}
+
+// majority returns 1 if labels has at least as many 1s as 0s, else 0 --
+// what a leaf predicts for any example that lands in it.
+func majority(labels []int) int {
+	pos := 0
+	for _, l := range labels {
+		pos += l
+	}
+	if pos*2 >= len(labels) {
+		return 1
+	}
+	return 0
+}
+
+// Tree is one single-split ("stump") decision tree: a threshold on hours,
+// and the majority label each side predicts.
+type Tree struct {
+	Threshold             float64
+	LeftLabel, RightLabel int
+	Gain                  float64
+}
+
+// BuildTree fits a single-split tree on hours/labels by scanning every
+// midpoint between consecutive distinct hours values (as decision-trees
+// does) and keeping the threshold with the highest information gain.
+func BuildTree(hours []float64, labels []int) Tree {
+	uniq := append([]float64(nil), hours...)
+	sort.Float64s(uniq)
+	dedup := uniq[:0]
+	for i, h := range uniq {
+		if i == 0 || h != dedup[len(dedup)-1] {
+			dedup = append(dedup, h)
+		}
+	}
+
+	best := -1.0
+	bestT := 0.0
+	for i := 0; i < len(dedup)-1; i++ {
+		th := (dedup[i] + dedup[i+1]) / 2
+		left, right := Split(hours, labels, th)
+		g := InfoGain(labels, left, right)
+		if g > best {
+			best = g
+			bestT = th
+		}
+	}
+	left, right := Split(hours, labels, bestT)
+	return Tree{Threshold: bestT, LeftLabel: majority(left), RightLabel: majority(right), Gain: best}
+}
+
+// Predict returns the tree's predicted label for a given hours value.
+func Predict(t Tree, hours float64) int {
+	if hours <= t.Threshold {
+		return t.LeftLabel
+	}
+	return t.RightLabel
+}
+
+// Forest builds the first n trees (1..len(treeSamples)) from treeSamples,
+// each fit on its own bootstrap resample of Hours/Pass. n is clamped to
+// [1, len(treeSamples)].
+func Forest(n int) []Tree {
+	if n < 1 {
+		n = 1
+	}
+	if n > len(treeSamples) {
+		n = len(treeSamples)
+	}
+	trees := make([]Tree, n)
+	for i := 0; i < n; i++ {
+		idx := treeSamples[i]
+		hs := make([]float64, len(idx))
+		ls := make([]int, len(idx))
+		for j, ix := range idx {
+			hs[j] = Hours[ix]
+			ls[j] = Pass[ix]
+		}
+		trees[i] = BuildTree(hs, ls)
+	}
+	return trees
+}
+
+// VoteFraction is the fraction of trees predicting "pass" (1) at hours.
+func VoteFraction(trees []Tree, hours float64) float64 {
+	if len(trees) == 0 {
+		return 0
+	}
+	votes := 0
+	for _, t := range trees {
+		votes += Predict(t, hours)
+	}
+	return float64(votes) / float64(len(trees))
 }
 
 func render(p map[string]float64) string {
