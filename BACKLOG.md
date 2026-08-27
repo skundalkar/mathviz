@@ -79,9 +79,9 @@ Format: `- [ ] <id> — <one-line description of the concept to visualize>`
 - [x] random-forest — bagging many decision trees on bootstrap-resampled data and averaging their votes to cut variance without adding bias, built from decision-trees and bootstrap-resampling
 - [x] pagerank — ranking nodes in a graph by the steady-state of a random walk over links, built from markov-chains
 - [x] k-nearest-neighbors — classifying a new point by majority vote of its k closest neighbors, and how the choice of k trades bias for variance
+- [x] hypergeometric-distribution — the probability of k successes when sampling without replacement, and how it differs from binomial as the population shrinks
 
 ## Up next (statistics & ML intuition)
-- [ ] hypergeometric-distribution — the probability of k successes when sampling without replacement, and how it differs from binomial as the population shrinks
 
 ## Up next (math foundations)
 - [ ] gaussian-elimination — solving a linear system by row-reducing to echelon form, and reading a matrix's rank off the result
