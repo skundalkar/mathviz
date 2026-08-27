@@ -33,6 +33,7 @@ import (
 	_ "mathviz/internal/concepts/fibonacci"
 	_ "mathviz/internal/concepts/fourier"
 	_ "mathviz/internal/concepts/gradientdescent"
+	_ "mathviz/internal/concepts/hypergeometric"
 	_ "mathviz/internal/concepts/integral"
 	_ "mathviz/internal/concepts/kldivergence"
 	_ "mathviz/internal/concepts/kmeans"
