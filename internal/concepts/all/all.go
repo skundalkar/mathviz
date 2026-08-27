@@ -50,6 +50,7 @@ import (
 	_ "mathviz/internal/concepts/newton"
 	_ "mathviz/internal/concepts/normalskew"
 	_ "mathviz/internal/concepts/overfitting"
+	_ "mathviz/internal/concepts/pagerank"
 	_ "mathviz/internal/concepts/pascalstriangle"
 	_ "mathviz/internal/concepts/pca"
 	_ "mathviz/internal/concepts/permutationscombinations"
