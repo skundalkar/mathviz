@@ -79,10 +79,18 @@ Format: `- [ ] <id> — <one-line description of the concept to visualize>`
 - [x] random-forest — bagging many decision trees on bootstrap-resampled data and averaging their votes to cut variance without adding bias, built from decision-trees and bootstrap-resampling
 
 ## Up next (statistics & ML intuition)
+- [ ] pagerank — ranking nodes in a graph by the steady-state of a random walk over links, built from markov-chains
+- [ ] k-nearest-neighbors — classifying a new point by majority vote of its k closest neighbors, and how the choice of k trades bias for variance
+- [ ] hypergeometric-distribution — the probability of k successes when sampling without replacement, and how it differs from binomial as the population shrinks
 
 ## Up next (math foundations)
+- [ ] gaussian-elimination — solving a linear system by row-reducing to echelon form, and reading a matrix's rank off the result
+- [ ] lagrange-multipliers — finding a function's constrained max/min by matching gradients with the constraint's gradient, built from chain-rule
+- [ ] rsa-encryption — public-key encryption built from modular arithmetic and the euclidean algorithm
 
 ## Up next (statistics & ML intuition, batch 2)
+- [ ] support-vector-machine — finding the maximum-margin hyperplane that separates two classes
+- [ ] gradient-boosting — sequentially fitting trees to the residual errors of the ensemble so far, built from decision-trees
 
 ## How to add work
 Append an unchecked line under the right section by hand any time — the loop
