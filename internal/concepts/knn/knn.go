@@ -6,6 +6,9 @@
 package knn
 
 import (
+	"math"
+	"sort"
+
 	"mathviz/internal/concept"
 	"mathviz/internal/viz"
 )
@@ -118,6 +121,81 @@ func init() {
 		},
 		Render: render,
 	})
+}
+
+// Point is one labeled training example: two features (x, y) and a class
+// Label of 0 or 1.
+type Point struct {
+	X, Y  float64
+	Label int
+}
+
+// TrainingSet is the fixed 10-student example every Section walks through:
+// (hours studied, hours slept), labeled 0=fail or 1=pass. Each cluster has
+// one outlier that breaks the "just look at one feature" shortcut a
+// decision-trees-style single threshold would take.
+var TrainingSet = []Point{
+	{1, 2, 0}, {2, 1, 0}, {2, 4, 0}, {3, 2, 0}, {8, 2, 0}, // fail (8,2 is the outlier)
+	{7, 8, 1}, {9, 7, 1}, {8, 9, 1}, {9, 9, 1}, {2, 8, 1}, // pass (2,8 is the outlier)
+}
+
+// Distance returns the plain Euclidean distance between (ax,ay) and (bx,by).
+func Distance(ax, ay, bx, by float64) float64 {
+	dx, dy := ax-bx, ay-by
+	return math.Sqrt(dx*dx + dy*dy)
+}
+
+// Neighbor pairs a training point with its distance to some query point.
+type Neighbor struct {
+	Point    Point
+	Distance float64
+}
+
+// Nearest returns the k training points in pts closest to (qx,qy), sorted
+// nearest-first. Ties in distance are broken by original pts order — Go's
+// sort.SliceStable keeps equal-distance neighbors in the order they appear
+// in pts, so a query point exactly equidistant from two training points
+// always favors whichever one comes first in TrainingSet. k is clamped to
+// len(pts) if larger.
+func Nearest(qx, qy float64, k int, pts []Point) []Neighbor {
+	neighbors := make([]Neighbor, len(pts))
+	for i, p := range pts {
+		neighbors[i] = Neighbor{Point: p, Distance: Distance(qx, qy, p.X, p.Y)}
+	}
+	sort.SliceStable(neighbors, func(i, j int) bool {
+		return neighbors[i].Distance < neighbors[j].Distance
+	})
+	if k > len(neighbors) {
+		k = len(neighbors)
+	}
+	if k < 0 {
+		k = 0
+	}
+	return neighbors[:k]
+}
+
+// VoteCounts tallies how many of the given neighbors carry each label,
+// returning (count of label 0, count of label 1).
+func VoteCounts(neighbors []Neighbor) (label0, label1 int) {
+	for _, n := range neighbors {
+		if n.Point.Label == 1 {
+			label1++
+		} else {
+			label0++
+		}
+	}
+	return label0, label1
+}
+
+// Classify returns the majority label among the k nearest neighbors of
+// (qx,qy) in pts. Ties fall back to label 0; callers should pick an odd k
+// against a 2-class training set to avoid ever needing that fallback.
+func Classify(qx, qy float64, k int, pts []Point) int {
+	label0, label1 := VoteCounts(Nearest(qx, qy, k, pts))
+	if label1 > label0 {
+		return 1
+	}
+	return 0
 }
 
 func render(p map[string]float64) string {
