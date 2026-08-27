@@ -78,9 +78,9 @@ Format: `- [ ] <id> — <one-line description of the concept to visualize>`
 - [x] cross-entropy-loss — the loss function that scores a predicted probability against a true label, and why minimizing it is the same as minimizing KL-divergence to the true distribution, built from entropy and kl-divergence
 - [x] random-forest — bagging many decision trees on bootstrap-resampled data and averaging their votes to cut variance without adding bias, built from decision-trees and bootstrap-resampling
 - [x] pagerank — ranking nodes in a graph by the steady-state of a random walk over links, built from markov-chains
+- [x] k-nearest-neighbors — classifying a new point by majority vote of its k closest neighbors, and how the choice of k trades bias for variance
 
 ## Up next (statistics & ML intuition)
-- [ ] k-nearest-neighbors — classifying a new point by majority vote of its k closest neighbors, and how the choice of k trades bias for variance
 - [ ] hypergeometric-distribution — the probability of k successes when sampling without replacement, and how it differs from binomial as the population shrinks
 
 ## Up next (math foundations)
