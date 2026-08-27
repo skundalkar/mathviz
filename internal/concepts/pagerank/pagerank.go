@@ -9,6 +9,9 @@
 package pagerank
 
 import (
+	"fmt"
+	"math"
+
 	"mathviz/internal/concept"
 	"mathviz/internal/viz"
 )
@@ -185,6 +188,93 @@ func Converge(outlinks [][]int, d float64, t int) []float64 {
 	return ranks
 }
 
+// positions lays the 4-page example graph out on a unit square, in the same
+// index order as Outlinks and PageNames.
+var positions = [][2]float64{
+	{0.18, 0.82}, // A, top-left
+	{0.82, 0.82}, // B, top-right
+	{0.82, 0.18}, // C, bottom-right
+	{0.18, 0.18}, // D, bottom-left
+}
+
+// edges is Outlinks flattened into (src, dst) pairs, purely for drawing.
+var edges = [][2]int{
+	{0, 1}, // A -> B
+	{0, 2}, // A -> C
+	{1, 2}, // B -> C
+	{2, 0}, // C -> A
+	{3, 2}, // D -> C
+}
+
 func render(p map[string]float64) string {
-	return viz.New(680, 420, 0, 1, 0, 1).String()
+	d := p["d"]
+	t := int(p["t"] + 0.5)
+	if t < 0 {
+		t = 0
+	}
+
+	ranks := Converge(Outlinks, d, t)
+
+	// A 0..1 x 0..1 canvas we never call Axes()/Sample() on -- this is a
+	// node-and-edge diagram, not a function plot.
+	c := viz.New(680, 460, 0, 1, 0, 1)
+
+	for _, e := range edges {
+		drawEdge(c, positions[e[0]], positions[e[1]], e[0] > e[1])
+	}
+
+	for i, pos := range positions {
+		px, py := c.X(pos[0]), c.Y(pos[1])
+		// Box side scales with rank; clamped so even D's near-zero floor
+		// stays visible and A/C's largest ranks stay on the canvas.
+		side := 18 + ranks[i]*260
+		if side < 18 {
+			side = 18
+		}
+		if side > 170 {
+			side = 170
+		}
+		c.Rect(px-side/2, py-side/2, side, side, viz.Accent, 0.85)
+		c.Text(px, py+5, PageNames[i], 15, "white", "middle")
+		c.Text(px, py+side/2+18, fmt.Sprintf("%.4f", ranks[i]), 12, viz.Muted, "middle")
+	}
+
+	c.Text(16, 24, fmt.Sprintf("d = %.2f    t = %d iteration(s)", d, t), 14, viz.Ink, "start")
+	c.Text(16, 44, "box size = current PageRank; arrows are the fixed links A→B, A→C, B→C, C→A, D→C",
+		12, viz.Muted, "start")
+	c.Text(16, 440, fmt.Sprintf("D has no inbound links: its rank is always exactly (1-d)/4 = %.4f", (1-d)/4),
+		12, viz.Muted, "start")
+
+	return c.String()
+}
+
+// drawEdge draws a line from src to dst with a small arrowhead at the dst
+// end. Edges between the same pair of nodes running in opposite directions
+// (A->C and C->A here) are nudged to either side of the direct line, via
+// flip, so both stay visible instead of overlapping exactly.
+func drawEdge(c *viz.Canvas, src, dst [2]float64, flip bool) {
+	dx, dy := dst[0]-src[0], dst[1]-src[1]
+	length := math.Hypot(dx, dy)
+	if length == 0 {
+		return
+	}
+	ux, uy := dx/length, dy/length
+	perpX, perpY := -uy, ux
+	if flip {
+		perpX, perpY = -perpX, -perpY
+	}
+
+	// Nudge apart from the reverse-direction edge, and stop short of the
+	// node boxes at both ends so lines don't run under them.
+	const sideOffset, margin = 0.015, 0.075
+	ox, oy := perpX*sideOffset, perpY*sideOffset
+	sx, sy := src[0]+ux*margin+ox, src[1]+uy*margin+oy
+	ex, ey := dst[0]-ux*margin+ox, dst[1]-uy*margin+oy
+	c.Path([][2]float64{{sx, sy}, {ex, ey}}, viz.Muted, 1.5)
+
+	// Arrowhead: a small chevron pointing into the endpoint.
+	const wingLen, wingWidth = 0.045, 0.02
+	w1x, w1y := ex-ux*wingLen+perpX*wingWidth, ey-uy*wingLen+perpY*wingWidth
+	w2x, w2y := ex-ux*wingLen-perpX*wingWidth, ey-uy*wingLen-perpY*wingWidth
+	c.Path([][2]float64{{w1x, w1y}, {ex, ey}, {w2x, w2y}}, viz.Muted, 1.5)
 }
