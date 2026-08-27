@@ -9,6 +9,7 @@
 package hypergeometric
 
 import (
+	"fmt"
 	"math"
 
 	"mathviz/internal/concept"
@@ -198,6 +199,101 @@ func BinomialPMF(n int, p float64, k int) float64 {
 	return Choose(n, k) * math.Pow(p, float64(k)) * math.Pow(1-p, float64(n-k))
 }
 
-func render(p map[string]float64) string {
-	return viz.New(680, 420, 0, 1, 0, 1).String()
+func render(params map[string]float64) string {
+	N := int(params["N"] + 0.5)
+	if N < 1 {
+		N = 1
+	}
+	K := int(params["K"] + 0.5)
+	if K < 0 {
+		K = 0
+	}
+	if K > N {
+		K = N
+	}
+	n := int(params["n"] + 0.5)
+	if n < 0 {
+		n = 0
+	}
+	if n > N {
+		n = N
+	}
+	k := int(params["k"] + 0.5)
+	if k < 0 {
+		k = 0
+	}
+	if k > n {
+		k = n
+	}
+
+	pApprox := float64(K) / float64(N)
+
+	// PMF for every count 0..n, both the true hypergeometric and the naive
+	// binomial comparison, plus the tallest bar so the y-axis fits this
+	// particular N/K/n instead of always reserving room for the worst case.
+	hyperPMF := make([]float64, n+1)
+	binomPMF := make([]float64, n+1)
+	maxP := 0.0
+	for i := 0; i <= n; i++ {
+		hyperPMF[i] = PMF(N, K, n, i)
+		binomPMF[i] = BinomialPMF(n, pApprox, i)
+		if hyperPMF[i] > maxP {
+			maxP = hyperPMF[i]
+		}
+		if binomPMF[i] > maxP {
+			maxP = binomPMF[i]
+		}
+	}
+	yMax := maxP * 1.2
+	if yMax <= 0 {
+		yMax = 1
+	}
+
+	c := viz.New(680, 420, -0.5, float64(n)+0.5, 0, yMax)
+	c.Axes()
+	tickStep := 1.0
+	if n > 12 {
+		tickStep = math.Ceil(float64(n) / 10)
+	}
+	for x := 0.0; x <= float64(n); x += tickStep {
+		c.Tick(x, fmt.Sprintf("%.0f", x))
+	}
+
+	barHalfW := 0.42
+	for i := 0; i <= n; i++ {
+		color := viz.Accent
+		if i == k {
+			color = viz.Warm
+		}
+		x0, x1 := c.X(float64(i)-barHalfW), c.X(float64(i)+barHalfW)
+		y0, y1 := c.Y(0), c.Y(hyperPMF[i])
+		c.Rect(x0, y1, x1-x0, y0-y1, color, 0.8)
+	}
+
+	// The naive with-replacement (binomial) comparison, as a line over the
+	// same counts, so the gap from the true hypergeometric bars is visible
+	// directly rather than needing a second set of bars.
+	binomLine := make([][2]float64, n+1)
+	for i := 0; i <= n; i++ {
+		binomLine[i] = [2]float64{float64(i), binomPMF[i]}
+	}
+	c.Path(binomLine, viz.Warm, 2)
+
+	mean := Mean(N, K, n)
+	variance := Variance(N, K, n)
+	binomVar := float64(n) * pApprox * (1 - pApprox)
+	fpc := 0.0
+	if N > 1 {
+		fpc = float64(N-n) / float64(N-1)
+	}
+
+	c.Text(16, 24, fmt.Sprintf("N=%d    K=%d    n=%d    p=K/N=%.2f", N, K, n, pApprox), 14, viz.Ink, "start")
+	c.Text(16, 44, fmt.Sprintf("P(X=%d) = %.4f    P(X<=%d) = %.4f", k, PMF(N, K, n, k), k, CDF(N, K, n, k)),
+		15, viz.Warm, "start")
+	c.Text(16, 64, fmt.Sprintf("mean = n*K/N = %.2f (same for both)    variance: hypergeometric = %.4f, binomial = %.4f (x%.4f correction)",
+		mean, variance, binomVar, fpc), 12, viz.Muted, "start")
+	c.Text(16, 400, "solid bars = true hypergeometric PMF    orange line = naive binomial(n, p=K/N) comparison",
+		12, viz.Muted, "start")
+
+	return c.String()
 }
