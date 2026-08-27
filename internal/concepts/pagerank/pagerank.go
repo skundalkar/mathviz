@@ -130,6 +130,61 @@ func init() {
 	})
 }
 
+// PageNames labels the fixed 4-page example graph every Section walks
+// through, in the same index order as Outlinks.
+var PageNames = []string{"A", "B", "C", "D"}
+
+// Outlinks is that fixed example graph: Outlinks[q] lists the indices of
+// every page q links to. A links to B and C; B links to C; C links to A;
+// D links to C. Every page has at least one outbound link, so no page is a
+// "dangling" dead end that would need special-casing just to send its rank
+// somewhere.
+var Outlinks = [][]int{
+	{1, 2}, // A -> B, C
+	{2},    // B -> C
+	{0},    // C -> A
+	{2},    // D -> C
+}
+
+// Iterate applies one step of the PageRank power-iteration update: each
+// page's next rank is (1-d)/n — the floor every page gets from a random
+// surfer occasionally teleporting to a uniformly random page instead of
+// clicking a link — plus d times the sum, over every page q that links to
+// it, of q's current rank split evenly across q's own outbound links.
+func Iterate(ranks []float64, outlinks [][]int, d float64) []float64 {
+	n := len(ranks)
+	next := make([]float64, n)
+	base := (1 - d) / float64(n)
+	for q, dests := range outlinks {
+		if len(dests) == 0 {
+			continue
+		}
+		share := ranks[q] / float64(len(dests))
+		for _, p := range dests {
+			next[p] += share
+		}
+	}
+	for p := range next {
+		next[p] = base + d*next[p]
+	}
+	return next
+}
+
+// Converge starts every page at a uniform rank of 1/n and applies Iterate
+// t times, returning the resulting rank vector. t<=0 returns the uniform
+// starting point unchanged.
+func Converge(outlinks [][]int, d float64, t int) []float64 {
+	n := len(outlinks)
+	ranks := make([]float64, n)
+	for i := range ranks {
+		ranks[i] = 1 / float64(n)
+	}
+	for i := 0; i < t; i++ {
+		ranks = Iterate(ranks, outlinks, d)
+	}
+	return ranks
+}
+
 func render(p map[string]float64) string {
 	return viz.New(680, 420, 0, 1, 0, 1).String()
 }
