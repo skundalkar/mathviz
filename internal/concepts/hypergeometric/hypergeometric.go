@@ -9,6 +9,8 @@
 package hypergeometric
 
 import (
+	"math"
+
 	"mathviz/internal/concept"
 	"mathviz/internal/viz"
 )
@@ -121,6 +123,79 @@ func init() {
 		},
 		Render: render,
 	})
+}
+
+// Choose returns n-choose-k, the number of ways to pick an unordered
+// k-element subset out of n items. Computed multiplicatively (rather than
+// via factorials, which overflow fast) and returns 0 for out-of-range k.
+// Duplicated from binomial-distribution's own Choose rather than imported,
+// matching this gallery's convention of keeping each concept self-contained.
+func Choose(n, k int) float64 {
+	if k < 0 || k > n {
+		return 0
+	}
+	if k > n-k {
+		k = n - k // C(n,k) == C(n,n-k); fewer multiplications either way
+	}
+	result := 1.0
+	for i := 0; i < k; i++ {
+		result *= float64(n-i) / float64(i+1)
+	}
+	return result
+}
+
+// PMF returns the hypergeometric probability of drawing exactly k successes
+// when drawing n items without replacement from a population of N items
+// that contains K successes: the number of ways to pick k of the K
+// successes and the rest from the N-K non-successes, divided by the total
+// number of ways to draw any n of the N items.
+func PMF(N, K, n, k int) float64 {
+	if k < 0 || k > n || k > K || n-k > N-K {
+		return 0
+	}
+	return Choose(K, k) * Choose(N-K, n-k) / Choose(N, n)
+}
+
+// CDF returns P(X<=k), the probability of k or fewer successes, by summing
+// PMF over every count from 0 to k.
+func CDF(N, K, n, k int) float64 {
+	if k < 0 {
+		return 0
+	}
+	sum := 0.0
+	for i := 0; i <= k; i++ {
+		sum += PMF(N, K, n, i)
+	}
+	return sum
+}
+
+// Mean returns the expected number of successes, n*K/N -- the same mean a
+// binomial(n, p=K/N) distribution has.
+func Mean(N, K, n int) float64 {
+	return float64(n) * float64(K) / float64(N)
+}
+
+// Variance returns the hypergeometric variance: binomial's n*p*(1-p),
+// scaled down by the finite population correction (N-n)/(N-1), which
+// accounts for successes being removed from the pool as they're drawn.
+// N<=1 has no well-defined correction and returns 0.
+func Variance(N, K, n int) float64 {
+	if N <= 1 {
+		return 0
+	}
+	p := float64(K) / float64(N)
+	fpc := float64(N-n) / float64(N-1)
+	return float64(n) * p * (1 - p) * fpc
+}
+
+// BinomialPMF is the naive with-replacement approximation -- p held fixed
+// at every one of the n draws -- kept here only for comparison against the
+// true hypergeometric PMF above.
+func BinomialPMF(n int, p float64, k int) float64 {
+	if k < 0 || k > n {
+		return 0
+	}
+	return Choose(n, k) * math.Pow(p, float64(k)) * math.Pow(1-p, float64(n-k))
 }
 
 func render(p map[string]float64) string {
