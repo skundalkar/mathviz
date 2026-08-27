@@ -6,6 +6,7 @@
 package knn
 
 import (
+	"fmt"
 	"math"
 	"sort"
 
@@ -199,5 +200,58 @@ func Classify(qx, qy float64, k int, pts []Point) int {
 }
 
 func render(p map[string]float64) string {
-	return viz.New(680, 460, 0, 10, 0, 10).String()
+	qx, qy := p["qx"], p["qy"]
+	k := int(p["k"] + 0.5)
+	if k < 1 {
+		k = 1
+	}
+
+	neighbors := Nearest(qx, qy, k, TrainingSet)
+	selected := make(map[Point]bool, k)
+	for _, n := range neighbors {
+		selected[n.Point] = true
+	}
+	label0, label1 := VoteCounts(neighbors)
+
+	c := viz.New(680, 460, -1, 11, -1, 11)
+	c.Axes()
+	for x := 0.0; x <= 10; x += 2 {
+		c.Tick(x, fmt.Sprintf("%g", x))
+	}
+
+	// A thin line from the query to each of its current k nearest
+	// neighbors, so changing k visibly rewires which lines are drawn.
+	for _, n := range neighbors {
+		c.Path([][2]float64{{qx, qy}, {n.Point.X, n.Point.Y}}, viz.Muted, 1)
+	}
+
+	for _, pt := range TrainingSet {
+		px, py := c.X(pt.X), c.Y(pt.Y)
+		color := viz.Bad
+		if pt.Label == 1 {
+			color = viz.Good
+		}
+		size := 8.0
+		if selected[pt] {
+			size = 12 // one of the current k nearest neighbors -- drawn larger
+		}
+		c.Rect(px-size/2, py-size/2, size, size, color, 0.9)
+	}
+
+	qpx, qpy := c.X(qx), c.Y(qy)
+	c.Rect(qpx-6, qpy-6, 12, 12, viz.Warm, 1)
+
+	verdict, vColor := "FAIL", viz.Bad
+	if label1 > label0 {
+		verdict, vColor = "PASS", viz.Good
+	}
+
+	c.Text(16, 24, fmt.Sprintf("query = (%.1f, %.1f) hours studied/slept    k = %d", qx, qy, k), 14, viz.Ink, "start")
+	c.Text(16, 44, fmt.Sprintf("votes among the %d nearest neighbors: %d fail, %d pass", k, label0, label1), 13, viz.Muted, "start")
+	c.Text(16, 66, fmt.Sprintf("verdict: %s", verdict), 16, vColor, "start")
+	c.Text(16, 442,
+		"red = past fail, green = past pass, orange = query; larger squares + connecting lines are the current k nearest neighbors",
+		11, viz.Muted, "start")
+
+	return c.String()
 }
