@@ -80,11 +80,11 @@ Format: `- [ ] <id> — <one-line description of the concept to visualize>`
 - [x] pagerank — ranking nodes in a graph by the steady-state of a random walk over links, built from markov-chains
 - [x] k-nearest-neighbors — classifying a new point by majority vote of its k closest neighbors, and how the choice of k trades bias for variance
 - [x] hypergeometric-distribution — the probability of k successes when sampling without replacement, and how it differs from binomial as the population shrinks
+- [x] gaussian-elimination — solving a linear system by row-reducing to echelon form, and reading a matrix's rank off the result
 
 ## Up next (statistics & ML intuition)
 
 ## Up next (math foundations)
-- [ ] gaussian-elimination — solving a linear system by row-reducing to echelon form, and reading a matrix's rank off the result
 - [ ] lagrange-multipliers — finding a function's constrained max/min by matching gradients with the constraint's gradient, built from chain-rule
 - [ ] rsa-encryption — public-key encryption built from modular arithmetic and the euclidean algorithm
 
