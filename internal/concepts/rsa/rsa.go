@@ -11,6 +11,90 @@ import (
 	"mathviz/internal/viz"
 )
 
+// The worked example's key pair, small enough to check by hand. p and q are
+// the two primes; N is their product (the public modulus); Phi is Euler's
+// totient of N; E is the public exponent. D is derived from E and Phi below
+// via the extended Euclidean algorithm, the same way real RSA key
+// generation computes it.
+const (
+	p, q = 61, 53
+	N    = p * q             // 3233
+	Phi  = (p - 1) * (q - 1) // 3120
+	E    = 17
+)
+
+// D is the private exponent: E's modular inverse mod Phi. Computed once at
+// package init so every render call reuses the same value instead of
+// re-running the extended Euclidean algorithm each time.
+var D = privateExponent()
+
+func privateExponent() int {
+	d, ok := ModInverse(E, Phi)
+	if !ok {
+		panic("rsa: E and Phi are not coprime -- the worked example's constants are wrong")
+	}
+	return d
+}
+
+// ModPow computes base^exp mod m using square-and-multiply, so it stays
+// fast (and stays within normal integer range) even for exponents in the
+// thousands -- the naive "multiply base by itself exp times" approach would
+// overflow long before reaching a real RSA exponent.
+func ModPow(base, exp, m int) int {
+	if m == 1 {
+		return 0
+	}
+	base = base % m
+	if base < 0 {
+		base += m
+	}
+	result := 1
+	for exp > 0 {
+		if exp&1 == 1 {
+			result = (result * base) % m
+		}
+		exp >>= 1
+		base = (base * base) % m
+	}
+	return result
+}
+
+// ExtendedGCD returns g=gcd(a,b) along with Bézout coefficients x,y such
+// that a*x + b*y = g -- the extended form of `euclidean-algorithm`'s plain
+// GCD, which only returns g. RSA key generation needs the coefficients, not
+// just the GCD itself: x is exactly a's modular inverse mod b when g=1.
+func ExtendedGCD(a, b int) (g, x, y int) {
+	if b == 0 {
+		return a, 1, 0
+	}
+	g, x1, y1 := ExtendedGCD(b, a%b)
+	return g, y1, x1 - (a/b)*y1
+}
+
+// ModInverse returns d such that e*d ≡ 1 (mod n), and whether one exists
+// (it does exactly when gcd(e,n)=1). This is the extended Euclidean
+// algorithm's payoff: RSA's private exponent is nothing more than e's
+// modular inverse mod φ(n).
+func ModInverse(e, n int) (int, bool) {
+	g, x, _ := ExtendedGCD(e, n)
+	if g != 1 {
+		return 0, false
+	}
+	d := x % n
+	if d < 0 {
+		d += n
+	}
+	return d, true
+}
+
+// Encrypt applies the public key (n,e) to message m: c = m^e mod n.
+func Encrypt(m, e, n int) int { return ModPow(m, e, n) }
+
+// Decrypt applies a decryption exponent d to ciphertext c: m = c^d mod n.
+// Passing the true private exponent recovers the original message;
+// anything else recovers an unrelated number.
+func Decrypt(c, d, n int) int { return ModPow(c, d, n) }
+
 func init() {
 	concept.Register(concept.Concept{
 		ID:    "rsa-encryption",
