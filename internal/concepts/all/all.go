@@ -68,6 +68,7 @@ import (
 	_ "mathviz/internal/concepts/randomwalk"
 	_ "mathviz/internal/concepts/regularization"
 	_ "mathviz/internal/concepts/rocauc"
+	_ "mathviz/internal/concepts/rsa"
 	_ "mathviz/internal/concepts/sigmoidsoftmax"
 	_ "mathviz/internal/concepts/simpsonsparadox"
 	_ "mathviz/internal/concepts/sinecosine"
