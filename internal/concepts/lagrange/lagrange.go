@@ -7,6 +7,7 @@
 package lagrange
 
 import (
+	"fmt"
 	"math"
 
 	"mathviz/internal/concept"
@@ -190,7 +191,89 @@ func ContourPoints(k, xlo, xhi float64, n int) [][2]float64 {
 	return pts
 }
 
+// alignTol is the cross-product magnitude below which a point is
+// considered visually "aligned" -- close enough to a Lagrange candidate to
+// call out in the readout.
+const alignTol = 0.05
+
+// contourLevels are the f=xy values whose hyperbola is faintly drawn for
+// scale, chosen to stay visible across the canvas's -3.2..3.2 view.
+var contourLevels = []float64{-4, -2, -1, 1, 2, 4}
+
 func render(p map[string]float64) string {
-	_ = p
-	return viz.New(560, 560, -3, 3, -3, 3).String()
+	r, theta := p["r"], p["theta"]
+	x, y := PointOnCircle(r, theta)
+	fx, fy := GradF(x, y)
+	gx, gy := GradG(x, y)
+	cross := Cross(x, y)
+	lambda := Lambda(x, y)
+
+	c := viz.New(560, 560, -3.2, 3.2, -3.2, 3.2)
+	c.Path([][2]float64{{c.XMin, 0}, {c.XMax, 0}}, viz.Muted, 1)
+	c.Path([][2]float64{{0, c.YMin}, {0, c.YMax}}, viz.Muted, 1)
+
+	for _, k := range contourLevels {
+		c.Path(ContourPoints(k, -3.2, -0.05, 40), viz.Muted, 1)
+		c.Path(ContourPoints(k, 0.05, 3.2, 40), viz.Muted, 1)
+	}
+
+	circlePts := make([][2]float64, 0, 73)
+	for i := 0; i <= 72; i++ {
+		cx, cy := PointOnCircle(r, float64(i)*5)
+		circlePts = append(circlePts, [2]float64{cx, cy})
+	}
+	c.Path(circlePts, viz.Good, 2)
+
+	// The current point, and the gradient arrows from it -- normalized to
+	// a fixed visual length so their *directions* are what's comparable,
+	// not their raw (very different) magnitudes.
+	px, py := c.X(x), c.Y(y)
+	c.Rect(px-3, py-3, 6, 6, viz.Ink, 1)
+
+	const armLen = 1.0
+	if fmag := math.Hypot(fx, fy); fmag > 1e-9 {
+		arrow(c, x, y, x+fx/fmag*armLen, y+fy/fmag*armLen, viz.Accent, 2.5)
+	}
+	if gmag := math.Hypot(gx, gy); gmag > 1e-9 {
+		arrow(c, x, y, x+gx/gmag*armLen, y+gy/gmag*armLen, viz.Warm, 2.5)
+	}
+
+	c.Text(16, 24, fmt.Sprintf("point = (%.2f, %.2f)    f(x,y) = xy = %.2f", x, y, F(x, y)), 14, viz.Ink, "start")
+	c.Text(16, 44, fmt.Sprintf("grad f = (%.2f, %.2f) [blue]    grad g = (%.2f, %.2f) [orange]", fx, fy, gx, gy),
+		13, viz.Muted, "start")
+	align := "not aligned"
+	if math.Abs(cross) < alignTol {
+		align = "ALIGNED -- a candidate max/min"
+	}
+	c.Text(16, 64, fmt.Sprintf("cross(grad f, grad g) = %.3f    lambda ~ %.3f    %s", cross, lambda, align),
+		13, viz.Ink, "start")
+	c.Text(16, 536, "green = constraint circle x^2+y^2=r^2    faint = contour lines of f=xy",
+		12, viz.Muted, "start")
+
+	return c.String()
+}
+
+// arrow draws a straight line from (x0,y0) to (x1,y1) in data space, with a
+// small V-shaped arrowhead at the end.
+func arrow(c *viz.Canvas, x0, y0, x1, y1 float64, color string, width float64) {
+	c.Path([][2]float64{{x0, y0}, {x1, y1}}, color, width)
+
+	dx, dy := x1-x0, y1-y0
+	length := math.Hypot(dx, dy)
+	if length < 1e-9 {
+		return
+	}
+	ux, uy := dx/length, dy/length
+	const headLen = 0.15
+	const headAngle = 0.5 // radians, ~29 degrees off the shaft on each side
+
+	barb := func(t float64) (float64, float64) {
+		cos, sin := math.Cos(t), math.Sin(t)
+		bx, by := -ux, -uy
+		return bx*cos - by*sin, bx*sin + by*cos
+	}
+	b1x, b1y := barb(headAngle)
+	b2x, b2y := barb(-headAngle)
+	c.Path([][2]float64{{x1, y1}, {x1 + headLen*b1x, y1 + headLen*b1y}}, color, width)
+	c.Path([][2]float64{{x1, y1}, {x1 + headLen*b2x, y1 + headLen*b2y}}, color, width)
 }
