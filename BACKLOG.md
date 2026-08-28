@@ -81,11 +81,11 @@ Format: `- [ ] <id> — <one-line description of the concept to visualize>`
 - [x] k-nearest-neighbors — classifying a new point by majority vote of its k closest neighbors, and how the choice of k trades bias for variance
 - [x] hypergeometric-distribution — the probability of k successes when sampling without replacement, and how it differs from binomial as the population shrinks
 - [x] gaussian-elimination — solving a linear system by row-reducing to echelon form, and reading a matrix's rank off the result
+- [x] lagrange-multipliers — finding a function's constrained max/min by matching gradients with the constraint's gradient, built from chain-rule
 
 ## Up next (statistics & ML intuition)
 
 ## Up next (math foundations)
-- [ ] lagrange-multipliers — finding a function's constrained max/min by matching gradients with the constraint's gradient, built from chain-rule
 - [ ] rsa-encryption — public-key encryption built from modular arithmetic and the euclidean algorithm
 
 ## Up next (statistics & ML intuition, batch 2)
