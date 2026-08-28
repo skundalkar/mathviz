@@ -39,6 +39,7 @@ import (
 	_ "mathviz/internal/concepts/kldivergence"
 	_ "mathviz/internal/concepts/kmeans"
 	_ "mathviz/internal/concepts/knn"
+	_ "mathviz/internal/concepts/lagrange"
 	_ "mathviz/internal/concepts/linreg"
 	_ "mathviz/internal/concepts/lln"
 	_ "mathviz/internal/concepts/logreg"
