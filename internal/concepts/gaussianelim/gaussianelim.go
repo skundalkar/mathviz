@@ -279,7 +279,108 @@ func system(e float64) Matrix {
 	}
 }
 
+// Layout constants for the matrix-grid diagram, in pixels.
+const (
+	gridX, gridY   = 40.0, 100.0
+	cellW, cellH   = 90.0, 56.0
+	rhsGap         = 16.0 // extra horizontal gap before the right-hand-side column
+	stepListX      = 460.0
+	stepListY      = 100.0
+	stepLineHeight = 22.0
+)
+
 func render(p map[string]float64) string {
-	_ = p
-	return viz.New(680, 420, 0, 1, 0, 1).String()
+	e := p["e"]
+	step := int(p["step"])
+
+	steps := Eliminate(system(e))
+	if step < 0 {
+		step = 0
+	}
+	if step > len(steps)-1 {
+		step = len(steps) - 1
+	}
+	cur := steps[step]
+
+	// A canvas we never call Axes()/Sample() on -- every draw call below is
+	// in raw pixel space, since the diagram is a table, not a function plot.
+	c := viz.New(760, 420, 0, 1, 0, 1)
+
+	c.Text(20, 28, "2x + y - z = 8    -3x - y + 2z = -11    -2x + y + e*z = -3", 14, viz.Ink, "start")
+	c.Text(20, 48, fmt.Sprintf("e = %.1f", e), 13, viz.Muted, "start")
+	c.Text(20, 74, fmt.Sprintf("Step %d/%d: %s", step, len(steps)-1, cur.Description), 13, viz.Accent, "start")
+
+	cols := len(cur.Matrix[0])
+	for r, row := range cur.Matrix {
+		rowIsPivot := r == cur.PivotRow
+		for col, v := range row {
+			x := gridX + float64(col)*cellW
+			if col == cols-1 {
+				x += rhsGap // visually separate the augmented (RHS) column
+			}
+			y := gridY + float64(r)*cellH
+
+			fill := viz.Faint
+			if rowIsPivot {
+				fill = viz.Accent
+			}
+			opacity := 0.35
+			if rowIsPivot && col == cur.PivotCol {
+				opacity = 0.7
+			}
+			c.Rect(x, y, cellW-4, cellH-4, fill, opacity)
+
+			textColor := viz.Ink
+			if rowIsPivot && col == cur.PivotCol {
+				textColor = viz.Warm
+			}
+			c.Text(x+(cellW-4)/2, y+(cellH-4)/2+5, fmt.Sprintf("%.2f", v), 14, textColor, "middle")
+		}
+		// A "|" separating coefficients from the right-hand side.
+		sepX := gridX + float64(cols-1)*cellW + rhsGap/2
+		c.Text(sepX, gridY+float64(r)*cellH+(cellH-4)/2+5, "|", 16, viz.Muted, "middle")
+	}
+
+	shown := steps
+	truncated := false
+	const maxStepLines = 8
+	if len(shown) > maxStepLines {
+		shown = shown[:maxStepLines]
+		truncated = true
+	}
+	for i, st := range shown {
+		y := stepListY + float64(i)*stepLineHeight
+		color := viz.Muted
+		if i == step {
+			color = viz.Accent
+		}
+		c.Text(stepListX, y, fmt.Sprintf("%d: %s", i, st.Description), 12, color, "start")
+	}
+	if truncated {
+		c.Text(stepListX, stepListY+float64(len(shown))*stepLineHeight, "...", 12, viz.Muted, "start")
+	}
+
+	final := steps[len(steps)-1].Matrix
+	rankA := Rank(final, 3)
+	rankAug := Rank(final, 4)
+	readoutY := gridY + float64(len(cur.Matrix))*cellH + 30
+
+	var verdict string
+	switch {
+	case rankA == 3 && rankAug == 3:
+		sol, ok := BackSubstitute(final)
+		if ok {
+			verdict = fmt.Sprintf("rank(A)=%d = rank([A|b])=%d = 3 vars -> one solution: x=%.2f, y=%.2f, z=%.2f",
+				rankA, rankAug, sol[0], sol[1], sol[2])
+		} else {
+			verdict = fmt.Sprintf("rank(A)=%d = rank([A|b])=%d = 3 vars, but back-substitution failed", rankA, rankAug)
+		}
+	case rankA == rankAug:
+		verdict = fmt.Sprintf("rank(A)=%d = rank([A|b])=%d < 3 vars -> infinitely many solutions", rankA, rankAug)
+	default:
+		verdict = fmt.Sprintf("rank(A)=%d < rank([A|b])=%d -> no solution (contradiction)", rankA, rankAug)
+	}
+	c.Text(20, readoutY, verdict, 13, viz.Ink, "start")
+
+	return c.String()
 }
