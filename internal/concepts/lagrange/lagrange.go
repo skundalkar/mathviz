@@ -7,6 +7,8 @@
 package lagrange
 
 import (
+	"math"
+
 	"mathviz/internal/concept"
 	"mathviz/internal/viz"
 )
@@ -122,6 +124,70 @@ func init() {
 		},
 		Render: render,
 	})
+}
+
+// F is the objective being optimized, f(x,y) = xy.
+func F(x, y float64) float64 { return x * y }
+
+// GradF returns the objective's gradient (∂f/∂x, ∂f/∂y) = (y, x).
+func GradF(x, y float64) (float64, float64) { return y, x }
+
+// GradG returns the gradient of the constraint g(x,y) = x²+y²-r², which is
+// (2x, 2y) regardless of r (r only shifts g's level, not its shape).
+func GradG(x, y float64) (float64, float64) { return 2 * x, 2 * y }
+
+// PointOnCircle returns the point at angle thetaDeg (measured counter-
+// clockwise from the positive x-axis) on the circle of radius r centered
+// at the origin -- the constraint curve x²+y²=r².
+func PointOnCircle(r, thetaDeg float64) (float64, float64) {
+	rad := thetaDeg * math.Pi / 180
+	return r * math.Cos(rad), r * math.Sin(rad)
+}
+
+// Cross returns the 2-D cross product of ∇f and ∇g at (x,y):
+// fx*gy - fy*gx. It is exactly zero when the two gradients are parallel
+// (pointing the same way or directly opposite) -- the Lagrange condition
+// ∇f=λ∇g -- and its magnitude otherwise measures how far the point is from
+// satisfying it.
+func Cross(x, y float64) float64 {
+	fx, fy := GradF(x, y)
+	gx, gy := GradG(x, y)
+	return fx*gy - fy*gx
+}
+
+// Lambda estimates the Lagrange multiplier λ at (x,y) as the least-squares
+// projection of ∇f onto ∇g: λ = (∇f·∇g)/(∇g·∇g). This equals the exact λ
+// from ∇f=λ∇g whenever the gradients are actually parallel there, and is
+// otherwise the closest scalar multiple of ∇g to ∇f -- useful for showing
+// a continuously-varying readout as theta sweeps past the exact solutions.
+func Lambda(x, y float64) float64 {
+	fx, fy := GradF(x, y)
+	gx, gy := GradG(x, y)
+	denom := gx*gx + gy*gy
+	if denom == 0 {
+		return 0
+	}
+	return (fx*gx + fy*gy) / denom
+}
+
+// ContourPoints samples the curve x*y=k (one branch of a hyperbola) at n+1
+// evenly spaced x values across [xlo, xhi], skipping x values too close to
+// 0 (where y=k/x blows up). Mirrors viz.Sample's signature and skip-bad-
+// values behavior, but for an implicit curve instead of a plain function.
+func ContourPoints(k, xlo, xhi float64, n int) [][2]float64 {
+	if n < 1 {
+		n = 1
+	}
+	const epsX = 0.05
+	pts := make([][2]float64, 0, n+1)
+	for i := 0; i <= n; i++ {
+		x := xlo + (xhi-xlo)*float64(i)/float64(n)
+		if math.Abs(x) < epsX {
+			continue
+		}
+		pts = append(pts, [2]float64{x, k / x})
+	}
+	return pts
 }
 
 func render(p map[string]float64) string {
