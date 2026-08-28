@@ -7,6 +7,8 @@
 package rsa
 
 import (
+	"fmt"
+
 	"mathviz/internal/concept"
 	"mathviz/internal/viz"
 )
@@ -203,7 +205,84 @@ func init() {
 	})
 }
 
+// Layout constants for the encrypt/decrypt pipeline diagram, in pixels.
+const (
+	boxY, boxH   = 170.0, 90.0
+	boxW         = 150.0
+	mBoxX, cBoxX = 20.0, 285.0
+	outBoxX      = 550.0
+	outBoxW      = boxW + 20
+)
+
 func render(p map[string]float64) string {
-	_ = p
-	return viz.New(720, 400, 0, 1, 0, 1).String()
+	m := int(p["m"])
+	dOffset := int(p["dOffset"])
+	if m < 0 {
+		m = 0
+	}
+	if m > N-1 {
+		m = N - 1
+	}
+
+	cipher := Encrypt(m, E, N)
+	dUsed := D + dOffset
+	recovered := Decrypt(cipher, dUsed, N)
+	correct := recovered == m
+
+	// A canvas whose Path/Axes/Sample side is never used -- every draw call
+	// below is Rect/Text, both raw-pixel-space regardless of the canvas's
+	// data range, since the diagram is a labeled pipeline, not a plot.
+	c := viz.New(720, 400, 0, 1, 0, 1)
+	midY := boxY + boxH/2
+
+	c.Text(20, 24, fmt.Sprintf("Public key: (n=%d, e=%d)    Private key: (n=%d, d=%d)   [phi(n)=%d]",
+		N, E, N, D, Phi), 14, viz.Ink, "start")
+	if dOffset != 0 {
+		c.Text(20, 44, fmt.Sprintf("Decrypting with d+dOffset = %d+%d = %d instead of the true d", D, dOffset, dUsed),
+			13, viz.Warm, "start")
+	} else {
+		c.Text(20, 44, "Decrypting with the true private exponent d", 13, viz.Muted, "start")
+	}
+
+	// Box 1: the plaintext message.
+	c.Rect(mBoxX, boxY, boxW, boxH, viz.Faint, 1)
+	c.Text(mBoxX+boxW/2, boxY+30, "message m", 13, viz.Muted, "middle")
+	c.Text(mBoxX+boxW/2, boxY+58, fmt.Sprintf("%d", m), 20, viz.Ink, "middle")
+
+	// Arrow + label: encrypt.
+	arrow(c, mBoxX+boxW+6, midY, cBoxX-6, viz.Accent)
+	c.Text((mBoxX+boxW+cBoxX)/2, boxY-14, "encrypt: c = m^e mod n", 12, viz.Accent, "middle")
+
+	// Box 2: the ciphertext.
+	c.Rect(cBoxX, boxY, boxW, boxH, viz.Faint, 1)
+	c.Text(cBoxX+boxW/2, boxY+30, "cipher c", 13, viz.Muted, "middle")
+	c.Text(cBoxX+boxW/2, boxY+58, fmt.Sprintf("%d", cipher), 20, viz.Ink, "middle")
+
+	// Arrow + label: decrypt.
+	arrow(c, cBoxX+boxW+6, midY, outBoxX-6, viz.Warm)
+	c.Text((cBoxX+boxW+outBoxX)/2, boxY-14, fmt.Sprintf("decrypt: m' = c^%d mod n", dUsed), 12, viz.Warm, "middle")
+
+	// Box 3: the recovered value, green if it matches m, red if not.
+	outColor := viz.Good
+	verdict := "matches m -- correct key"
+	if !correct {
+		outColor = viz.Bad
+		verdict = "!= m -- wrong key"
+	}
+	c.Rect(outBoxX, boxY, outBoxW, boxH, outColor, 0.18)
+	c.Text(outBoxX+outBoxW/2, boxY+30, "recovered m'", 13, viz.Muted, "middle")
+	c.Text(outBoxX+outBoxW/2, boxY+58, fmt.Sprintf("%d", recovered), 20, outColor, "middle")
+	c.Text(outBoxX+outBoxW/2, boxY+boxH+20, verdict, 13, outColor, "middle")
+
+	return c.String()
+}
+
+// arrow draws a horizontal shaft from x0 to x1 at pixel height y, capped
+// with a right-pointing triangle glyph -- built from Rect and Text (both
+// raw pixel space) rather than Path, which stays in the canvas's mapped
+// data space and would need the shaft's endpoints expressed there instead.
+func arrow(c *viz.Canvas, x0, y, x1 float64, color string) {
+	const headW = 14.0
+	c.Rect(x0, y-1.5, x1-x0-headW, 3, color, 1)
+	c.Text(x1-headW/2, y+5, "▶", 14, color, "middle")
 }

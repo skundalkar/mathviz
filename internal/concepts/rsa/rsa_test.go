@@ -55,9 +55,9 @@ func TestDecryptWithWrongExponentGenerallyFails(t *testing.T) {
 
 func TestModPowKnownValues(t *testing.T) {
 	cases := []struct{ base, exp, mod, want int }{
-		{2, 10, 1000, 24},   // 1024 mod 1000
-		{3, 0, 7, 1},        // anything^0 = 1
-		{5, 1, 13, 5},       // anything^1 = itself mod m
+		{2, 10, 1000, 24}, // 1024 mod 1000
+		{3, 0, 7, 1},      // anything^0 = 1
+		{5, 1, 13, 5},     // anything^1 = itself mod m
 		{65, 17, 3233, 2790},
 		{7, 4, 1, 0}, // mod 1 is always 0
 	}
