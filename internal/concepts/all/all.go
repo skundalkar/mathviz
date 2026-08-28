@@ -32,6 +32,7 @@ import (
 	_ "mathviz/internal/concepts/expgrowth"
 	_ "mathviz/internal/concepts/fibonacci"
 	_ "mathviz/internal/concepts/fourier"
+	_ "mathviz/internal/concepts/gaussianelim"
 	_ "mathviz/internal/concepts/gradientdescent"
 	_ "mathviz/internal/concepts/hypergeometric"
 	_ "mathviz/internal/concepts/integral"
