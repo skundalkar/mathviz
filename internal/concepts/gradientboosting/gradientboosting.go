@@ -8,6 +8,8 @@
 package gradientboosting
 
 import (
+	"sort"
+
 	"mathviz/internal/concept"
 	"mathviz/internal/viz"
 )
@@ -112,6 +114,151 @@ func init() {
 		},
 		Render: render,
 	})
+}
+
+// Xs and Ys are the five fixed observations the worked example walks
+// through: a big level jump between x=3 and x=4, hand-picked so a single
+// stump captures most of the signal and a second stump mops up most of
+// what's left.
+var (
+	Xs = []float64{1, 2, 3, 4, 5}
+	Ys = []float64{2, 3, 3, 8, 9}
+)
+
+// Stump is one regression split: predict LeftVal for x<=Threshold,
+// RightVal otherwise.
+type Stump struct {
+	Threshold         float64
+	LeftVal, RightVal float64
+}
+
+// Mean returns the arithmetic mean of vs, or 0 for an empty slice.
+func Mean(vs []float64) float64 {
+	if len(vs) == 0 {
+		return 0
+	}
+	var sum float64
+	for _, v := range vs {
+		sum += v
+	}
+	return sum / float64(len(vs))
+}
+
+// SSE returns the sum of squared errors between actual and predicted,
+// index-aligned.
+func SSE(actual, predicted []float64) float64 {
+	var sum float64
+	for i := range actual {
+		d := actual[i] - predicted[i]
+		sum += d * d
+	}
+	return sum
+}
+
+// sseAroundMean is the sum of squared deviations of vs from its own mean --
+// the error a single constant prediction (the mean) leaves behind.
+func sseAroundMean(vs []float64) float64 {
+	if len(vs) == 0 {
+		return 0
+	}
+	m := Mean(vs)
+	var sum float64
+	for _, v := range vs {
+		d := v - m
+		sum += d * d
+	}
+	return sum
+}
+
+// FitStump fits a regression stump to predict target from xs: it scans
+// every midpoint between consecutive distinct sorted x values and keeps the
+// threshold whose two-sided split minimizes total sum-of-squared-error,
+// predicting each side's mean of target. xs and target must be the same
+// length and index-aligned.
+func FitStump(xs, target []float64) Stump {
+	uniq := append([]float64(nil), xs...)
+	sort.Float64s(uniq)
+	dedup := uniq[:0]
+	for i, x := range uniq {
+		if i == 0 || x != dedup[len(dedup)-1] {
+			dedup = append(dedup, x)
+		}
+	}
+
+	bestSSE := sseAroundMean(target) // fallback: one flat level, no split
+	bestThreshold := dedup[len(dedup)-1]
+	for i := 0; i < len(dedup)-1; i++ {
+		th := (dedup[i] + dedup[i+1]) / 2
+		var left, right []float64
+		for j, x := range xs {
+			if x <= th {
+				left = append(left, target[j])
+			} else {
+				right = append(right, target[j])
+			}
+		}
+		sse := sseAroundMean(left) + sseAroundMean(right)
+		if sse < bestSSE {
+			bestSSE = sse
+			bestThreshold = th
+		}
+	}
+
+	var left, right []float64
+	for j, x := range xs {
+		if x <= bestThreshold {
+			left = append(left, target[j])
+		} else {
+			right = append(right, target[j])
+		}
+	}
+	return Stump{Threshold: bestThreshold, LeftVal: Mean(left), RightVal: Mean(right)}
+}
+
+// StumpPredict returns a stump's output for one x.
+func StumpPredict(s Stump, x float64) float64 {
+	if x <= s.Threshold {
+		return s.LeftVal
+	}
+	return s.RightVal
+}
+
+// Boost runs gradient boosting for squared-error loss: start from the flat
+// baseline F0(x) = mean(ys), then repeat numStages times: fit a stump to
+// the current residual (ys minus the running prediction) and add
+// lr*stump(x) into the running prediction. It returns the baseline and the
+// sequence of fitted stumps, in order; Predict sums them back up for a
+// given x. Pure and deterministic: same inputs always produce the same
+// stumps, no randomness -- unlike random-forest's resampling, every stage
+// here is a direct function of the stage before it.
+func Boost(xs, ys []float64, numStages int, lr float64) (base float64, stumps []Stump) {
+	base = Mean(ys)
+	preds := make([]float64, len(xs))
+	for i := range preds {
+		preds[i] = base
+	}
+	for s := 0; s < numStages; s++ {
+		resid := make([]float64, len(xs))
+		for i := range xs {
+			resid[i] = ys[i] - preds[i]
+		}
+		st := FitStump(xs, resid)
+		stumps = append(stumps, st)
+		for i, x := range xs {
+			preds[i] += lr * StumpPredict(st, x)
+		}
+	}
+	return base, stumps
+}
+
+// Predict returns the boosted ensemble's prediction at x: the baseline plus
+// lr times every stump's output, summed in order.
+func Predict(base float64, stumps []Stump, lr float64, x float64) float64 {
+	pred := base
+	for _, st := range stumps {
+		pred += lr * StumpPredict(st, x)
+	}
+	return pred
 }
 
 func render(p map[string]float64) string {
