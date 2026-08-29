@@ -8,6 +8,7 @@
 package gradientboosting
 
 import (
+	"fmt"
 	"sort"
 
 	"mathviz/internal/concept"
@@ -261,7 +262,82 @@ func Predict(base float64, stumps []Stump, lr float64, x float64) float64 {
 	return pred
 }
 
+// maxStages is the deepest boosting sequence Render ever needs. Fitting it
+// once and slicing prefixes is equivalent to re-running Boost at each
+// smaller stage count, since stage k's stump only ever depends on the
+// stages before it.
+const maxStages = 4
+
+// stairPoints traces the piecewise-constant prediction base+lr*stumps(x)
+// across [xlo, xhi] as an explicit staircase: a horizontal segment per
+// region between consecutive stump thresholds, joined by vertical risers,
+// so the picture shows the same flat-then-jump shape the stumps actually
+// produce instead of a smoothed-over interpolation between them.
+func stairPoints(base float64, stumps []Stump, lr, xlo, xhi float64) [][2]float64 {
+	cuts := make([]float64, 0, len(stumps))
+	for _, s := range stumps {
+		if s.Threshold > xlo && s.Threshold < xhi {
+			cuts = append(cuts, s.Threshold)
+		}
+	}
+	sort.Float64s(cuts)
+	dedup := cuts[:0]
+	for i, c := range cuts {
+		if i == 0 || c != dedup[len(dedup)-1] {
+			dedup = append(dedup, c)
+		}
+	}
+	bounds := append([]float64{xlo}, dedup...)
+	bounds = append(bounds, xhi)
+
+	pts := make([][2]float64, 0, 2*len(bounds))
+	for i := 0; i < len(bounds)-1; i++ {
+		lo, hi := bounds[i], bounds[i+1]
+		y := Predict(base, stumps, lr, (lo+hi)/2)
+		if i > 0 {
+			prevY := Predict(base, stumps, lr, (bounds[i-1]+lo)/2)
+			pts = append(pts, [2]float64{lo, prevY})
+		}
+		pts = append(pts, [2]float64{lo, y})
+		pts = append(pts, [2]float64{hi, y})
+	}
+	return pts
+}
+
 func render(p map[string]float64) string {
-	_ = p
-	return viz.New(560, 420, 0, 6, -1, 11).String()
+	numStages := int(p["numStages"])
+	lr := p["learningRate"]
+
+	base, allStumps := Boost(Xs, Ys, maxStages, lr)
+	active := allStumps[:numStages]
+
+	preds := make([]float64, len(Xs))
+	for i, x := range Xs {
+		preds[i] = Predict(base, active, lr, x)
+	}
+	sse := SSE(Ys, preds)
+	baselineSSE := SSE(Ys, []float64{base, base, base, base, base})
+
+	const xmin, xmax, ymin, ymax = 0.5, 5.5, -1.0, 11.0
+	c := viz.New(600, 420, xmin, xmax, ymin, ymax)
+	c.PadT = 70
+	c.Axes()
+	for x := 1.0; x <= 5.0; x++ {
+		c.Tick(x, fmt.Sprintf("%g", x))
+	}
+
+	c.Path([][2]float64{{xmin, base}, {xmax, base}}, viz.Muted, 1)
+	c.Path(stairPoints(base, active, lr, xmin, xmax), viz.Accent, 2.5)
+
+	for i, x := range Xs {
+		px, py := c.X(x), c.Y(Ys[i])
+		c.Rect(px-5, py-5, 10, 10, viz.Ink, 1)
+	}
+
+	c.Text(16, 22, fmt.Sprintf("stage %d of %d   learning rate = %.1f", numStages, maxStages, lr), 14, viz.Ink, "start")
+	c.Text(16, 44, fmt.Sprintf("training SSE = %.3f   (stage 0 baseline alone: %.0f)", sse, baselineSSE), 14, viz.Accent, "start")
+	c.Text(16, 64, "black squares = true (x,y)    gray line = flat baseline F0 = mean(y)    accent staircase = cumulative prediction",
+		12, viz.Muted, "start")
+
+	return c.String()
 }
