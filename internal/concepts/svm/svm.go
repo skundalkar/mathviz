@@ -7,6 +7,7 @@
 package svm
 
 import (
+	"fmt"
 	"math"
 
 	"mathviz/internal/concept"
@@ -206,7 +207,61 @@ func LinePoints(nx, ny, d, tLo, tHi float64, n int) [][2]float64 {
 	return pts
 }
 
+// bestPos and bestNeg are the two support vectors from the worked example:
+// the closest pair of points across the two classes.
+var bestPos, bestNeg = Points[0], Points[2] // (3,3), (1,1)
+
 func render(p map[string]float64) string {
-	_ = p
-	return viz.New(560, 420, -3, 6, -3, 6).String()
+	theta, offset := p["theta"], p["offset"]
+
+	bnx, bny, bd, bestMargin := MaxMarginFromPair(bestPos, bestNeg)
+	gnx, gny := Normal(theta)
+	guessMargin := Margin(Points, Labels, gnx, gny, offset)
+
+	const xmin, xmax, ymin, ymax = -3.0, 6.0, -3.0, 6.0
+	c := viz.New(560, 480, xmin, xmax, ymin, ymax)
+	c.PadT = 70
+	c.Axes()
+
+	// The margin band around the best hyperplane, shaded, plus its two
+	// boundary lines and the center line itself.
+	half := bestMargin / 2
+	upper := LinePoints(bnx, bny, bd+half, -6, 6, 2)
+	lower := LinePoints(bnx, bny, bd-half, -6, 6, 2)
+	c.Path(upper, viz.Muted, 1)
+	c.Path(lower, viz.Muted, 1)
+	c.Path(LinePoints(bnx, bny, bd, -6, 6, 2), viz.Good, 2.5)
+
+	// Your candidate line, drawn only where it stays inside the view.
+	c.Path(LinePoints(gnx, gny, offset, -8, 8, 2), viz.Accent, 2)
+
+	for i, pt := range Points {
+		color := viz.Bad
+		if Labels[i] == 1 {
+			color = viz.Good
+		}
+		px, py := c.X(pt[0]), c.Y(pt[1])
+		c.Rect(px-5, py-5, 10, 10, color, 0.9)
+	}
+	// Circle the two support vectors.
+	for _, sv := range []([2]float64){bestPos, bestNeg} {
+		ring := make([][2]float64, 0, 25)
+		for i := 0; i <= 24; i++ {
+			a := float64(i) / 24 * 2 * math.Pi
+			ring = append(ring, [2]float64{sv[0] + 0.22*math.Cos(a), sv[1] + 0.22*math.Sin(a)})
+		}
+		c.Path(ring, viz.Ink, 1.5)
+	}
+
+	c.Text(16, 22, fmt.Sprintf("best possible margin (green) = %.2f -- support vectors (3,3) and (1,1), circled", bestMargin),
+		14, viz.Good, "start")
+	status := fmt.Sprintf("your line's margin (blue) = %.2f", guessMargin)
+	if guessMargin < 0 {
+		status = "your line (blue) misclassifies at least one point -- not a valid separator"
+	}
+	c.Text(16, 44, status, 14, viz.Accent, "start")
+	c.Text(16, 64, "green squares = class +1, red squares = class -1    gray lines = the best margin's edges",
+		12, viz.Muted, "start")
+
+	return c.String()
 }
