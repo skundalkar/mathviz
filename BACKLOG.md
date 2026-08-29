@@ -84,13 +84,13 @@ Format: `- [ ] <id> — <one-line description of the concept to visualize>`
 - [x] lagrange-multipliers — finding a function's constrained max/min by matching gradients with the constraint's gradient, built from chain-rule
 - [x] rsa-encryption — public-key encryption built from modular arithmetic and the euclidean algorithm
 - [x] support-vector-machine — finding the maximum-margin hyperplane that separates two classes
+- [x] gradient-boosting — sequentially fitting trees to the residual errors of the ensemble so far, built from decision-trees
 
 ## Up next (statistics & ML intuition)
 
 ## Up next (math foundations)
 
 ## Up next (statistics & ML intuition, batch 2)
-- [ ] gradient-boosting — sequentially fitting trees to the residual errors of the ensemble so far, built from decision-trees
 
 ## How to add work
 Append an unchecked line under the right section by hand any time — the loop
