@@ -74,6 +74,7 @@ import (
 	_ "mathviz/internal/concepts/sinecosine"
 	_ "mathviz/internal/concepts/stddev"
 	_ "mathviz/internal/concepts/svd"
+	_ "mathviz/internal/concepts/svm"
 	_ "mathviz/internal/concepts/taylorseries"
 	_ "mathviz/internal/concepts/tdist"
 	_ "mathviz/internal/concepts/variancestddev"
