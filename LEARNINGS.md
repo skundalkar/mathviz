@@ -6,6 +6,77 @@ code. Newest entries go at the top.
 
 ---
 
+## support-vector-machine — the maximum-margin boundary
+**Why would you need this?** `logistic-regression` fit one specific S-curve
+by minimizing log-loss over every point, and `decision-trees` picked one
+specific split by scoring information gain — both land on a single answer
+because their scoring rule prefers it. But once two classes are cleanly
+separable, there isn't just one line that gets 100% right: rotate or shift
+a separating line a little and it can still classify every training point
+correctly. Two students working the same four-point dataset by hand could
+draw two different "perfect" lines and both be technically right. If
+accuracy on the training points can't tell those lines apart, what can?
+
+**How does it actually work?** Take four points: class +1 at (3,3) and
+(5,4); class -1 at (1,1) and (-1,0). Instead of scoring a line by how many
+points it gets right (all of these lines get all four right), score it by
+its margin: the distance from the line to the single nearest point of
+either class, doubled to cover both sides. A line that grazes past a point
+has almost no buffer before a slightly different point of that class would
+land on the wrong side; a line with room on both sides is safer.
+
+The two closest points across the two classes are (3,3) and (1,1) —
+distance sqrt((3-1)²+(3-1)²) = sqrt(8) ≈ 2.83 apart. The maximum-margin
+line is their perpendicular bisector: the direction straight from (1,1) to
+(3,3) is (2,2), so the line's normal vector (after scaling to length 1) is
+n ≈ (0.707, 0.707), passing through their midpoint (2,2), giving the line
+0.707x + 0.707y = 2.83. Checking the other two points against this line:
+(5,4) sits 3.54 units out and (-1,0) sits 3.54 units out on the correct
+sides — both comfortably farther from the line than (3,3) and (1,1) are
+(1.41 units each). Moving (5,4) or (-1,0) anywhere in that safe zone never
+changes the boundary at all; only (3,3) and (1,1) — the "support vectors" —
+decide where the line sits, which is exactly the pattern
+`lagrange-multipliers` pointed at: the points with a nonzero multiplier at
+the solution are the ones that actually constrain it.
+
+**What does the picture show?** theta and offset draw your own candidate
+line (blue) by its angle and distance from the origin; the green line and
+shaded band are the true maximum-margin solution from the worked example
+above, with (3,3) and (1,1) circled as its support vectors. The readout
+reports your line's achieved margin — or flags it as not separating the
+classes at all, if you rotate it too far — next to the best possible margin
+(2.83) for comparison. At the default angle (80°, offset 1.5) the line
+still separates every point but only achieves a margin of 0.68, since it
+passes close by (1,1).
+
+**What can you do now that you couldn't before?** Pick, out of infinitely
+many training-accuracy-perfect lines, provably the one that leaves the
+most breathing room before a new point near the boundary would get
+misclassified — and know in advance which handful of points (the support
+vectors) that decision actually depends on, so collecting more of the
+other points wouldn't change the answer at all.
+
+**Where does this show up in real life?** Text classification (spam vs.
+not-spam from word-count features) and bioinformatics (classifying tumor
+samples from a handful of gene-expression readings) were classic SVM
+strongholds, especially when there are more features than examples — a
+regime where margin, not just training accuracy, matters a lot for how
+well the boundary generalizes. The "kernel trick" (not shown here) lets
+the same max-margin idea draw curved boundaries by measuring distance in a
+reshaped space instead of the raw one.
+
+**What's the common mistake here?** Say it like this: "the boundary is
+decided by the closest points across classes, so only those points are
+support vectors" — moving any other point, as long as it stays on its own
+side of the margin, leaves the line exactly where it was. Not like this:
+assuming the line that looks centered by eye, or the one a different
+training method (like logistic regression's log-loss fit) happens to
+produce, is automatically the max-margin one — two lines can both classify
+every point correctly while having very different margins, and only
+measuring the distance to the nearest point tells them apart.
+
+---
+
 ## rsa-encryption — public keys built from modular arithmetic
 **Why would you need this?** `modular-arithmetic` ended by pointing at an
 operation that's easy to do forward but hard to undo as the key to keeping
