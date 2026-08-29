@@ -7,6 +7,8 @@
 package svm
 
 import (
+	"math"
+
 	"mathviz/internal/concept"
 	"mathviz/internal/viz"
 )
@@ -112,6 +114,96 @@ func init() {
 		},
 		Render: render,
 	})
+}
+
+// Points and Labels are the four fixed observations the worked example
+// walks through: class +1 at (3,3) and (5,4), class -1 at (1,1) and
+// (-1,0). (3,3) and (1,1) are the closest pair across the two classes, so
+// they turn out to be the only points that decide the boundary -- the
+// support vectors.
+var (
+	Points = [][2]float64{{3, 3}, {5, 4}, {1, 1}, {-1, 0}}
+	Labels = []int{1, 1, -1, -1}
+)
+
+// Normal returns the unit vector at angle thetaDeg (measured counter-
+// clockwise from the positive x-axis), used as a candidate hyperplane's
+// normal direction.
+func Normal(thetaDeg float64) (nx, ny float64) {
+	rad := thetaDeg * math.Pi / 180
+	return math.Cos(rad), math.Sin(rad)
+}
+
+// FunctionalMargin returns how correctly and how confidently a unit-normal
+// hyperplane {n·x = d} classifies one labeled point: label*(n·point - d).
+// It is positive when the point sits on the side its label predicts,
+// negative when the hyperplane misclassifies it, and its magnitude is the
+// point's perpendicular distance to the line.
+func FunctionalMargin(nx, ny, d, x, y float64, label int) float64 {
+	return float64(label) * (nx*x + ny*y - d)
+}
+
+// MinFunctionalMargin returns the smallest FunctionalMargin over every
+// (point, label) pair -- positive only when the hyperplane separates every
+// point correctly, in which case it's also the perpendicular distance from
+// the line to the single nearest point of either class.
+func MinFunctionalMargin(points [][2]float64, labels []int, nx, ny, d float64) float64 {
+	min := math.Inf(1)
+	for i, pt := range points {
+		if fm := FunctionalMargin(nx, ny, d, pt[0], pt[1], labels[i]); fm < min {
+			min = fm
+		}
+	}
+	return min
+}
+
+// Margin returns the full width of the gap a unit-normal hyperplane leaves
+// between the two classes: twice the distance from the line to the nearest
+// point. It is negative when the hyperplane misclassifies at least one
+// point (Separates reports false in that case).
+func Margin(points [][2]float64, labels []int, nx, ny, d float64) float64 {
+	return 2 * MinFunctionalMargin(points, labels, nx, ny, d)
+}
+
+// Separates reports whether a unit-normal hyperplane classifies every point
+// correctly (allowing points to sit exactly on the line).
+func Separates(points [][2]float64, labels []int, nx, ny, d float64) bool {
+	return MinFunctionalMargin(points, labels, nx, ny, d) >= 0
+}
+
+// MaxMarginFromPair returns the maximum-margin hyperplane determined by two
+// support vectors, one from each class: the perpendicular bisector of the
+// segment joining them. margin is the distance between pos and neg, which
+// equals the full gap width whenever no other point lies closer to the
+// resulting line than pos and neg do.
+func MaxMarginFromPair(pos, neg [2]float64) (nx, ny, d, margin float64) {
+	dx, dy := pos[0]-neg[0], pos[1]-neg[1]
+	margin = math.Hypot(dx, dy)
+	if margin == 0 {
+		return 0, 0, 0, 0
+	}
+	nx, ny = dx/margin, dy/margin
+	midx, midy := (pos[0]+neg[0])/2, (pos[1]+neg[1])/2
+	d = nx*midx + ny*midy
+	return nx, ny, d, margin
+}
+
+// LinePoints samples the implicit line {n·x = d} at n points spread across
+// t in [tLo, tHi], walking along the line's direction (-ny, nx) from the
+// point on the line closest to the origin (d*nx, d*ny). Mirrors viz.Sample's
+// signature for an explicit function, but for a line given by its normal
+// form instead.
+func LinePoints(nx, ny, d, tLo, tHi float64, n int) [][2]float64 {
+	if n < 1 {
+		n = 1
+	}
+	pts := make([][2]float64, 0, n+1)
+	ox, oy := d*nx, d*ny
+	for i := 0; i <= n; i++ {
+		t := tLo + (tHi-tLo)*float64(i)/float64(n)
+		pts = append(pts, [2]float64{ox - t*ny, oy + t*nx})
+	}
+	return pts
 }
 
 func render(p map[string]float64) string {
