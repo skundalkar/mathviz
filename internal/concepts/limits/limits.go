@@ -129,6 +129,62 @@ func init() {
 	})
 }
 
+// HoleAt is the point both worked examples approach, a=1.
+const HoleAt = 1.0
+
+// RemovableHole evaluates f(x) = (x^2-1)/(x-1) exactly as written: for
+// x != HoleAt it equals x+1 after the (x-1) factors cancel, but at
+// x == HoleAt it's literally 0/0, which float64 division produces as NaN
+// rather than silently returning the limit. That NaN is the point: the
+// formula itself refuses to answer at the hole, even though every nearby
+// value crowds toward a specific number (see RemovableHoleLimit).
+func RemovableHole(x float64) float64 {
+	return (x*x - 1) / (x - HoleAt)
+}
+
+// RemovableHoleLimit is the analytic two-sided limit of RemovableHole as
+// x -> HoleAt: the algebraic simplification (x-1)(x+1)/(x-1) = x+1 gives
+// HoleAt+1 = 2, regardless of which side x approaches from.
+func RemovableHoleLimit() float64 {
+	return HoleAt + 1
+}
+
+// Step evaluates the jump-discontinuity example: -1 left of HoleAt, 1 at
+// or after it. Unlike RemovableHole, Step is defined at every x, including
+// HoleAt itself -- its problem isn't an undefined formula, it's that the
+// two sides don't agree.
+func Step(x float64) float64 {
+	if x < HoleAt {
+		return -1
+	}
+	return 1
+}
+
+// LeftLimit and RightLimit return the one-sided limits of each example
+// function as x approaches HoleAt from below and above. For mode 0
+// (RemovableHole) both sides agree with RemovableHoleLimit; for mode 1
+// (Step) they disagree, which is exactly why its two-sided limit fails to
+// exist (see LimitExists).
+func LeftLimit(mode int) float64 {
+	if mode == 0 {
+		return RemovableHoleLimit()
+	}
+	return -1
+}
+
+func RightLimit(mode int) float64 {
+	if mode == 0 {
+		return RemovableHoleLimit()
+	}
+	return 1
+}
+
+// LimitExists reports whether the two-sided limit at HoleAt exists for the
+// given mode: true exactly when the left- and right-hand limits agree.
+func LimitExists(mode int) bool {
+	return LeftLimit(mode) == RightLimit(mode)
+}
+
 func render(p map[string]float64) string {
 	_ = p
 	return viz.New(680, 400, -1, 3, -2, 4).String()
