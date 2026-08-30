@@ -48,6 +48,7 @@ import (
 	_ "mathviz/internal/concepts/logreg"
 	_ "mathviz/internal/concepts/logscale"
 	_ "mathviz/internal/concepts/markov"
+	_ "mathviz/internal/concepts/matinv"
 	_ "mathviz/internal/concepts/matmul"
 	_ "mathviz/internal/concepts/meanmedianmode"
 	_ "mathviz/internal/concepts/modulararithmetic"
