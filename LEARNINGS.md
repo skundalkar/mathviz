@@ -6,6 +6,90 @@ code. Newest entries go at the top.
 
 ---
 
+## matrix-inverse — undoing a transformation
+**Why would you need this?** `gaussian-elimination` already showed how to
+solve Ax=b for one specific b, by row-reducing the augmented matrix
+[A | b]. But what if you need to solve Ax=b for the same A against ten
+different b's — ten different batches of sensor readings run through the
+same transformation, say? Rerunning the full elimination procedure from
+scratch every single time works, but it repeats identical work each
+round: A never changes, only b does. Is there a single matrix, call it
+A⁻¹, you could compute once so that x=A⁻¹b directly for any b afterward,
+without redoing elimination every time?
+
+**How does it actually work?** Take A = [[4,7],[2,6]]. Augment it with the
+identity matrix and row-reduce the whole thing at once, using the exact
+same three moves `gaussian-elimination` used — but this time pushing all
+the way to reduced form (every pivot scaled to exactly 1, and cleared out
+both above and below), not just echelon form:
+- [4,7 | 1,0] and [2,6 | 0,1]. Scale row 1 by 1/4: [1,1.75 | 0.25,0].
+- Eliminate column 1 from row 2 (subtract 2× row 1): [0,2.5 | -0.5,1].
+- Scale row 2 by 1/2.5: [0,1 | -0.2,0.4].
+- Eliminate column 2 from row 1 (subtract 1.75× row 2): [1,0 | 0.6,-0.7].
+
+The left half has become the identity, so the right half is the answer:
+A⁻¹ = [[0.6,-0.7],[-0.2,0.4]]. Check it: 4(0.6)+7(-0.2)=1 and
+2(0.6)+6(-0.2)=0, matching the identity's first column exactly.
+
+`determinant` already gave a one-number litmus test for whether this
+could even work: det(A) = 4×6 − 7×2 = 10, nonzero, so an inverse exists —
+and for a 2×2 matrix it even hands you a shortcut formula,
+A⁻¹ = (1/det(A)) × [[d,-b],[-c,a]] = (1/10)×[[6,-7],[-2,4]], the same
+answer elimination found. If det(A) were 0 instead, elimination would hit
+a column with no nonzero pivot available anywhere below it — the same
+stuck spot `gaussian-elimination` hit for a contradictory system — and
+there would be no A⁻¹ to find, because a zero-determinant matrix
+collapses the whole plane onto a line, and no matrix can undo throwing
+information away like that.
+
+**What does the picture show?** k sets A's bottom-right entry (6 in the
+worked example above); step scrubs through the Gauss-Jordan elimination
+one row operation at a time on the augmented matrix [A | I], highlighting
+the pivot cell and printing the operation that produced it. At the final
+step, with k away from 3.5, the left half has become the identity and the
+right half is A⁻¹, read off directly. Drag k down toward 3.5 and watch
+det(A)=4k-14 shrink toward zero along with it — at k=3.5 exactly,
+elimination can't find a pivot in column 2 at all, the left half never
+reaches the identity, and the readout reports "no inverse exists" instead
+of a matrix.
+
+**What can you do now that you couldn't before?** Compute A⁻¹ once and
+reuse it: x=A⁻¹b solves Ax=b for any new b with a single matrix-vector
+multiply, instead of rerunning full elimination from scratch every time
+the right-hand side changes. You can also now test invertibility
+directly, before even attempting to solve anything: a square matrix has
+an inverse exactly when its determinant is nonzero, the same det(A)≠0
+condition `determinant` already introduced for "this transformation
+doesn't collapse area to zero."
+
+**Where does this show up in real life?** Computer graphics converts a
+point from world coordinates back into an object's own local coordinates
+by multiplying by the object's placement matrix's inverse — undoing the
+exact rotation, scale, and translation that placed it in the world.
+`linear-regression`'s closed-form least-squares solution,
+β = (XᵀX)⁻¹Xᵀy, uses a matrix inverse directly instead of iterating
+gradient-descent-style. Robotics' inverse kinematics asks the same
+question in reverse: given where a robot arm's hand ended up, what joint
+angles (transformed forward by known matrices) produced it — answered,
+when the transform is linear and square, by inverting it.
+
+**What's the common mistake here?** Say it like this: "A has an inverse
+exactly when A is square and det(A) ≠ 0" — both conditions matter, and
+elimination hitting a missing pivot is just this same fact discovered
+mechanically instead of computed up front. Not like this: assuming every
+matrix has an inverse the way every nonzero number has a reciprocal. A
+non-square matrix has no inverse at all (that's exactly the gap
+`singular-value-decomposition` fills, generalizing "undo this
+transformation as best you can" to shapes where a true inverse can't
+exist), and a square matrix with det(A)=0 has thrown away information no
+matrix could recover. A second slip: computing A⁻¹ and then multiplying
+it by b when you only ever need to solve Ax=b once — running elimination
+on [A | b] directly is both faster and more numerically stable; the
+inverse earns its keep specifically when many different b's will reuse
+the same A.
+
+---
+
 ## limits — what f(x) is closing in on
 **Why would you need this?** Compute (x²-1)/(x-1) at x=1: plug it in and
 you get 0/0 — undefined, a calculator error. But try values near x=1
