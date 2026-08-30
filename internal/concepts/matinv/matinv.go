@@ -298,7 +298,100 @@ func System(k float64) Matrix {
 	}
 }
 
+// Layout constants for the matrix-grid diagram, in pixels. Mirrors
+// `gaussian-elimination`'s own grid layout, sized down for a 2x4 augmented
+// matrix instead of 3x4.
+const (
+	gridX, gridY   = 40.0, 110.0
+	cellW, cellH   = 90.0, 60.0
+	rhsGap         = 24.0 // extra horizontal gap before the right-half (I / A^-1) columns
+	stepListX      = 460.0
+	stepListY      = 110.0
+	stepLineHeight = 22.0
+)
+
 func render(p map[string]float64) string {
-	_ = p
-	return viz.New(760, 420, 0, 1, 0, 1).String()
+	k := p["k"]
+	step := int(p["step"])
+
+	a := System(k)
+	steps := GaussJordan(Augment(a))
+	if step < 0 {
+		step = 0
+	}
+	if step > len(steps)-1 {
+		step = len(steps) - 1
+	}
+	cur := steps[step]
+	n := len(a)
+
+	// A canvas we never call Axes()/Sample() on -- every draw call below is
+	// in raw pixel space, since the diagram is a table, not a function plot.
+	c := viz.New(760, 420, 0, 1, 0, 1)
+
+	c.Text(20, 28, fmt.Sprintf("A = [[4,7],[2,%.2f]]    augmented with I, reducing [A | I] -> [I | A^-1]", k), 14, viz.Ink, "start")
+	c.Text(20, 48, fmt.Sprintf("det(A) = 4k-14 = %.2f", Determinant2x2(a)), 13, viz.Muted, "start")
+	c.Text(20, 74, fmt.Sprintf("Step %d/%d: %s", step, len(steps)-1, cur.Description), 13, viz.Accent, "start")
+
+	for r, row := range cur.Matrix {
+		rowIsPivot := r == cur.PivotRow
+		for col, v := range row {
+			x := gridX + float64(col)*cellW
+			if col == n {
+				x += rhsGap // visually separate the right half (I / A^-1)
+			}
+			y := gridY + float64(r)*cellH
+
+			fill := viz.Faint
+			if rowIsPivot {
+				fill = viz.Accent
+			}
+			opacity := 0.35
+			if rowIsPivot && col == cur.PivotCol {
+				opacity = 0.7
+			}
+			c.Rect(x, y, cellW-4, cellH-4, fill, opacity)
+
+			textColor := viz.Ink
+			if rowIsPivot && col == cur.PivotCol {
+				textColor = viz.Warm
+			}
+			c.Text(x+(cellW-4)/2, y+(cellH-4)/2+5, fmt.Sprintf("%.2f", v), 14, textColor, "middle")
+		}
+		// A "|" separating A's columns from the identity/inverse columns.
+		sepX := gridX + float64(n)*cellW + rhsGap/2
+		c.Text(sepX, gridY+float64(r)*cellH+(cellH-4)/2+5, "|", 16, viz.Muted, "middle")
+	}
+
+	shown := steps
+	truncated := false
+	const maxStepLines = 8
+	if len(shown) > maxStepLines {
+		shown = shown[:maxStepLines]
+		truncated = true
+	}
+	for i, st := range shown {
+		y := stepListY + float64(i)*stepLineHeight
+		color := viz.Muted
+		if i == step {
+			color = viz.Accent
+		}
+		c.Text(stepListX, y, fmt.Sprintf("%d: %s", i, st.Description), 12, color, "start")
+	}
+	if truncated {
+		c.Text(stepListX, stepListY+float64(len(shown))*stepLineHeight, "...", 12, viz.Muted, "start")
+	}
+
+	final := steps[len(steps)-1].Matrix
+	readoutY := gridY + float64(n)*cellH + 30
+
+	var verdict string
+	if inv, ok := ExtractInverse(final, n); ok {
+		verdict = fmt.Sprintf("A^-1 = [[%.2f,%.2f],[%.2f,%.2f]]", inv[0][0], inv[0][1], inv[1][0], inv[1][1])
+	} else {
+		verdict = "no inverse exists -- elimination found no pivot for this column (A is singular)"
+	}
+	c.Text(20, readoutY, verdict, 13, viz.Ink, "start")
+
+	return c.String()
 }
