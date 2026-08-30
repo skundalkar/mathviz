@@ -9,6 +9,7 @@
 package benfordslaw
 
 import (
+	"fmt"
 	"math"
 
 	"mathviz/internal/concept"
@@ -222,6 +223,61 @@ func LeadingDigitFrequencies(vals []float64) [9]float64 {
 }
 
 func render(p map[string]float64) string {
-	_ = p
-	return viz.New(680, 420, 0, 10, 0, 0.35).String()
+	base := p["base"]
+	if base < 2 {
+		base = 2
+	}
+	n := int(p["n"] + 0.5)
+	if n < 1 {
+		n = 1
+	}
+	mode := int(p["mode"] + 0.5)
+
+	var vals []float64
+	var datasetLabel string
+	if mode == 0 {
+		vals = PowersOfBase(base, n)
+		datasetLabel = fmt.Sprintf("dataset: %.0f^0 .. %.0f^%d (%d multiplicative-growth terms)", base, base, n-1, n)
+	} else {
+		vals = LinearSamples(1, 999, n)
+		datasetLabel = fmt.Sprintf("dataset: %d values evenly spaced across 1..999 (no growth)", n)
+	}
+	freq := LeadingDigitFrequencies(vals)
+
+	const yMax = 0.35
+	c := viz.New(680, 460, 0.3, 9.7, 0, yMax)
+	c.PadT = 90
+	c.Axes()
+	for d := 1; d <= 9; d++ {
+		c.Tick(float64(d), fmt.Sprintf("%d", d))
+	}
+
+	// Empirical bars, one per leading digit.
+	const barHalfW = 0.32
+	for d := 1; d <= 9; d++ {
+		x0, x1 := c.X(float64(d)-barHalfW), c.X(float64(d)+barHalfW)
+		y0, y1 := c.Y(0), c.Y(freq[d-1])
+		c.Rect(x0, y1, x1-x0, y0-y1, viz.Accent, 0.8)
+	}
+
+	// Benford's predicted curve, connecting each digit's predicted height.
+	predicted := make([][2]float64, 9)
+	for d := 1; d <= 9; d++ {
+		predicted[d-1] = [2]float64{float64(d), BenfordProbability(d)}
+	}
+	c.Path(predicted, viz.Warm, 2)
+	for _, pt := range predicted {
+		px, py := c.X(pt[0]), c.Y(pt[1])
+		c.Rect(px-4, py-4, 8, 8, viz.Warm, 1)
+	}
+
+	c.Text(16, 24, datasetLabel, 14, viz.Ink, "start")
+	c.Text(16, 46, fmt.Sprintf("digit 1: actual %.1f%%    predicted (Benford) %.1f%%",
+		freq[0]*100, BenfordProbability(1)*100), 14, viz.Accent, "start")
+	c.Text(16, 66, fmt.Sprintf("digit 9: actual %.1f%%    predicted (Benford) %.1f%%",
+		freq[8]*100, BenfordProbability(9)*100), 14, viz.Accent, "start")
+	c.Text(16, 86, "blue bars = this dataset's leading-digit shares    orange line/markers = Benford's prediction",
+		12, viz.Muted, "start")
+
+	return c.String()
 }
