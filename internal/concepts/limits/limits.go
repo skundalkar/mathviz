@@ -12,6 +12,9 @@
 package limits
 
 import (
+	"fmt"
+	"math"
+
 	"mathviz/internal/concept"
 	"mathviz/internal/viz"
 )
@@ -186,6 +189,102 @@ func LimitExists(mode int) bool {
 }
 
 func render(p map[string]float64) string {
-	_ = p
-	return viz.New(680, 400, -1, 3, -2, 4).String()
+	mode := int(p["mode"] + 0.5)
+	h := p["h"]
+	if math.Abs(h) < 0.02 {
+		if h < 0 {
+			h = -0.02
+		} else {
+			h = 0.02
+		}
+	}
+	x := HoleAt + h
+
+	const xmin, xmax, ymin, ymax = -1.0, 3.0, -2.0, 4.0
+	c := viz.New(680, 420, xmin, xmax, ymin, ymax)
+	c.PadT = 90
+	c.Axes()
+	for tx := xmin; tx <= xmax; tx++ {
+		c.Tick(tx, fmt.Sprintf("%.0f", tx))
+	}
+
+	const eps = 0.02
+	var fx float64
+	if mode == 0 {
+		left := viz.Sample(xmin, HoleAt-eps, 60, RemovableHole)
+		right := viz.Sample(HoleAt+eps, xmax, 60, RemovableHole)
+		c.Path(left, viz.Ink, 2)
+		c.Path(right, viz.Ink, 2)
+		openRing(c, HoleAt, RemovableHoleLimit(), viz.Warm)
+		fx = RemovableHole(x)
+	} else {
+		// Stop the left ray just short of HoleAt (rather than exactly at
+		// it) so the flat -1 segment doesn't visually connect up to
+		// Step(HoleAt)=1 -- that jump is the whole point, not a smooth
+		// transition.
+		left := viz.Sample(xmin, HoleAt-eps, 2, Step)
+		right := viz.Sample(HoleAt, xmax, 2, Step)
+		c.Path(left, viz.Ink, 2)
+		c.Path(right, viz.Ink, 2)
+		openRing(c, HoleAt, LeftLimit(1), viz.Warm)
+		filledSquare(c, HoleAt, Step(HoleAt), viz.Ink)
+		fx = Step(x)
+	}
+
+	filledSquare(c, x, fx, viz.Accent)
+
+	left, right := LeftLimit(mode), RightLimit(mode)
+	exists := LimitExists(mode)
+	modeLabel := "removable hole: (x^2-1)/(x-1)"
+	if mode == 1 {
+		modeLabel = "jump discontinuity: step function"
+	}
+	side := "right"
+	if h < 0 {
+		side = "left"
+	}
+
+	c.Text(16, 24, fmt.Sprintf("mode %d -- %s    a = %.0f    h = %+.2f (approaching from the %s)",
+		mode, modeLabel, HoleAt, h, side), 14, viz.Ink, "start")
+	c.Text(16, 46, fmt.Sprintf("f(a+h) = f(%.2f) = %.3f", x, fx), 14, viz.Accent, "start")
+	existsLabel := "limit EXISTS"
+	if !exists {
+		existsLabel = "limit DOES NOT EXIST"
+	}
+	c.Text(16, 66, fmt.Sprintf("left-hand limit = %.2f    right-hand limit = %.2f    %s",
+		left, right, existsLabel), 14, viz.Warm, "start")
+	c.Text(16, 86, "black curve = f(x)    orange ring = a point the curve approaches but a hole/jump keeps it from reaching",
+		12, viz.Muted, "start")
+
+	return c.String()
+}
+
+// openRing draws a small open (unfilled) circle outline at a data-space
+// point -- the textbook "open dot" for a value a curve approaches but
+// never actually takes, whether because the function is undefined there
+// (a removable hole) or because a different value is defined there instead
+// (a jump's unreached side). The radius is specified in pixels and
+// converted to data-space units per axis so it renders as a circle
+// regardless of how stretched the canvas's x/y scales are relative to
+// each other.
+func openRing(c *viz.Canvas, x, y float64, color string) {
+	const radiusPx = 6.0
+	scaleX := (c.W - c.PadL - c.PadR) / (c.XMax - c.XMin)
+	scaleY := (c.H - c.PadT - c.PadB) / (c.YMax - c.YMin)
+	pts := make([][2]float64, 0, 25)
+	for i := 0; i <= 24; i++ {
+		a := float64(i) / 24 * 2 * math.Pi
+		dx := (radiusPx * math.Cos(a)) / scaleX
+		dy := (radiusPx * math.Sin(a)) / scaleY
+		pts = append(pts, [2]float64{x + dx, y + dy})
+	}
+	c.Path(pts, color, 2)
+}
+
+// filledSquare draws a small filled square marker at a data-space point,
+// matching the point-marker style used across the gallery (e.g. `svm`,
+// `derivative`).
+func filledSquare(c *viz.Canvas, x, y float64, color string) {
+	px, py := c.X(x), c.Y(y)
+	c.Rect(px-4, py-4, 8, 8, color, 1)
 }
