@@ -9,6 +9,8 @@
 package benfordslaw
 
 import (
+	"math"
+
 	"mathviz/internal/concept"
 	"mathviz/internal/viz"
 )
@@ -124,6 +126,99 @@ func init() {
 		},
 		Render: render,
 	})
+}
+
+// LeadingDigit returns the first significant (nonzero) digit of a positive
+// number, 1-9: 314 -> 3, 0.0072 -> 7, 9999 -> 9. Works by repeatedly
+// scaling x into [1,10) rather than going through log10 and rounding,
+// which keeps it exact at decade boundaries like x=1000 that floating-point
+// log/pow round-trips can nudge onto the wrong side (9.999... vs 10.0).
+func LeadingDigit(x float64) int {
+	x = math.Abs(x)
+	if x == 0 {
+		return 0
+	}
+	for x >= 10 {
+		x /= 10
+	}
+	for x < 1 {
+		x *= 10
+	}
+	d := int(x + 1e-9) // guard against e.g. 8.999999999 from fp error
+	if d < 1 {
+		d = 1
+	}
+	if d > 9 {
+		d = 9
+	}
+	return d
+}
+
+// BenfordProbability returns Benford's law's predicted probability that a
+// number's leading digit is d: log10(1 + 1/d). It is the width of the
+// fractional-log10 interval [log10(d), log10(d+1)) that digit d owns, out
+// of the full unit interval every digit's arcs partition. Returns 0 outside
+// 1..9, which isn't a valid leading digit.
+func BenfordProbability(d int) float64 {
+	if d < 1 || d > 9 {
+		return 0
+	}
+	return math.Log10(1 + 1/float64(d))
+}
+
+// PowersOfBase returns the n numbers base^0, base^1, ..., base^(n-1) --
+// the multiplicative-growth dataset that (for n large enough) tracks
+// Benford's law closely, since each step adds the fixed amount
+// log10(base) to log10(x).
+func PowersOfBase(base float64, n int) []float64 {
+	if n < 1 {
+		n = 1
+	}
+	vals := make([]float64, n)
+	v := 1.0
+	for i := 0; i < n; i++ {
+		vals[i] = v
+		v *= base
+	}
+	return vals
+}
+
+// LinearSamples returns n values evenly spaced across [lo, hi] inclusive
+// (n=1 returns just lo) -- the contrasting non-multiplicative dataset: no
+// repeated scaling by a fixed factor, so its leading digits stay close to
+// uniform across 1-9 regardless of n.
+func LinearSamples(lo, hi float64, n int) []float64 {
+	if n < 1 {
+		n = 1
+	}
+	if n == 1 {
+		return []float64{lo}
+	}
+	vals := make([]float64, n)
+	for i := 0; i < n; i++ {
+		vals[i] = lo + (hi-lo)*float64(i)/float64(n-1)
+	}
+	return vals
+}
+
+// LeadingDigitFrequencies returns, for each digit 1-9 (index d-1), the
+// fraction of vals whose leading digit is d. Empty input returns all
+// zeros rather than dividing by zero.
+func LeadingDigitFrequencies(vals []float64) [9]float64 {
+	var counts [9]int
+	for _, v := range vals {
+		if d := LeadingDigit(v); d >= 1 && d <= 9 {
+			counts[d-1]++
+		}
+	}
+	var freq [9]float64
+	if len(vals) == 0 {
+		return freq
+	}
+	for i, c := range counts {
+		freq[i] = float64(c) / float64(len(vals))
+	}
+	return freq
 }
 
 func render(p map[string]float64) string {
