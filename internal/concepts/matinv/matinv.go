@@ -8,6 +8,9 @@
 package matinv
 
 import (
+	"fmt"
+	"math"
+
 	"mathviz/internal/concept"
 	"mathviz/internal/viz"
 )
@@ -126,6 +129,173 @@ func init() {
 		},
 		Render: render,
 	})
+}
+
+// tol is the tolerance below which a value is treated as zero when
+// deciding whether a pivot exists. Mirrors `gaussian-elimination`'s own
+// tol.
+const tol = 1e-9
+
+// Matrix is a plain 2D grid of entries, row-major. Used both for a bare
+// n x n matrix and for an augmented n x 2n matrix ([A | I] or, after
+// elimination, [I | A^-1]).
+type Matrix [][]float64
+
+// cloneMatrix returns a deep copy so Step snapshots never alias each other
+// or the caller's matrix.
+func cloneMatrix(m Matrix) Matrix {
+	out := make(Matrix, len(m))
+	for i, row := range m {
+		out[i] = append([]float64(nil), row...)
+	}
+	return out
+}
+
+// Identity returns the n x n identity matrix.
+func Identity(n int) Matrix {
+	m := make(Matrix, n)
+	for i := range m {
+		m[i] = make([]float64, n)
+		m[i][i] = 1
+	}
+	return m
+}
+
+// Augment returns [a | Identity(n)], the starting point for Gauss-Jordan
+// matrix inversion: n x 2n, a's own entries on the left, the identity on
+// the right.
+func Augment(a Matrix) Matrix {
+	n := len(a)
+	out := make(Matrix, n)
+	for i, row := range a {
+		out[i] = make([]float64, 2*n)
+		copy(out[i], row)
+		out[i][n+i] = 1
+	}
+	return out
+}
+
+// Step is one snapshot of the augmented matrix, right after one row
+// operation (or, for the first Step, before any operation at all), plus a
+// human-readable description of what produced it. PivotRow/PivotCol name
+// the pivot the operation is working with; both are -1 for the initial
+// "start" step.
+type Step struct {
+	Matrix      Matrix
+	Description string
+	PivotRow    int
+	PivotCol    int
+}
+
+// GaussJordan runs full row reduction on an augmented n x 2n matrix (as
+// produced by Augment) -- unlike `gaussian-elimination`'s Eliminate, which
+// only reaches echelon form, this scales every pivot to exactly 1 and
+// clears its column both above and below, so a fully successful run
+// leaves the identity in the left n columns and the inverse in the right
+// n columns. m is left untouched; every Step holds its own copy. If a
+// column has no nonzero entry available in or below the current pivot row,
+// that column is left without a pivot and reduction stops there -- the
+// matrix has no inverse (see ExtractInverse).
+func GaussJordan(m Matrix) []Step {
+	if len(m) == 0 {
+		return nil
+	}
+	cur := cloneMatrix(m)
+	n := len(m)
+	cols := len(m[0])
+
+	steps := []Step{{Matrix: cloneMatrix(cur), Description: "Start", PivotRow: -1, PivotCol: -1}}
+
+	for col := 0; col < n; col++ {
+		if math.Abs(cur[col][col]) < tol {
+			swapRow := -1
+			for r := col + 1; r < n; r++ {
+				if math.Abs(cur[r][col]) >= tol {
+					swapRow = r
+					break
+				}
+			}
+			if swapRow == -1 {
+				break // no pivot available anywhere in this column -- not invertible
+			}
+			cur[col], cur[swapRow] = cur[swapRow], cur[col]
+			steps = append(steps, Step{
+				Matrix:      cloneMatrix(cur),
+				Description: fmt.Sprintf("Swap R%d <-> R%d", col+1, swapRow+1),
+				PivotRow:    col,
+				PivotCol:    col,
+			})
+		}
+
+		pivotVal := cur[col][col]
+		if math.Abs(pivotVal-1) >= tol {
+			for c := 0; c < cols; c++ {
+				cur[col][c] /= pivotVal
+			}
+			steps = append(steps, Step{
+				Matrix:      cloneMatrix(cur),
+				Description: fmt.Sprintf("R%d <- R%d / %.2f", col+1, col+1, pivotVal),
+				PivotRow:    col,
+				PivotCol:    col,
+			})
+		}
+
+		for r := 0; r < n; r++ {
+			if r == col || math.Abs(cur[r][col]) < tol {
+				continue
+			}
+			factor := cur[r][col]
+			for c := 0; c < cols; c++ {
+				cur[r][c] -= factor * cur[col][c]
+			}
+			steps = append(steps, Step{
+				Matrix:      cloneMatrix(cur),
+				Description: fmt.Sprintf("R%d <- R%d - (%.2f)*R%d", r+1, r+1, factor, col+1),
+				PivotRow:    col,
+				PivotCol:    col,
+			})
+		}
+	}
+	return steps
+}
+
+// ExtractInverse reads the inverse off a fully Gauss-Jordan-reduced n x 2n
+// matrix: ok is true exactly when the left n columns have become the
+// identity, in which case the right n columns are A^-1.
+func ExtractInverse(m Matrix, n int) (inv Matrix, ok bool) {
+	for i := 0; i < n; i++ {
+		for j := 0; j < n; j++ {
+			want := 0.0
+			if i == j {
+				want = 1
+			}
+			if math.Abs(m[i][j]-want) >= tol {
+				return nil, false
+			}
+		}
+	}
+	inv = make(Matrix, n)
+	for i := 0; i < n; i++ {
+		inv[i] = append([]float64(nil), m[i][n:2*n]...)
+	}
+	return inv, true
+}
+
+// Determinant2x2 returns ad-bc for a 2x2 matrix [[a,b],[c,d]] -- the same
+// litmus test `determinant` introduced: nonzero means an inverse exists,
+// zero means the matrix collapses the plane onto a line with no way back.
+func Determinant2x2(m Matrix) float64 {
+	return m[0][0]*m[1][1] - m[0][1]*m[1][0]
+}
+
+// System builds the worked example's 2x2 matrix, A = [[4,7],[2,k]]. k is
+// the concept's slider; det(A) = 4k-14 hits zero (singular, no inverse) at
+// k=3.5.
+func System(k float64) Matrix {
+	return Matrix{
+		{4, 7},
+		{2, k},
+	}
 }
 
 func render(p map[string]float64) string {
