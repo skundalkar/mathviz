@@ -85,9 +85,9 @@ Format: `- [ ] <id> — <one-line description of the concept to visualize>`
 - [x] rsa-encryption — public-key encryption built from modular arithmetic and the euclidean algorithm
 - [x] support-vector-machine — finding the maximum-margin hyperplane that separates two classes
 - [x] gradient-boosting — sequentially fitting trees to the residual errors of the ensemble so far, built from decision-trees
+- [x] benfords-law — why leading digits in many real-world datasets (population counts, invoice amounts, powers of 2) follow a logarithmic distribution instead of landing uniformly on 1-9, built from logarithms
 
 ## Up next (statistics & ML intuition)
-- [ ] benfords-law — why leading digits in many real-world datasets (population counts, invoice amounts, powers of 2) follow a logarithmic distribution instead of landing uniformly on 1-9, built from logarithms
 
 ## Up next (math foundations)
 - [ ] limits — how a function behaves as x approaches a point, even one where it isn't defined, the idea derivative and integral both build on

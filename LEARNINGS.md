@@ -6,6 +6,95 @@ code. Newest entries go at the top.
 
 ---
 
+## benfords-law — why leading digit 1 wins
+**Why would you need this?** An auditor eyeballing a spreadsheet of expense
+reports, tax filings, or census counts wants a quick way to flag numbers
+that might be made up. A natural guess: if the figures are basically
+"random", each first digit 1-9 should show up about equally often — a bit
+over 11% each. Pull the leading digit off almost any large real dataset
+that grows or scales multiplicatively (populations, revenues, prices) and
+that guess is way off: digit 1 leads roughly three times out of ten,
+digit 9 barely one time in twenty. Is "roughly equal" just wrong for some
+structural reason — and if so, can spotting the wrong shape actually catch
+someone faking numbers?
+
+**How does it actually work?** Take the powers of 2 from 2^0 up to 2^29 —
+30 numbers: 1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, ... Read off
+just the first digit of each: 1 appears 9 times out of 30 (30.0%), while 7
+and 9 never appear at all in this run. That's not a fluke of small
+samples — it's the predicted shape.
+
+Here's why. `logarithms` already showed that each ×2 step in x adds a
+fixed log₂(2)=1 to log₂(x); the same addition trick works with log10
+instead: each ×2 step adds a fixed log10(2) ≈ 0.301 to log10(x). A
+number's leading digit is decided entirely by the *fractional part* of
+log10(x) — digit d owns the fractional-part range [log10(d), log10(d+1)).
+Repeatedly adding a fixed amount and keeping only the fractional part
+sweeps evenly around the [0,1) circle, but the arcs assigned to each digit
+are not equal width: digit 1 owns [0, 0.301) — width 0.301 — while digit 9
+owns [0.954, 1) — width just 0.046, about 6.6× narrower. Landing evenly
+around a circle where one arc is 6.6× wider than another means landing in
+the wide arc roughly 6.6× more often. That gives the general formula:
+P(leading digit = d) = log10(1 + 1/d).
+
+**What does the picture show?** Bars are the empirical share of each
+leading digit 1-9 across the current dataset. b and n control the
+"powers of b" dataset (mode=0): b sets the growth multiplier, n sets how
+many terms; the default (b=2, n=30) reproduces the worked 30-powers-of-2
+example above almost exactly. Flipping mode to 1 swaps in a completely
+different dataset — n values evenly spaced across the fixed range 1..999,
+with no multiplicative growth at all — and the bars flatten out to roughly
+11% each, no matter how large n gets (checked up to n=300 while building
+this: digit 1's share stays under 12%). The warm markers and connecting
+line trace Benford's predicted P(d) = log10(1+1/d) for comparison; in
+mode 0 the accent bars hug that line, in mode 1 they don't.
+
+**What can you do now that you couldn't before?** Flag a spreadsheet as
+suspicious from its digit shape alone, without checking a single number
+against outside records: if digit 1 doesn't dominate the leading digits
+(or 9 shows up far more than about 4.6% of the time), that's a
+statistical red flag that the numbers weren't produced by natural
+multiplicative growth — someone (or some process) spread the digits more
+evenly than reality does, the same "expected vs. actual shape" test
+`chi-squared-test` runs on category counts. You can also now tell, before
+even collecting data, which kinds of numbers should follow the law:
+quantities that grow or scale multiplicatively across orders of
+magnitude, not quantities capped to a narrow range.
+
+**Where does this show up in real life?** Forensic accounting: auditors
+run first-digit tests on tax filings, invoice amounts, and expense
+reports as a first-pass fraud screen, since real accounting entries feed
+off compounding growth and Benford's law holds up well against it. It has
+also been used to flag anomalies in reported election vote counts and
+macroeconomic statistics. Physical quantities that span scales — river
+lengths, city and country populations, stock prices, physical constants
+in whatever unit — tend to follow it too. It does NOT apply to numbers
+that are capped to a narrow range or handed out sequentially: human
+heights in centimeters, ages in years, phone numbers, or lottery numbers
+all fail the test — the same way this picture's "evenly spaced 1..999"
+dataset does.
+
+**What's the common mistake here?** Say it like this: "leading digits
+skew toward 1 because multiplying by a fixed factor over and over adds a
+fixed amount to log10(x), and small digits own a wider slice of the log
+scale" — the skew comes from the arithmetic of repeated multiplication,
+not from anything special about the number 1 itself. Not like this:
+assuming Benford's law applies to any big pile of numbers. It only kicks
+in for data that spans several orders of magnitude through multiplicative
+growth or mixed scales — a dataset confined to a narrow range (test
+scores out of 100, ages 0-100) or handed out in a fixed pattern (phone
+numbers, ID numbers) has no reason to follow it, and forcing the test onto
+those numbers just "flags" perfectly honest data.
+
+*Scope note: the "linear/evenly-spaced" contrast dataset (mode 1) uses a
+fixed range of 1..999 rather than literally counting 1..n — counting from
+1 up to a small n lands mid-decade and is itself skewed toward small
+leading digits for an unrelated reason (you simply haven't counted high
+enough to reach larger leading digits yet), which would have muddied the
+contrast this concept is trying to draw.*
+
+---
+
 ## gradient-boosting — sequentially fitting the residual
 **Why would you need this?** `random-forest` averaged many independently-
 trained trees to smooth out noise — but every one of those trees trained on
