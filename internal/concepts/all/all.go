@@ -59,6 +59,7 @@ import (
 	_ "mathviz/internal/concepts/normalskew"
 	_ "mathviz/internal/concepts/overfitting"
 	_ "mathviz/internal/concepts/pagerank"
+	_ "mathviz/internal/concepts/partialderiv"
 	_ "mathviz/internal/concepts/pascalstriangle"
 	_ "mathviz/internal/concepts/pca"
 	_ "mathviz/internal/concepts/permutationscombinations"
