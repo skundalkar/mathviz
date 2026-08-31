@@ -12,6 +12,69 @@ import (
 	"mathviz/internal/viz"
 )
 
+// The worked example's public parameters, small enough to check by hand.
+// P is the public prime modulus; G is the public base (a primitive root
+// mod P, so its powers cycle through every nonzero residue mod P).
+const (
+	P = 23
+	G = 5
+)
+
+// ModPow computes base^exp mod m using square-and-multiply, so it stays
+// cheap even for exponents far larger than this worked example uses -- the
+// same trick `modular-arithmetic` and `rsa-encryption` both rely on.
+func ModPow(base, exp, m int) int {
+	if m == 1 {
+		return 0
+	}
+	base = base % m
+	if base < 0 {
+		base += m
+	}
+	result := 1
+	for exp > 0 {
+		if exp&1 == 1 {
+			result = (result * base) % m
+		}
+		exp >>= 1
+		base = (base * base) % m
+	}
+	return result
+}
+
+// PublicValue returns the number a party publishes: g^private mod p. It's
+// safe to send in the clear -- recovering `private` from it is the
+// discrete-log problem BruteForceDiscreteLog demonstrates below.
+func PublicValue(private, g, p int) int {
+	return ModPow(g, private, p)
+}
+
+// SharedSecret returns what one party computes after receiving the other
+// party's public value: otherPublic^myPrivate mod p. Both parties end up
+// computing g^(a*b) mod p this way, from opposite directions, without
+// either ever learning the other's private number.
+func SharedSecret(otherPublic, myPrivate, p int) int {
+	return ModPow(otherPublic, myPrivate, p)
+}
+
+// BruteForceDiscreteLog searches every exponent in [1, p-1] for one that
+// reproduces target = g^x mod p, returning the first match and whether one
+// was found. This is the only general way to invert PublicValue known --
+// there's no shortcut -- so it stands in for "recover the private number
+// from the public one," concretely, at a scale small enough to actually
+// run: exhaustive search over p-1 candidates is instant here (p=23) and
+// would still be instant at p in the low thousands, but at the sizes real
+// Diffie-Hellman uses (p hundreds of digits long) the same loop would
+// still be running long after the sun burns out.
+func BruteForceDiscreteLog(g, target, p int) (x int, ok bool) {
+	for x := 1; x < p; x++ {
+		if ModPow(g, x, p) == target {
+			return x, true
+		}
+	}
+	return 0, false
+}
+
 func init() {
 	concept.Register(concept.Concept{
 		ID:    "diffie-hellman-key-exchange",
