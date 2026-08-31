@@ -85,7 +85,107 @@ func init() {
 		Sections: []concept.Section{
 			{
 				Heading: "Why would you need this?",
-				Body:    []string{"placeholder"},
+				Body: []string{
+					"`modular-arithmetic` ended by pointing at modular exponentiation as easy " +
+						"forward, hard backward -- the discrete-log problem -- and named " +
+						"Diffie-Hellman as one of the two things built on that gap. " +
+						"`rsa-encryption` used a related gap (factoring, not discrete logs) to " +
+						"let anyone lock a message with a public key that only the key's owner " +
+						"can unlock. But locking individual messages is heavier than plenty of " +
+						"situations need: often two people just want to agree on one ordinary " +
+						"secret number to use as a key for a fast symmetric cipher afterward -- " +
+						"and the only channel they have to talk over is public, with someone " +
+						"potentially reading every byte. Neither side can just pick a secret and " +
+						"mail it over; that's the exact thing being avoided. Is there a way for " +
+						"two people, using only messages either of them would be fine with an " +
+						"eavesdropper reading in full, to land on the very same secret number, " +
+						"computed independently on each end?",
+				},
+			},
+			{
+				Heading: "How does it actually work?",
+				Body: []string{
+					"Both sides already agree, in public, on a prime p=23 and a base g=5 (a " +
+						"'primitive root' mod 23 -- its powers cycle through every nonzero " +
+						"remainder mod 23 before repeating, so no part of the range goes to " +
+						"waste).",
+					"• Alice picks a private number only she ever knows, a=6, and publishes " +
+						"A = g^a mod p = 5^6 mod 23 = 8 (via square-and-multiply ModPow, the " +
+						"same trick `modular-arithmetic`'s PowMod uses).",
+					"• Bob picks his own private number, b=15, and publishes " +
+						"B = g^b mod p = 5^15 mod 23 = 19.",
+					"• Alice takes Bob's public value and raises it to her own private " +
+						"number: B^a mod p = 19^6 mod 23 = 2.",
+					"• Bob does the mirror image with Alice's public value: " +
+						"A^b mod p = 8^15 mod 23 = 2.",
+					"Same answer, 2, from two calculations that look nothing alike, because " +
+						"both are secretly computing g^(a·b) mod p: B^a = (g^b)^a = g^(b·a), " +
+						"and A^b = (g^a)^b = g^(a·b), and a·b = b·a either way you multiply it. " +
+						"Neither side ever needed to know the other's private number to land on " +
+						"the same shared one -- only the other side's *public* value, which was " +
+						"never a secret to begin with.",
+				},
+			},
+			{
+				Heading: "What does the picture show?",
+				Body: []string{
+					"a and b drag each party's private number. The top row shows each side " +
+						"computing its public value and sending it across the public channel " +
+						"(the middle box lists exactly what an eavesdropper would see -- p, g, " +
+						"A, B, never a or b). The bottom row shows each side combining the " +
+						"*other* party's public value with its own still-private number; the " +
+						"center box turns green the moment both land on the same shared secret " +
+						"-- which is every time, for any a and b, since the underlying algebra " +
+						"never depends on which specific numbers were chosen. The footer runs " +
+						"the brute-force search a real eavesdropper would have to try to recover " +
+						"a from A at this tiny modulus (instant here, p=23) -- and says why that " +
+						"same search stops being instant the moment p grows to real-world size.",
+				},
+			},
+			{
+				Heading: "What can you do now that you couldn't before?",
+				Body: []string{
+					"Derive a shared secret with someone you've never met, over a channel " +
+						"where every message might be read, without ever transmitting the " +
+						"secret itself or any private key. That shared number then becomes the " +
+						"key for a fast symmetric cipher for the rest of the conversation -- " +
+						"this handshake is the missing first step `rsa-encryption`'s own opening " +
+						"question left open: how do two strangers agree on anything secret at " +
+						"all, in public, before either can safely encrypt a single byte to the " +
+						"other.",
+				},
+			},
+			{
+				Heading: "Where does this show up in real life?",
+				Body: []string{
+					"Nearly every HTTPS connection starts with a Diffie-Hellman-style handshake " +
+						"(usually its elliptic-curve variant today, same forward-easy/" +
+						"backward-hard structure) to agree on a session key before any webpage " +
+						"data flows. Signal and WhatsApp run the same idea to set up " +
+						"end-to-end-encrypted chats. SSH uses it the first time you connect to a " +
+						"new server, before you've exchanged anything else with it at all.",
+				},
+			},
+			{
+				Heading: "What's the common mistake here?",
+				Body: []string{
+					"Say it like this: 'a and b never cross the channel -- only g^a mod p and " +
+						"g^b mod p do; anyone watching has to solve the discrete-log problem to " +
+						"recover the private numbers from those public ones.'",
+					"Not like this: assuming the shared secret itself (2, in the worked " +
+						"example) is sent over the wire at some point -- it's never transmitted " +
+						"at all, only computed independently on each end from a number that WAS " +
+						"sent (the other party's public value) combined with a number that never " +
+						"left home (your own private one). Also not like this: treating " +
+						"Diffie-Hellman as encrypting a message the way RSA does -- it doesn't " +
+						"encrypt anything; it only gets two parties to the same secret number, " +
+						"which a separate cipher then actually uses. And one gap this picture " +
+						"doesn't show: nothing here confirms A really came from Alice and B " +
+						"really came from Bob -- an attacker sitting in the middle of the " +
+						"channel could swap in their own public values undetected, which is why " +
+						"real deployments pair this exchange with a separate authentication step " +
+						"(certificates) instead of using it alone.",
+				},
 			},
 		},
 		Params: []concept.ParamSpec{
