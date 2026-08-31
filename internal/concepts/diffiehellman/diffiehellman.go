@@ -8,6 +8,8 @@
 package diffiehellman
 
 import (
+	"fmt"
+
 	"mathviz/internal/concept"
 	"mathviz/internal/viz"
 )
@@ -94,7 +96,113 @@ func init() {
 	})
 }
 
+// Layout constants for the two-row exchange diagram, in pixels. Row 1 is
+// each party computing and sending their public value; row 2 is each party
+// combining the *other* party's public value with their own private one to
+// land on the shared secret.
+const (
+	boxW          = 210.0
+	boxH          = 110.0
+	leftX, rightX = 20.0, 530.0
+	midX          = 275.0
+	row1Y, row2Y  = 70.0, 300.0
+)
+
 func render(p map[string]float64) string {
+	a := int(p["a"])
+	b := int(p["b"])
+
+	A := PublicValue(a, G, P)
+	B := PublicValue(b, G, P)
+	secretAlice := SharedSecret(B, a, P)
+	secretBob := SharedSecret(A, b, P)
+	match := secretAlice == secretBob
+
+	guessedA, _ := BruteForceDiscreteLog(G, A, P)
+
+	// A canvas whose Path/Axes/Sample side is never used -- every draw call
+	// below is Rect/Text in raw pixel space, since the diagram is a
+	// labeled pipeline, not a plot (same approach as `rsa-encryption`).
 	c := viz.New(760, 480, 0, 1, 0, 1)
+
+	c.Text(20, 24, fmt.Sprintf("Public, known to everyone (including an eavesdropper): p=%d, g=%d", P, G),
+		14, viz.Ink, "start")
+
+	// Row 1: each party turns their private number into a public value and
+	// sends it across the channel.
+	c.Rect(leftX, row1Y, boxW, boxH, viz.Faint, 1)
+	c.Text(leftX+boxW/2, row1Y+26, "Alice (private)", 13, viz.Muted, "middle")
+	c.Text(leftX+boxW/2, row1Y+52, fmt.Sprintf("a = %d", a), 16, viz.Accent, "middle")
+	c.Text(leftX+boxW/2, row1Y+78, fmt.Sprintf("A = g^a mod p = %d", A), 14, viz.Ink, "middle")
+
+	c.Rect(rightX, row1Y, boxW, boxH, viz.Faint, 1)
+	c.Text(rightX+boxW/2, row1Y+26, "Bob (private)", 13, viz.Muted, "middle")
+	c.Text(rightX+boxW/2, row1Y+52, fmt.Sprintf("b = %d", b), 16, viz.Warm, "middle")
+	c.Text(rightX+boxW/2, row1Y+78, fmt.Sprintf("B = g^b mod p = %d", B), 14, viz.Ink, "middle")
+
+	c.Rect(midX, row1Y, boxW, boxH, viz.Bad, 0.08)
+	c.Text(midX+boxW/2, row1Y+20, "Public channel", 13, viz.Ink, "middle")
+	c.Text(midX+boxW/2, row1Y+44, fmt.Sprintf("A=%d   B=%d", A, B), 15, viz.Ink, "middle")
+	c.Text(midX+boxW/2, row1Y+68, "an eavesdropper sees exactly", 12, viz.Muted, "middle")
+	c.Text(midX+boxW/2, row1Y+86, "p, g, A, B -- never a or b", 12, viz.Muted, "middle")
+
+	arrow(c, leftX+boxW+6, row1Y+boxH/2-10, midX-6, viz.Accent)
+	c.Text((leftX+boxW+midX)/2, row1Y-10, "sends A", 12, viz.Accent, "middle")
+	arrow(c, rightX-6, row1Y+boxH/2+10, midX+boxW+6, viz.Warm)
+	c.Text((midX+boxW+rightX)/2, row1Y-10, "sends B", 12, viz.Warm, "middle")
+
+	// Row 2: each party combines the *other* party's public value with
+	// their own still-private number.
+	c.Rect(leftX, row2Y, boxW, boxH, viz.Faint, 1)
+	c.Text(leftX+boxW/2, row2Y+26, "Alice computes", 13, viz.Muted, "middle")
+	c.Text(leftX+boxW/2, row2Y+52, "B^a mod p", 14, viz.Ink, "middle")
+	c.Text(leftX+boxW/2, row2Y+80, fmt.Sprintf("= %d", secretAlice), 18, viz.Accent, "middle")
+
+	c.Rect(rightX, row2Y, boxW, boxH, viz.Faint, 1)
+	c.Text(rightX+boxW/2, row2Y+26, "Bob computes", 13, viz.Muted, "middle")
+	c.Text(rightX+boxW/2, row2Y+52, "A^b mod p", 14, viz.Ink, "middle")
+	c.Text(rightX+boxW/2, row2Y+80, fmt.Sprintf("= %d", secretBob), 18, viz.Warm, "middle")
+
+	secretColor := viz.Good
+	verdict := "MATCH -- shared secret"
+	if !match {
+		secretColor = viz.Bad
+		verdict = "mismatch (shouldn't happen)"
+	}
+	c.Rect(midX, row2Y, boxW, boxH, secretColor, 0.18)
+	c.Text(midX+boxW/2, row2Y+26, "shared secret", 13, viz.Muted, "middle")
+	c.Text(midX+boxW/2, row2Y+56, fmt.Sprintf("%d", secretAlice), 26, secretColor, "middle")
+	c.Text(midX+boxW/2, row2Y+82, verdict, 13, secretColor, "middle")
+
+	arrow(c, leftX+boxW+6, row2Y+boxH/2-10, midX-6, viz.Accent)
+	arrow(c, rightX-6, row2Y+boxH/2+10, midX+boxW+6, viz.Warm)
+
+	c.Text(20, 430, fmt.Sprintf(
+		"Eve, watching the channel, would have to brute-force search up to p-1=%d exponents to recover a from A -- found a=%d here in that search.",
+		P-1, guessedA), 12, viz.Muted, "start")
+	c.Text(20, 452, "At real Diffie-Hellman sizes (p hundreds of digits) that same search is the discrete-log problem, believed to take longer than the age of the universe.",
+		12, viz.Muted, "start")
+
 	return c.String()
+}
+
+// arrow draws a horizontal shaft between x0 and x1 at pixel height y,
+// capped with a triangle glyph pointing toward x1 -- built from Rect and
+// Text (both raw pixel space) so it works regardless of which side of the
+// pipeline diagram it's connecting.
+func arrow(c *viz.Canvas, x0, y, x1 float64, color string) {
+	const headW = 14.0
+	lo, hi := x0, x1
+	glyph := "▶"
+	if x1 < x0 {
+		lo, hi = x1, x0
+		glyph = "◀"
+	}
+	if x1 >= x0 {
+		c.Rect(lo, y-1.5, hi-lo-headW, 3, color, 1)
+		c.Text(hi-headW/2, y+5, glyph, 14, color, "middle")
+	} else {
+		c.Rect(lo+headW, y-1.5, hi-lo-headW, 3, color, 1)
+		c.Text(lo+headW/2, y+5, glyph, 14, color, "middle")
+	}
 }
