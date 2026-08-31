@@ -6,8 +6,10 @@
 package huffman
 
 import (
+	"fmt"
 	"math"
 	"sort"
+	"strings"
 
 	"mathviz/internal/concept"
 	"mathviz/internal/viz"
@@ -173,7 +175,142 @@ func init() {
 	})
 }
 
+// messageLen is the message length used to translate "bits per symbol" into
+// a concrete total-bits comparison in the footer readout.
+const messageLen = 1000
+
 func render(p map[string]float64) string {
-	c := viz.New(720, 460, 0, 1, 0, 1)
+	skew := p["skew"]
+	labels, freqs := Frequencies(skew)
+	root := BuildHuffmanTree(labels, freqs)
+	lengths := CodeLengths(root)
+	codes := Codes(root)
+	avg := AverageCodeLength(labels, freqs, lengths)
+	ent := EntropyBits(freqs)
+	fixed := FixedLengthBits(len(labels))
+
+	// Depth of every node (root=0), and the tree's overall depth, so leaves
+	// and internal nodes alike can be placed on the right horizontal row.
+	depths := map[*Node]int{}
+	maxDepth := 0
+	var walkDepth func(n *Node, d int)
+	walkDepth = func(n *Node, d int) {
+		if n == nil {
+			return
+		}
+		depths[n] = d
+		if d > maxDepth {
+			maxDepth = d
+		}
+		walkDepth(n.Left, d+1)
+		walkDepth(n.Right, d+1)
+	}
+	walkDepth(root, 0)
+	if maxDepth == 0 {
+		maxDepth = 1 // guards the (unused here) single-leaf case from a divide-by-zero below
+	}
+
+	// x position: leaves spread left-to-right in the order the tree visits
+	// them; every internal node sits above the midpoint of its children.
+	nLeaves := len(labels)
+	leafIdx := 0
+	xPos := map[*Node]float64{}
+	var assignX func(n *Node) float64
+	assignX = func(n *Node) float64 {
+		if n.Left == nil && n.Right == nil {
+			x := 0.08 + (float64(leafIdx)+0.5)/float64(nLeaves)*0.84
+			leafIdx++
+			xPos[n] = x
+			return x
+		}
+		lx := assignX(n.Left)
+		rx := assignX(n.Right)
+		x := (lx + rx) / 2
+		xPos[n] = x
+		return x
+	}
+	assignX(root)
+
+	// y position: root at the top (large data-y, since Canvas.Y flips so
+	// larger data-y renders higher), leaves at the bottom.
+	yFor := func(depth int) float64 {
+		return 0.95 - float64(depth)/float64(maxDepth)*0.80
+	}
+
+	c := viz.New(760, 580, 0, 1, 0, 1)
+	c.PadT = 130 // room for three lines of header text above the tree
+	c.PadB = 130 // room for the bits-per-symbol comparison below it
+
+	// Edges, drawn before nodes so the node markers sit on top of them.
+	// Each edge is labeled with the bit it contributes (0 for the left
+	// branch, 1 for the right) -- the same path Codes walks to build each
+	// leaf's codeword.
+	var drawEdges func(n *Node)
+	drawEdges = func(n *Node) {
+		if n == nil || (n.Left == nil && n.Right == nil) {
+			return
+		}
+		for _, child := range []*Node{n.Left, n.Right} {
+			c.Path([][2]float64{{xPos[n], yFor(depths[n])}, {xPos[child], yFor(depths[child])}}, viz.Muted, 1.5)
+			bit := "0"
+			if child == n.Right {
+				bit = "1"
+			}
+			mx := (xPos[n] + xPos[child]) / 2
+			my := (yFor(depths[n]) + yFor(depths[child])) / 2
+			c.Text(c.X(mx)+6, c.Y(my), bit, 12, viz.Accent, "middle")
+		}
+		drawEdges(n.Left)
+		drawEdges(n.Right)
+	}
+	drawEdges(root)
+
+	// Nodes: a tinted square for every leaf, its symbol, frequency, and
+	// Huffman codeword printed below it; a small dot with just the
+	// combined frequency for every internal (merge) node.
+	var drawNodes func(n *Node)
+	drawNodes = func(n *Node) {
+		if n == nil {
+			return
+		}
+		px, py := c.X(xPos[n]), c.Y(yFor(depths[n]))
+		if n.Left == nil && n.Right == nil {
+			c.Rect(px-16, py-16, 32, 32, viz.Accent, 0.16)
+			c.Text(px, py+5, n.Label, 15, viz.Ink, "middle")
+			c.Text(px, py+30, fmt.Sprintf("p=%.3f", n.Freq), 11, viz.Muted, "middle")
+			c.Text(px, py+46, fmt.Sprintf("code %s (%d bit)", codes[n.Label], lengths[n.Label]), 11, viz.Ink, "middle")
+			return
+		}
+		c.Rect(px-5, py-5, 10, 10, viz.Muted, 0.5)
+		c.Text(px, py-12, fmt.Sprintf("%.3f", n.Freq), 10, viz.Muted, "middle")
+		drawNodes(n.Left)
+		drawNodes(n.Right)
+	}
+	drawNodes(root)
+
+	freqStrs := make([]string, len(labels))
+	for i, l := range labels {
+		freqStrs[i] = fmt.Sprintf("%s=%.3f", l, freqs[i])
+	}
+	c.Text(20, 24, fmt.Sprintf("Symbol frequencies (skew=%.2f): %s", skew, strings.Join(freqStrs, "  ")),
+		14, viz.Ink, "start")
+	c.Text(20, 46, "Merge the two least-frequent nodes repeatedly (greedy), building the tree bottom-up",
+		12, viz.Muted, "start")
+	c.Text(20, 66, "left branch = bit 0, right branch = bit 1 -- a symbol's codeword is its path from the root",
+		12, viz.Muted, "start")
+
+	saved := 0.0
+	if fixed > 0 {
+		saved = (fixed - avg) / fixed * 100
+	}
+	c.Text(20, c.H-92, fmt.Sprintf("Huffman average = %.3f bits/symbol    entropy floor = %.3f bits    fixed-length = %.0f bits",
+		avg, ent, fixed), 13, viz.Ink, "start")
+	c.Text(20, c.H-70, fmt.Sprintf("gap above entropy = %.3f bits (Huffman is always within 1 bit of entropy)", avg-ent),
+		12, viz.Muted, "start")
+	c.Text(20, c.H-48, fmt.Sprintf("over %d symbols: fixed-length ~%.0f bits vs Huffman ~%.0f bits (%.1f%% smaller)",
+		messageLen, fixed*messageLen, avg*messageLen, saved), 12, viz.Muted, "start")
+	c.Text(20, c.H-20, "square = leaf symbol    dot = merged (internal) node, labeled with its combined frequency",
+		12, viz.Muted, "start")
+
 	return c.String()
 }
