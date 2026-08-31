@@ -165,7 +165,105 @@ func init() {
 		Sections: []concept.Section{
 			{
 				Heading: "Why would you need this?",
-				Body:    []string{"placeholder"},
+				Body: []string{
+					"`entropy` measured how many bits of genuine surprise a distribution " +
+						"carries on average -- but it never said how to actually build a code " +
+						"that gets close to that number. The obvious approach is a fixed-length " +
+						"code: with 4 symbols, ⌈log2(4)⌉=2 bits apiece, no exceptions, whether a " +
+						"symbol is the most common one in the alphabet or the rarest. That's " +
+						"simple, but it spends the same 2 bits on a symbol that shows up over " +
+						"half the time as on one that shows up a fraction of that -- treating a " +
+						"near-certainty and a rare surprise as equally expensive to send, even " +
+						"though `entropy` already said they're not. Can you build an actual, " +
+						"usable code -- one where a stream of bits still unambiguously decodes " +
+						"back to the original symbols -- that spends fewer bits on frequent " +
+						"symbols and more on rare ones, pulling the average down toward entropy's " +
+						"floor?",
+				},
+			},
+			{
+				Heading: "How does it actually work?",
+				Body: []string{
+					"Take the 4-symbol alphabet A, B, C, D with frequencies 8/15≈0.533, " +
+						"4/15≈0.267, 2/15≈0.133, and 1/15≈0.067 (skew=0.5 below). Build the tree " +
+						"bottom-up by repeatedly merging the two least-frequent nodes into one:",
+					"• Merge the two smallest: C(0.133) and D(0.067) → a new combined node " +
+						"CD=0.200.",
+					"• Merge the two smallest again: CD(0.200) and B(0.267) → a new combined " +
+						"node BCD=0.467.",
+					"• Merge the last two: BCD(0.467) and A(0.533) → the root, 1.000.",
+					"Read each symbol's code off its path down from the root -- 0 for every " +
+						"left branch, 1 for every right one. A sits just one merge below the " +
+						"root: code '1', 1 bit. B is two merges down: code '01', 2 bits. C and D " +
+						"are each three merges down: codes '001' and '000', 3 bits apiece.",
+					"Weighted average: 8/15×1 + 4/15×2 + 2/15×3 + 1/15×3 = (8+8+6+3)/15 = " +
+						"25/15 ≈ 1.667 bits/symbol -- noticeably under the fixed 2 bits/symbol, " +
+						"and only 0.026 bits above this distribution's 1.640-bit entropy floor.",
+					"Why merging-the-smallest-first works: every merge buries that round's two " +
+						"least-likely candidates one level deeper, and one level deeper costs " +
+						"exactly one more bit. The algorithm always spends that extra bit where " +
+						"it's cheapest -- on whatever is least frequent at that moment -- never on " +
+						"something more common that an earlier merge has already promoted higher " +
+						"up the tree.",
+				},
+			},
+			{
+				Heading: "What does the picture show?",
+				Body: []string{
+					"skew reshapes the four frequencies (A always the largest, D always the " +
+						"smallest); the tree below rebuilds itself merge by merge to match. Each " +
+						"leaf square shows its symbol, frequency, and Huffman codeword; each " +
+						"branch is labeled with the bit it contributes, so tracing a leaf's path " +
+						"back to the root spells out its codeword directly. Drag skew toward 0.95 " +
+						"and the frequencies flatten out, the tree balances into every leaf sitting " +
+						"2 levels down, and the Huffman average converges on the fixed-length cost " +
+						"it was trying to beat. Drag skew toward 0.15 and A dominates so heavily " +
+						"that it keeps its 1-bit code while B, C, and D get pushed progressively " +
+						"deeper. The bottom readout tracks the Huffman average, the entropy floor, " +
+						"the fixed-length cost, and the gap between the first two, live.",
+				},
+			},
+			{
+				Heading: "What can you do now that you couldn't before?",
+				Body: []string{
+					"Build an actual prefix-free code from nothing but symbol frequencies, " +
+						"provably as good as any code can get to within 1 bit of entropy (Shannon's " +
+						"source coding theorem) -- turning entropy from a description of a limit " +
+						"into a limit you can actually approach with a constructive algorithm. And " +
+						"the savings are real, not just theoretical: at skew=0.5 above, encoding " +
+						"1000 symbols costs about 1667 bits with Huffman versus 2000 bits " +
+						"fixed-length, a 16.7% reduction, for free, just by looking at the " +
+						"frequencies before choosing the codes.",
+				},
+			},
+			{
+				Heading: "Where does this show up in real life?",
+				Body: []string{
+					"ZIP, DEFLATE, and gzip all run Huffman coding on the back end, after a " +
+						"separate pass finds repeated sequences to shorten first. JPEG and MP3 " +
+						"Huffman-encode their final quantized values before writing the file. " +
+						"Morse code is a hand-built approximation of the exact same idea, " +
+						"invented a century before Huffman's algorithm: E, the most common letter " +
+						"in English, gets a single dot; Q, one of the rarest, gets four symbols.",
+				},
+			},
+			{
+				Heading: "What's the common mistake here?",
+				Body: []string{
+					"Say it like this: 'Huffman coding assigns shorter codes to more frequent " +
+						"symbols and always lands within 1 bit of entropy per symbol -- it reads " +
+						"the frequencies and builds the optimal tree from them directly, instead " +
+						"of guessing ahead of time how much a symbol will be used.'",
+					"Not like this: assuming a shorter Huffman code for a frequent symbol means " +
+						"it somehow compressed that individual symbol -- one occurrence of A " +
+						"still costs exactly 1 bit here, not a fraction of one; the savings only " +
+						"show up in aggregate, averaged across many symbols, which is exactly why " +
+						"entropy (itself an average) is the right thing to compare against, not " +
+						"any single code length in isolation. Also not like this: expecting " +
+						"Huffman to ever beat entropy -- the gap can shrink toward 0 (skew=0.5 " +
+						"above gets within 0.026 bits) but the average length can never dip below " +
+						"the entropy floor itself, for any distribution.",
+				},
 			},
 		},
 		Params: []concept.ParamSpec{
