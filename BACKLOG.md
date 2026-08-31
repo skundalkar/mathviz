@@ -88,11 +88,11 @@ Format: `- [ ] <id> — <one-line description of the concept to visualize>`
 - [x] benfords-law — why leading digits in many real-world datasets (population counts, invoice amounts, powers of 2) follow a logarithmic distribution instead of landing uniformly on 1-9, built from logarithms
 - [x] limits — how a function behaves as x approaches a point, even one where it isn't defined, the idea derivative and integral both build on
 - [x] matrix-inverse — undoing a linear transformation by row-reducing to the identity, and why not every matrix has one, built from gaussian-elimination and determinant
+- [x] partial-derivatives-gradient — how a function's steepest-ascent direction generalizes the single-variable derivative to functions of several inputs, built from derivative
 
 ## Up next (statistics & ML intuition)
 
 ## Up next (math foundations)
-- [ ] partial-derivatives-gradient — how a function's steepest-ascent direction generalizes the single-variable derivative to functions of several inputs, built from derivative
 - [ ] diffie-hellman-key-exchange — two parties agreeing on a shared secret over a public channel using modular exponentiation, built from modular-arithmetic
 - [ ] huffman-coding — building an optimal prefix-free code from symbol frequencies, and why it approaches entropy's theoretical limit, built from entropy
 

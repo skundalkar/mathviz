@@ -21,7 +21,99 @@ func init() {
 		Sections: []concept.Section{
 			{
 				Heading: "Why would you need this?",
-				Body:    []string{"placeholder"},
+				Body: []string{
+					"`derivative` found the exact slope of a curve at one point — but there " +
+						"was only ever one direction to move in, along the x-axis. Standing on a " +
+						"hillside, that's not true anymore: you could head north, east, or any " +
+						"compass bearing in between, and the ground gets steeper or flatter " +
+						"depending on which way you pick. If f(x,y) reports elevation at map " +
+						"coordinates (x,y), which single direction should you walk to gain " +
+						"elevation the fastest — and how much do you actually gain per step going " +
+						"that way?",
+				},
+			},
+			{
+				Heading: "How does it actually work?",
+				Body: []string{
+					"Take f(x,y) = x²+y² and the point (1,2), where f(1,2) = 1+4 = 5:",
+					"• Freeze y at 2 and let only x vary: g(x) = f(x,2) = x²+4. That's a plain " +
+						"single-variable curve again, so `derivative` applies directly: " +
+						"g'(x) = 2x, so g'(1) = 2. This is the partial derivative of f with " +
+						"respect to x at (1,2), written ∂f/∂x(1,2) = 2 — moving east (increasing " +
+						"x, holding y=2) raises f by about 2 units per unit of x.",
+					"• Freeze x at 1 and let only y vary: h(y) = f(1,y) = 1+y². h'(y) = 2y, so " +
+						"h'(2) = 4: ∂f/∂y(1,2) = 4 — moving north raises f by about 4 per unit of " +
+						"y, steeper than east.",
+					"• Package the two slopes into one vector, the gradient: " +
+						"∇f(1,2) = (∂f/∂x, ∂f/∂y) = (2,4). Its length, |∇f| = √(2²+4²) = √20 ≈ " +
+						"4.47, isn't an arbitrary combination of the two numbers — it's about to " +
+						"turn out to be the actual steepest slope available at this point, in any " +
+						"direction at all, not just east or north.",
+					"• Check that claim with `vectors`' dot product: the rate f changes moving " +
+						"along any unit direction u = (cos θ, sin θ) is the directional " +
+						"derivative D_u f = ∇f · u. Straight east (θ=0°, u=(1,0)): " +
+						"D_u f = 2(1)+4(0) = 2, matching ∂f/∂x exactly, as it must — 'freeze y' " +
+						"is just 'move along the x-axis' restated. Straight along the gradient's " +
+						"own direction (θ = atan2(4,2) ≈ 63.43°, u ≈ (0.447,0.894)): " +
+						"D_u f = 2(0.447)+4(0.894) ≈ 0.894+3.578 ≈ 4.47 — exactly |∇f|, the " +
+						"biggest a directional derivative can get here, because a dot product " +
+						"u·v is maximized exactly when u points the same way as v.",
+				},
+			},
+			{
+				Heading: "What does the picture show?",
+				Body: []string{
+					"x0 and y0 drag the point around; theta swings a direction arrow (orange) " +
+						"around that point. The faint circles are contours of f = x²+y² (level " +
+						"sets, always circles here since f only depends on distance from the " +
+						"origin); the dashed lines mark the y=y0 and x=x0 slices ∂f/∂x and ∂f/∂y " +
+						"come from. The blue arrow is the gradient ∇f, fixed at the point's own " +
+						"steepest-ascent direction. Drag theta until the orange arrow lines up " +
+						"with the blue one and the readout's D_u f climbs to match |∇f| exactly, " +
+						"flipping the status line to 'ALIGNED' — every other angle gives a " +
+						"smaller (or, pointing the other way, negative) number.",
+				},
+			},
+			{
+				Heading: "What can you do now that you couldn't before?",
+				Body: []string{
+					"Name a single best direction to move from any point of a multivariable " +
+						"function, instead of only ever being able to ask 'how steep is it in " +
+						"this one direction I already picked' — and know exactly how much you'd " +
+						"gain moving that way. It's also the compass `gradient-descent` follows: " +
+						"stepping opposite the gradient walks straight downhill by the steepest " +
+						"available route at every point along the way.",
+				},
+			},
+			{
+				Heading: "Where does this show up in real life?",
+				Body: []string{
+					"A hiking app can report the grade in the direction of the trail you're on, " +
+						"but the steepest slope at your exact GPS pin might point off into the " +
+						"woods on a completely different bearing — the gradient is that bearing. " +
+						"Weather maps' pressure-gradient force pushes air straight down the " +
+						"steepest drop in pressure, not along whatever direction the wind " +
+						"happened to be blowing before. Heat flows down a temperature gradient " +
+						"the same way. And `gradient-descent`, already in this gallery, is " +
+						"exactly this idea applied to training a model: repeatedly step opposite " +
+						"∇(loss) to reduce the loss as fast as locally possible.",
+				},
+			},
+			{
+				Heading: "What's the common mistake here?",
+				Body: []string{
+					"Say it like this: '∂f/∂x only measures the slope along one axis with " +
+						"everything else frozen; the gradient combines both partials into the " +
+						"one vector that points the actual steepest way up.'",
+					"Not like this: treating a single partial derivative, like ∂f/∂x(1,2)=2, as " +
+						"'the' slope at that point — it's only the slope in that one axis-aligned " +
+						"direction, and a steeper direction exists unless the gradient happens to " +
+						"point exactly along that axis (compare: 4.47 available along the " +
+						"gradient here, versus only 2 heading due east). Also not like this: " +
+						"reading the gradient's components as literal step sizes to walk — they " +
+						"give a direction and a rate (units of f gained per unit of distance " +
+						"moved), not a distance to travel.",
+				},
 			},
 		},
 		Params: []concept.ParamSpec{
