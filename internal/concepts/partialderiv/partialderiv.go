@@ -6,6 +6,7 @@
 package partialderiv
 
 import (
+	"fmt"
 	"math"
 
 	"mathviz/internal/concept"
@@ -89,8 +90,101 @@ func DirectionalDerivative(x, y, thetaDeg float64) float64 {
 	return fx*math.Cos(rad) + fy*math.Sin(rad)
 }
 
+// contourLevels are the f=k circles drawn faintly for scale: since
+// F(x,y)=x²+y², the level set f=k is the circle of radius √k.
+var contourLevels = []float64{1, 4, 9, 16}
+
+// alignTolDeg is how close theta must sit to the gradient's own angle
+// before the readout calls the two "ALIGNED" -- comfortably tighter than
+// the 1° slider step so a genuine match is never missed by rounding.
+const alignTolDeg = 2.0
+
 func render(p map[string]float64) string {
+	x0, y0, theta := p["x0"], p["y0"], p["theta"]
+	fx, fy := Gradient(x0, y0)
+	mag := GradientMagnitude(x0, y0)
+	gradAngle := GradientAngleDeg(x0, y0)
+	dDeriv := DirectionalDerivative(x0, y0, theta)
+
 	c := viz.New(560, 560, -4.5, 4.5, -4.5, 4.5)
-	c.Axes()
+	c.Path([][2]float64{{c.XMin, 0}, {c.XMax, 0}}, viz.Muted, 1)
+	c.Path([][2]float64{{0, c.YMin}, {0, c.YMax}}, viz.Muted, 1)
+
+	// Contours of f: since f=x²+y², each level set f=k is a plain circle
+	// of radius √k, so no gradient-free implicit-curve sampling is needed.
+	for _, k := range contourLevels {
+		r := math.Sqrt(k)
+		pts := make([][2]float64, 0, 73)
+		for i := 0; i <= 72; i++ {
+			rad := float64(i) * 5 * math.Pi / 180
+			pts = append(pts, [2]float64{r * math.Cos(rad), r * math.Sin(rad)})
+		}
+		c.Path(pts, viz.Muted, 1)
+	}
+
+	// Dashed cross-section guides: the horizontal one at y=y0 is where
+	// PartialX's slice g(x)=F(x,y0) lives, the vertical one at x=x0 is
+	// where PartialY's slice h(y)=F(x0,y) lives.
+	c.Path([][2]float64{{c.XMin, y0}, {c.XMax, y0}}, viz.Faint, 1)
+	c.Path([][2]float64{{x0, c.YMin}, {x0, c.YMax}}, viz.Faint, 1)
+
+	px, py := c.X(x0), c.Y(y0)
+	c.Rect(px-3, py-3, 6, 6, viz.Ink, 1)
+
+	// Both arrows are drawn at a fixed visual length from the point so
+	// their *directions* -- the thing being compared -- read clearly no
+	// matter how their true magnitudes differ; the readout prints the
+	// real numbers.
+	const armLen = 1.2
+	if mag > 1e-9 {
+		arrow(c, x0, y0, x0+fx/mag*armLen, y0+fy/mag*armLen, viz.Accent, 2.5)
+	}
+	rad := theta * math.Pi / 180
+	ux, uy := math.Cos(rad), math.Sin(rad)
+	arrow(c, x0, y0, x0+ux*armLen, y0+uy*armLen, viz.Warm, 2.5)
+
+	c.Text(16, 24, fmt.Sprintf("point = (%.2f, %.2f)    f(x,y) = x²+y² = %.2f", x0, y0, F(x0, y0)), 14, viz.Ink, "start")
+	c.Text(16, 44, fmt.Sprintf("∂f/∂x = %.2f    ∂f/∂y = %.2f    grad f = (%.2f, %.2f) [blue]", fx, fy, fx, fy),
+		13, viz.Muted, "start")
+	c.Text(16, 64, fmt.Sprintf("|grad f| = %.3f at %.1f°    direction u [orange] = %.1f°    D_u f = %.3f",
+		mag, gradAngle, theta, dDeriv), 13, viz.Ink, "start")
+
+	diff := math.Abs(theta - gradAngle)
+	if diff > 180 {
+		diff = 360 - diff
+	}
+	status := "not steepest"
+	if diff < alignTolDeg {
+		status = "ALIGNED -- steepest ascent"
+	}
+	c.Text(16, 84, status, 13, viz.Good, "start")
+	c.Text(16, 536, "faint circles = contours of f    dashed lines = the x0,y0 slices the partials use",
+		12, viz.Muted, "start")
+
 	return c.String()
+}
+
+// arrow draws a straight line from (x0,y0) to (x1,y1) in data space, with a
+// small V-shaped arrowhead at the end.
+func arrow(c *viz.Canvas, x0, y0, x1, y1 float64, color string, width float64) {
+	c.Path([][2]float64{{x0, y0}, {x1, y1}}, color, width)
+
+	dx, dy := x1-x0, y1-y0
+	length := math.Hypot(dx, dy)
+	if length < 1e-9 {
+		return
+	}
+	ux, uy := dx/length, dy/length
+	const headLen = 0.18
+	const headAngle = 0.5 // radians, ~29° off the shaft on each side
+
+	barb := func(t float64) (float64, float64) {
+		cos, sin := math.Cos(t), math.Sin(t)
+		bx, by := -ux, -uy
+		return bx*cos - by*sin, bx*sin + by*cos
+	}
+	b1x, b1y := barb(headAngle)
+	b2x, b2y := barb(-headAngle)
+	c.Path([][2]float64{{x1, y1}, {x1 + headLen*b1x, y1 + headLen*b1y}}, color, width)
+	c.Path([][2]float64{{x1, y1}, {x1 + headLen*b2x, y1 + headLen*b2y}}, color, width)
 }
