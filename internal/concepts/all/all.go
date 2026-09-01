@@ -28,6 +28,7 @@ import (
 	_ "mathviz/internal/concepts/determinant"
 	_ "mathviz/internal/concepts/diffiehellman"
 	_ "mathviz/internal/concepts/eigen"
+	_ "mathviz/internal/concepts/elbowsilhouette"
 	_ "mathviz/internal/concepts/entropy"
 	_ "mathviz/internal/concepts/euclidalg"
 	_ "mathviz/internal/concepts/evalplaybook"
