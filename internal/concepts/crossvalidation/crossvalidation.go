@@ -6,6 +6,8 @@
 package crossvalidation
 
 import (
+	"fmt"
+
 	"mathviz/internal/concept"
 	"mathviz/internal/viz"
 )
@@ -141,6 +143,72 @@ func CrossValidate(xs, ys []float64, k int) (foldMSEs []float64, avg float64) {
 }
 
 func render(p map[string]float64) string {
-	c := viz.New(680, 440, 0, 1, 0, 1)
+	k := int(p["k"])
+	if k < 2 {
+		k = 2
+	}
+	if k > len(DataX) {
+		k = len(DataX)
+	}
+	folds := KFoldIndices(len(DataX), k)
+	hf := int(p["highlightFold"]) % k
+	if hf < 0 {
+		hf += k
+	}
+
+	slope, intercept, mse := FoldFit(DataX, DataY, folds, hf)
+	_, avg := CrossValidate(DataX, DataY, k)
+
+	// Fixed k=5 reference numbers for the "a single split can mislead"
+	// callout at the bottom, independent of whatever k the slider is
+	// currently set to — fold 0 (test={x=1,2}) is the lucky split, fold 3
+	// (test={x=7,8}) is the one that lands on the deliberate outlier.
+	refFolds := KFoldIndices(len(DataX), 5)
+	_, _, cleanMSE := FoldFit(DataX, DataY, refFolds, 0)
+	_, _, outlierMSE := FoldFit(DataX, DataY, refFolds, 3)
+
+	testSet := map[int]bool{}
+	for _, i := range folds[hf] {
+		testSet[i] = true
+	}
+
+	const xmin, xmax = 0.0, 11.0
+	const ymin, ymax = 0.0, 27.0
+	c := viz.New(680, 480, xmin, xmax, ymin, ymax)
+	c.PadT = 84
+	c.Axes()
+	for x := 0.0; x <= xmax; x += 2 {
+		c.Tick(x, fmt.Sprintf("%g", x))
+	}
+
+	line := viz.Sample(xmin, xmax, 2, func(x float64) float64 { return Predict(slope, intercept, x) })
+
+	// Residuals for the held-out (test) points only — training points get
+	// no residual line since the model was fit to match them closely.
+	for i := range DataX {
+		if !testSet[i] {
+			continue
+		}
+		predY := Predict(slope, intercept, DataX[i])
+		c.Path([][2]float64{{DataX[i], DataY[i]}, {DataX[i], predY}}, viz.Bad, 1.5)
+	}
+
+	c.Path(line, viz.Accent, 2.5)
+
+	for i := range DataX {
+		px, py := c.X(DataX[i]), c.Y(DataY[i])
+		color := viz.Ink
+		if testSet[i] {
+			color = viz.Warm
+		}
+		c.Rect(px-4, py-4, 8, 8, color, 0.9)
+	}
+
+	c.Text(20, 22, fmt.Sprintf("k=%d folds — held-out fold %d of %d: test MSE = %.2f", k, hf, k-1, mse), 14, viz.Ink, "start")
+	c.Text(20, 44, fmt.Sprintf("line trained without the held-out points: y = %.2f + %.2f·x", intercept, slope), 13, viz.Muted, "start")
+	c.Text(20, 64, fmt.Sprintf("average test MSE across all %d folds (the CV estimate) = %.2f", k, avg), 14, viz.Good, "start")
+	c.Text(20, 440, "orange squares = held-out fold    black squares = training points    red = residuals on the held-out fold", 11, viz.Muted, "start")
+	c.Text(20, 460, fmt.Sprintf("a single split can mislead: test={x=1,2} -> MSE=%.2f (looks great) vs test={x=7,8} -> MSE=%.2f (looks terrible) -- same model, same data", cleanMSE, outlierMSE), 11, viz.Muted, "start")
+
 	return c.String()
 }
