@@ -6,6 +6,111 @@ code. Newest entries go at the top.
 
 ---
 
+## elbow-method-silhouette-score — picking k without eyeballing the scatter plot
+**Why would you need this?** `k-means-clustering` happily sorts your
+data into however many groups you ask for — hand it k=2, k=5, or k=8
+and it converges to *some* answer every time, no complaints. But
+nothing about the algorithm itself tells you which k is actually right
+for your data. Guessing by eyeballing the scatter plot is exactly the
+fragile, un-repeatable habit k-means-clustering was built to replace —
+and it breaks the same way: with three or more measurements per point
+you can't even draw the scatter to eyeball. Is there a mechanical,
+repeatable way to pick k itself, not just to run k-means once k is
+already decided?
+
+**How does it actually work?** Reuse k-means-clustering's exact
+nine-point dataset — three visible blobs, {A,B,C} near (2,2), {D,E,F}
+near (8,2), {G,H,I} near (5,8) — and run k-means to convergence for
+every k from 1 to 6, tracking two numbers each time: inertia (every
+point's squared distance to its own cluster's centroid, totaled —
+smaller means tighter clusters) and the silhouette score (how much
+closer each point sits to its own cluster than to the nearest other
+one, averaged, from -1 to +1).
+
+- k=1: one centroid near the overall center (5,4). inertia=138.00
+  (everything measured against one point). silhouette=0.000 (there's
+  no "other cluster" to compare against yet).
+- k=2: splits into {A,B,C,D,E,F} and {G,H,I} — two centroids aren't
+  enough to separate all three blobs, so the two nearby ones get
+  merged. inertia=66.00 (a 72.00 drop from k=1). silhouette=0.463.
+- k=3: {A,B,C}, {D,E,F}, {G,H,I} — every real blob finally gets its
+  own centroid. inertia=12.00, a 54.00 drop from k=2 — by far the
+  sharpest drop of the whole sequence. silhouette=0.679, also the
+  highest of the whole sequence.
+- k=4, 5, 6: inertia keeps falling — 9.00, 6.00, 4.50 — but now only
+  by a little each time (drops of 3.00, 3.00, 1.50), because the
+  "extra" centroids are just carving up already-correct blobs (k=4
+  splits {G,H,I} into {G} and {H,I}). silhouette falls too — 0.623,
+  0.561, 0.430 — since points that used to sit comfortably inside one
+  cluster now have a too-close sibling cluster nearby to be compared
+  against.
+
+Both signals land on the same answer for a different reason: the
+elbow method looks for where inertia stops falling *fast* (the sharp
+bend right after k=3, not the lowest inertia — that's always at the
+largest k, and taken to its extreme, k=9 drives inertia to exactly 0
+by making every point its own cluster, which is obviously useless).
+The silhouette score instead looks for where clusters are most
+cleanly separated, and simply reports its highest value directly — no
+bend-spotting needed, just the peak, which sits at k=3.
+
+**What does the picture show?** One slider, "Number of clusters (k)",
+moves a vertical marker across both curves at once: blue is inertia
+(normalized against k=1's value so it shares the 0-1 axis with
+silhouette — the raw number is always shown in the text above), orange
+is the silhouette score. Small squares mark every k from 1 to 6 on
+each curve. Watch the blue curve as you sweep k up from 1: it drops
+steeply through k=2 and k=3, then visibly flattens out — that
+flattening point is the elbow. The orange curve instead rises to a
+single visible peak right at k=3, then falls back down. The text below
+the marker shows the exact clusters k-means produces at the current k
+(e.g. "clusters at k=3: {A,B,C} {D,E,F} {G,H,I}"), so you can see the
+actual grouping behind whatever point on the curve you're looking at.
+
+**What can you do now that you couldn't before?** Choose k without
+eyeballing a scatter plot: plot inertia against k and read off where
+the drop stops being sharp, or compute the silhouette score for a
+handful of k values and take whichever scores highest — both are
+mechanical, repeatable, and work in as many dimensions as your data
+has, unlike eyeballing. Here they agree, both pointing to k=3, which
+is exactly the number of real blobs — that agreement between two
+independently-computed signals is itself stronger evidence than either
+one alone. On messier real data, where they don't perfectly agree,
+that disagreement is information too: it's telling you the "natural"
+number of groups isn't as clean-cut as it is here.
+
+**Where does this show up in real life?** Customer segmentation again
+(from k-means-clustering): instead of arbitrarily deciding "we'll run
+3 marketing campaigns," plot the elbow and silhouette curves against
+your actual purchase data and let them tell you whether 3, 5, or 7
+segments is genuinely supported. Image-compression palettes (choosing
+how many colors to keep — too few and the image looks banded, too
+many and you've barely compressed anything — the elbow marks the
+sweet spot). Document or news-topic clustering, where "how many
+topics are actually in this pile of articles" is exactly this
+question. The everyday version: sorting a junk drawer into piles — you
+could make 2 giant piles or 20 tiny ones, and the useful stopping
+point is right around where splitting a pile further stops making it
+meaningfully more organized.
+
+**What's the common mistake here?** Say it like this: "elbow and
+silhouette both compare what k-means already produces at different
+values of k — pick the k where inertia stops dropping fast, or where
+silhouette peaks, and treat agreement between the two as stronger
+evidence than either alone." Not like this: assuming lower inertia is
+always better regardless of k — inertia is guaranteed to keep falling
+(or at worst stay flat) as k grows and hits exactly 0 once k equals
+the number of points, so "lowest inertia" by itself always picks the
+largest, most useless k; you need the elbow — where it stops falling
+*fast* — not the minimum. Also not like this: expecting elbow and
+silhouette to always agree on real, noisier data — they agree cleanly
+here because these three blobs are unusually well separated; on
+messier data the two can suggest different k values, and there's no
+substitute for combining them with judgment about what a "group"
+should actually mean for your problem.
+
+---
+
 ## cross-validation — no single split gets to decide the verdict
 **Why would you need this?** You fit a line to 10 data points, hold out 2
 of them as a test set the model never saw, and check how far off the
