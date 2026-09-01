@@ -5,6 +5,7 @@ package all
 
 import (
 	_ "mathviz/internal/concepts/anova"
+	_ "mathviz/internal/concepts/backprop"
 	_ "mathviz/internal/concepts/bayestheorem"
 	_ "mathviz/internal/concepts/benfordslaw"
 	_ "mathviz/internal/concepts/biasvariance"
