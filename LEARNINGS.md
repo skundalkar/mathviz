@@ -6,6 +6,110 @@ code. Newest entries go at the top.
 
 ---
 
+## backpropagation — one backward pass, every weight's gradient
+**Why would you need this?** `chain-rule` showed you how to multiply
+derivatives through a chain of two composed functions, and
+`gradient-descent` showed you how to nudge a single number downhill
+once you have its derivative. A real network isn't one composed
+function with one input and one derivative, though — it's dozens (in
+a real network, millions) of weights, all feeding forward through
+several layers into one final number, the loss — and gradient descent
+needs a derivative for *every single weight* before it can take even
+one step. Do you really have to re-derive each weight's gradient
+completely separately, from scratch, one at a time?
+
+**How does it actually work?** Take the smallest network that still
+has this problem: one input x, two hidden neurons (each a weight, a
+bias, and a sigmoid squashing the result into (0,1)), and one output
+neuron (same shape) whose output y is compared against a target with
+squared-error loss L = ½(y−target)². Fixed weights: w1=0.60, b1=0.10
+(feeds hidden neuron 1), w2=−0.40, b2=0.20 (feeds hidden neuron 2),
+v1=0.90, v2=−0.70, b3=−0.10 (combines both hidden neurons into the
+output). With x=1.00 and target=1.00, the forward pass is: z1=0.70 →
+h1=0.668, z2=−0.20 → h2=0.450, z3 = 0.9(0.668)+(−0.7)(0.450)+(−0.1) =
+0.19 → y=0.546, giving Loss = ½(0.546−1.00)² = 0.1029.
+
+Now go backward, one layer at a time, computing each layer's "local
+error" term (δ) exactly once and reusing it for every weight that
+touches it. Start at the output: δ3 = (y−target)·y·(1−y) =
+(−0.454)(0.546)(0.454) = −0.112. Every weight feeding *into* y uses
+δ3 directly: ∂L/∂v1 = δ3·h1 = −0.112×0.668 = −0.075, ∂L/∂v2 = δ3·h2 =
+−0.112×0.450 = −0.051, ∂L/∂b3 = δ3 = −0.112.
+
+The chain-rule step that gives backpropagation its name: to get
+hidden neuron 1's local error δ1, take δ3 (already computed — never
+recomputed), multiply by the weight it flows back through (v1=0.90)
+to get ∂L/∂h1 = −0.112×0.90 = −0.101, then multiply by h1's own local
+derivative h1(1−h1) = 0.668×0.332 = 0.222: δ1 = −0.101×0.222 = −0.022.
+That's the chain rule (∂L/∂h1 × ∂h1/∂z1), applied exactly the way
+`chain-rule` multiplies rates through a composition — just one more
+link added to the chain. Hidden neuron 2 gets the identical treatment
+through v2 instead of v1: ∂L/∂h2 = δ3·v2 = −0.112×(−0.70) = 0.079,
+δ2 = 0.079×h2(1−h2) = 0.079×0.248 = 0.019.
+
+Every remaining weight is now just δ times whatever fed it: ∂L/∂w1 =
+δ1·x = −0.022×1.00 = −0.022, ∂L/∂b1 = δ1 = −0.022 (a bias's "input"
+is always 1, so its gradient is always exactly its neuron's δ). Same
+pattern for neuron 2: ∂L/∂w2 = δ2·x = 0.019, ∂L/∂b2 = δ2 = 0.019.
+Tally it up: 3 δ's computed (δ3, δ1, δ2), each computed once,
+produced all 7 gradients (∂L/∂w1, ∂L/∂b1, ∂L/∂w2, ∂L/∂b2, ∂L/∂v1,
+∂L/∂v2, ∂L/∂b3) — one forward pass followed by one backward pass, not
+seven separate derivations from scratch.
+
+**What does the picture show?** The diagram is the network itself: x
+on the left, the two hidden neurons h1/h2 in the middle, y on the
+right, arrows for every weight. Each arrow is labeled with its weight
+(black) and its gradient (red for negative, green for positive)
+directly below it. Each neuron box shows its activation value (black)
+and its δ (orange) underneath — the exact same numbers from the
+worked example above, recomputed live. The "Input (x)" slider re-runs
+the whole forward-then-backward pass for a different x, so you can
+watch every δ and every gradient shift together as the input changes.
+The "Learning rate" slider feeds the computed gradients into one
+`gradient-descent` step on every weight at once, and the bottom line
+shows the loss actually dropping — the payoff for having computed all
+7 gradients in the first place.
+
+**What can you do now that you couldn't before?** Train an actual
+multi-layer network: repeat forward pass → backward pass (every
+gradient, in one shot) → `gradient-descent` step on every weight →
+repeat, which is the entire training loop behind every neural
+network, no matter how many layers or weights it has. Without
+backpropagation's δ-reuse trick, getting a gradient for every weight
+in a real network (millions of them, not 7) by separately re-deriving
+each one would be computationally hopeless; with it, the cost of the
+whole backward pass is about the same as one forward pass.
+
+**Where does this show up in real life?** Every deep learning
+framework's `.backward()` call (PyTorch, TensorFlow, JAX) runs
+exactly this algorithm, automated for networks with millions or
+billions of weights instead of this example's 7 — "backprop" is quite
+literally what trains every image classifier, chatbot, and
+recommendation system in production today. The everyday intuition:
+it's like tracing back through a long chain of "because of that,
+because of that, because of that" to find how much blame each early
+decision deserves for a final outcome, computing each link's share of
+the blame once and passing it backward, rather than re-tracing the
+entire chain from scratch for every single decision you want to
+evaluate.
+
+**What's the common mistake here?** Say it like this: "backpropagation
+doesn't invent a new kind of derivative — it applies the ordinary
+chain rule, but computes each layer's local error (δ) exactly once
+and reuses it for every weight that touches it, instead of expanding
+the full chain-rule product by hand for each weight separately." Not
+like this: treating each weight's gradient as its own unrelated
+computation — δ1 and δ2 above both started from the same δ3, and a
+real network with millions of weights leans on exactly that sharing
+to stay computationally feasible at all. Also not like this:
+confusing the backward pass with training itself — the backward pass
+only tells you which direction, and how steeply, to nudge each
+weight; actually improving the network still requires taking a
+`gradient-descent` step with those gradients (Loss 0.1029 → 0.0919
+above, at lr=0.5), and in practice repeating that over many examples.
+
+---
+
 ## elbow-method-silhouette-score — picking k without eyeballing the scatter plot
 **Why would you need this?** `k-means-clustering` happily sorts your
 data into however many groups you ask for — hand it k=2, k=5, or k=8
