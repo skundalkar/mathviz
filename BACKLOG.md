@@ -91,13 +91,13 @@ Format: `- [ ] <id> — <one-line description of the concept to visualize>`
 - [x] partial-derivatives-gradient — how a function's steepest-ascent direction generalizes the single-variable derivative to functions of several inputs, built from derivative
 - [x] diffie-hellman-key-exchange — two parties agreeing on a shared secret over a public channel using modular exponentiation, built from modular-arithmetic
 - [x] huffman-coding — building an optimal prefix-free code from symbol frequencies, and why it approaches entropy's theoretical limit, built from entropy
+- [x] cross-validation — estimating a model's out-of-sample performance by rotating which fold is held out, and why a single train/test split can mislead
 
 ## Up next (statistics & ML intuition)
 
 ## Up next (math foundations)
 
 ## Up next (statistics & ML intuition, batch 2)
-- [ ] cross-validation — estimating a model's out-of-sample performance by rotating which fold is held out, and why a single train/test split can mislead
 - [ ] elbow-method-silhouette-score — choosing k for k-means by balancing within-cluster tightness against added model complexity, built from k-means-clustering
 - [ ] backpropagation — extending the chain rule through a small multi-layer network to compute every weight's gradient in one backward pass, built from chain-rule and gradient-descent
 - [ ] attention-mechanism — weighting how much each input token contributes to an output using scaled dot-product similarity, built from cosine-similarity and sigmoid-softmax

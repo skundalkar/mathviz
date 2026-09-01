@@ -6,6 +6,113 @@ code. Newest entries go at the top.
 
 ---
 
+## cross-validation — no single split gets to decide the verdict
+**Why would you need this?** You fit a line to 10 data points, hold out 2
+of them as a test set the model never saw, and check how far off the
+predictions are. The number comes back tiny — the model looks great.
+Ship it? Here's the uncomfortable question: would you have gotten the
+same verdict if you'd held out a *different* 2 points instead? If which
+2 points you happened to pick can flip the story from "great model" to
+"terrible model," the number you just trusted was measuring luck, not
+the model.
+
+**How does it actually work?** Take 10 points with a roughly-linear
+trend, y ≈ 2x, except one deliberately planted outlier: at x=8 the
+trend predicts ~16, but the actual value is 24 (`x = 1..10`, `y = 2.0,
+4.1, 5.9, 8.2, 10.1, 11.8, 14.2, 24.0, 18.0, 20.1`). Instead of picking
+one train/test split, k-fold cross-validation (k=5 here) splits all 10
+points into 5 folds of 2 points each, in x order: {1,2}, {3,4}, {5,6},
+{7,8}, {9,10}. It then rotates: for each fold in turn, fit a
+least-squares line on the other 8 points and measure the mean squared
+error (MSE) on just that fold's 2 held-out points.
+
+- Fold {1,2} held out: trained on the other 8 points, slope≈2.29,
+  intercept≈-0.86 → predicts [1.43, 3.73] against actual [2.0, 4.1] →
+  MSE=0.23.
+- Fold {3,4} held out: MSE=0.19.
+- Fold {5,6} held out: MSE=1.31.
+- Fold {7,8} held out — the outlier's own fold: trained on the other 8
+  points (which never include the outlier), slope=2.00, intercept≈0.03
+  → predicts a clean [14.02, 16.02] against actual [14.2, 24.0] →
+  MSE=31.82, over 100× fold {1,2}'s error.
+- Fold {9,10} held out: this time the outlier *is* in the training
+  data, and it drags the fitted line off course — slope≈2.67,
+  intercept≈-1.97 → predicts [22.04, 24.71] against actual [18.0,
+  20.1] → MSE=18.80. Neither held-out point is itself unusual; the
+  fold still scores badly because the outlier corrupted the line that
+  had to predict them.
+
+Read the five scores together, not one at a time: they range from 0.19
+to 31.82 — a roughly 165× spread — for the exact same model on the
+exact same data, depending only on which 2 points got held out.
+Averaging all five gives (0.23+0.19+1.31+31.82+18.80)/5 = 10.47, the
+k-fold cross-validation estimate: one number that isn't hostage to any
+single split's luck, plus a spread across folds that's informative on
+its own (it says this model handles most of the data fine but
+struggles badly near x=7–8).
+
+For comparison, fitting the same line to all 10 points at once (no
+holdout at all) gives slope≈2.24, intercept≈-0.51, and a training MSE
+of 5.22 — a number that looks better than the honest 10.47 CV estimate
+precisely because it's partly grading the model on data it already
+memorized, including the outlier itself.
+
+**What does the picture show?** The "Number of folds (k)" slider
+re-splits the same 10 points into k folds; "Held-out fold" picks which
+one is currently drawn as the test set (it wraps around if set past
+the current k). Orange squares are the held-out fold, black squares
+are the training points, the blue line is fit only on the training
+points, and red lines are residuals — shown only for the held-out
+points, since those are the only ones the model didn't get to see. The
+top readout shows the current fold's test MSE and the running average
+across all k folds (the CV estimate). The default (k=5, fold 3) lands
+directly on the outlier fold from the worked example: drag through
+folds 0-4 and watch the test MSE jump from 0.19-1.31 on the clean
+folds to 31.82 the moment the outlier's fold is held out. A line at
+the bottom freezes the k=5, fold-0-vs-fold-3 comparison regardless of
+the slider position, so the "lucky vs. unlucky split" contrast below
+is always visible on the page.
+
+**What can you do now that you couldn't before?** Report
+"cross-validated MSE ≈ 10.47" instead of a single, split-dependent
+number — a score that reflects how the model does averaged across
+many different held-out slices, not whichever slice you happened to
+pick. You also get the per-fold spread for free, which tells you
+*where* the model struggles (here: the region around the outlier),
+something a single train/test split can't reveal even in principle,
+since it only ever shows you one slice.
+
+**Where does this show up in real life?** Any time you see
+"cross-validated accuracy" reported for a machine-learning model, this
+is the literal mechanism, not a figure of speech — it's almost always
+preferred over a single train/test split whenever the dataset is small
+enough that one split's luck would swing the number. The everyday
+version: judging a restaurant off one visit vs. several visits spread
+across different nights — a place that's fantastic on a slow Tuesday
+but chaotic on a packed Saturday is exactly a model that aces one fold
+and bombs another, and only rotating through several visits (folds)
+tells you which is closer to the truth. Same idea grading a student
+off one exam vs. their average across several — one test can land
+unusually easy or unusually hard for that particular student, in a way
+their true understanding doesn't reflect.
+
+**What's the common mistake here?** Say it like this:
+"cross-validation reports the average test score across k rotating
+splits, so no single split's luck decides the verdict — and the
+spread across folds is itself informative, not noise to average
+away." Not like this: trusting a low error from any one split as
+proof the model is good — fold {1,2} above scores MSE=0.23 and fold
+{7,8} scores MSE=31.82 for the identical model on the identical data;
+a single split could have shown you either number and you'd have no
+way to tell which one you got. Also not like this: assuming
+cross-validation removes the need for a separate final test set — CV
+is for comparing and tuning models using the training data's own
+rotation; once you've picked a model this way, you still want one
+untouched holdout set, never used in any fold, for the final honest
+number.
+
+---
+
 ## huffman-coding — spending fewer bits on the common stuff
 **Why would you need this?** `entropy` measured how many bits of genuine
 surprise a distribution carries on average — but it never said how to
