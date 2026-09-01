@@ -6,7 +6,9 @@
 package elbowsilhouette
 
 import (
+	"fmt"
 	"math"
+	"strings"
 
 	"mathviz/internal/concept"
 	"mathviz/internal/viz"
@@ -213,7 +215,85 @@ func SilhouetteScore(assignments []int, k int) float64 {
 	return total / float64(n)
 }
 
+const maxK = 6
+
+// groupsLabel returns a compact "{A,B,C} {D,E,F} ..." rendering of the
+// current cluster assignments, so the curve can be tied back to the exact
+// same labeled points k-means-clustering uses.
+func groupsLabel(assignments []int, k int) string {
+	groups := make([][]string, k)
+	for i, a := range assignments {
+		groups[a] = append(groups[a], PointLabels[i])
+	}
+	parts := make([]string, 0, k)
+	for _, g := range groups {
+		if len(g) == 0 {
+			continue
+		}
+		parts = append(parts, "{"+strings.Join(g, ",")+"}")
+	}
+	return strings.Join(parts, " ")
+}
+
 func render(p map[string]float64) string {
-	c := viz.New(680, 460, 0, 1, 0, 1)
+	k := int(p["k"])
+	if k < 1 {
+		k = 1
+	}
+	if k > maxK {
+		k = maxK
+	}
+
+	inertias := make([]float64, maxK+1) // 1-indexed by k
+	silhouettes := make([]float64, maxK+1)
+	var assignmentsAtK []int
+	var maxInertia float64
+	for kk := 1; kk <= maxK; kk++ {
+		centroids, assignments := RunKMeans(kk, 20)
+		inertias[kk] = Inertia(centroids, assignments)
+		silhouettes[kk] = SilhouetteScore(assignments, kk)
+		if inertias[kk] > maxInertia {
+			maxInertia = inertias[kk]
+		}
+		if kk == k {
+			assignmentsAtK = assignments
+		}
+	}
+
+	const xmin, xmax = 0.5, float64(maxK) + 0.5
+	const ymin, ymax = 0.0, 1.08
+	c := viz.New(680, 460, xmin, xmax, ymin, ymax)
+	c.PadT = 108
+	c.Axes()
+	for kk := 1; kk <= maxK; kk++ {
+		c.Tick(float64(kk), fmt.Sprintf("%d", kk))
+	}
+
+	// Normalize inertia to [0,1] (divide by k=1's inertia) so it shares an
+	// axis with the silhouette score, which is already 0-1 here.
+	inertiaCurve := make([][2]float64, maxK)
+	silhouetteCurve := make([][2]float64, maxK)
+	for kk := 1; kk <= maxK; kk++ {
+		inertiaCurve[kk-1] = [2]float64{float64(kk), inertias[kk] / maxInertia}
+		silhouetteCurve[kk-1] = [2]float64{float64(kk), silhouettes[kk]}
+	}
+
+	c.VLine(float64(k), viz.Ink, true)
+	c.Path(inertiaCurve, viz.Accent, 2.5)
+	c.Path(silhouetteCurve, viz.Warm, 2.5)
+
+	for kk := 1; kk <= maxK; kk++ {
+		px, py := c.X(float64(kk)), c.Y(inertias[kk]/maxInertia)
+		c.Rect(px-3, py-3, 6, 6, viz.Accent, 1)
+		px2, py2 := c.X(float64(kk)), c.Y(silhouettes[kk])
+		c.Rect(px2-3, py2-3, 6, 6, viz.Warm, 1)
+	}
+
+	c.Text(20, 22, fmt.Sprintf("k = %d    inertia = %.2f (raw, unnormalized)    silhouette = %.3f",
+		k, inertias[k], silhouettes[k]), 14, viz.Ink, "start")
+	c.Text(20, 44, fmt.Sprintf("clusters at k=%d: %s", k, groupsLabel(assignmentsAtK, k)), 13, viz.Muted, "start")
+	c.Text(20, 66, "blue = inertia, normalized to k=1's value    orange = silhouette score (already 0-1)", 12, viz.Muted, "start")
+	c.Text(20, 86, "inertia keeps falling as k grows; the elbow is where it stops falling fast — here, k=3", 12, viz.Muted, "start")
+
 	return c.String()
 }
