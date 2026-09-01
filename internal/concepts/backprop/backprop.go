@@ -6,6 +6,7 @@
 package backprop
 
 import (
+	"fmt"
 	"math"
 
 	"mathviz/internal/concept"
@@ -146,7 +147,106 @@ func GradientDescentStep(w Weights, g Gradients, lr float64) Weights {
 	}
 }
 
+// Node positions in the 0..1 x 0..1 diagram space: input on the left, the
+// two hidden neurons stacked in the middle, output on the right.
+var (
+	posX  = [2]float64{0.08, 0.50}
+	posH1 = [2]float64{0.42, 0.80}
+	posH2 = [2]float64{0.42, 0.20}
+	posY  = [2]float64{0.80, 0.50}
+)
+
+// drawEdge draws a straight arrow from src to dst, stopping short of both
+// node boxes so the line doesn't run under them, with a small arrowhead at
+// the dst end.
+func drawEdge(c *viz.Canvas, src, dst [2]float64) {
+	dx, dy := dst[0]-src[0], dst[1]-src[1]
+	length := math.Hypot(dx, dy)
+	if length == 0 {
+		return
+	}
+	ux, uy := dx/length, dy/length
+	const margin = 0.075
+	sx, sy := src[0]+ux*margin, src[1]+uy*margin
+	ex, ey := dst[0]-ux*margin, dst[1]-uy*margin
+	c.Path([][2]float64{{sx, sy}, {ex, ey}}, viz.Muted, 1.5)
+
+	const wingLen, wingWidth = 0.03, 0.014
+	perpX, perpY := -uy, ux
+	w1x, w1y := ex-ux*wingLen+perpX*wingWidth, ey-uy*wingLen+perpY*wingWidth
+	w2x, w2y := ex-ux*wingLen-perpX*wingWidth, ey-uy*wingLen-perpY*wingWidth
+	c.Path([][2]float64{{w1x, w1y}, {ex, ey}, {w2x, w2y}}, viz.Muted, 1.5)
+}
+
+// edgeLabel writes a 2-line label (weight, then its gradient) near the
+// midpoint of the src-dst edge, offset toward dy so it doesn't sit on top
+// of the line itself.
+func edgeLabel(c *viz.Canvas, src, dst [2]float64, dyPx float64, weightLine, gradLine string, gradColor string) {
+	mx, my := (src[0]+dst[0])/2, (src[1]+dst[1])/2
+	px, py := c.X(mx), c.Y(my)
+	c.Text(px, py+dyPx, weightLine, 12, viz.Ink, "middle")
+	c.Text(px, py+dyPx+15, gradLine, 12, gradColor, "middle")
+}
+
+// node draws one neuron's box, its label, and (if given) its activation
+// value and local error term underneath.
+func node(c *viz.Canvas, pos [2]float64, label, valueLine, deltaLine string) {
+	px, py := c.X(pos[0]), c.Y(pos[1])
+	const side = 44.0
+	c.Rect(px-side/2, py-side/2, side, side, viz.Accent, 0.9)
+	c.Text(px, py+5, label, 15, "white", "middle")
+	if valueLine != "" {
+		c.Text(px, py+side/2+16, valueLine, 12, viz.Ink, "middle")
+	}
+	if deltaLine != "" {
+		c.Text(px, py+side/2+32, deltaLine, 12, viz.Warm, "middle")
+	}
+}
+
+func gradColorFor(grad float64) string {
+	if grad < 0 {
+		return viz.Bad
+	}
+	return viz.Good
+}
+
 func render(p map[string]float64) string {
+	x, lr := p["x"], p["lr"]
+	w := FixedWeights
+
+	a := Forward(w, x, Target)
+	g := Backward(w, a, x, Target)
+	updated := GradientDescentStep(w, g, lr)
+	newLoss := Forward(updated, x, Target).Loss
+
 	c := viz.New(700, 560, 0, 1, 0, 1)
+	c.PadT = 116
+	c.PadB = 130
+
+	drawEdge(c, posX, posH1)
+	drawEdge(c, posX, posH2)
+	drawEdge(c, posH1, posY)
+	drawEdge(c, posH2, posY)
+
+	edgeLabel(c, posX, posH1, -14, fmt.Sprintf("w1=%.2f", w.W1), fmt.Sprintf("∂L/∂w1=%.3f", g.DW1), gradColorFor(g.DW1))
+	edgeLabel(c, posX, posH2, 14, fmt.Sprintf("w2=%.2f", w.W2), fmt.Sprintf("∂L/∂w2=%.3f", g.DW2), gradColorFor(g.DW2))
+	edgeLabel(c, posH1, posY, -14, fmt.Sprintf("v1=%.2f", w.V1), fmt.Sprintf("∂L/∂v1=%.3f", g.DV1), gradColorFor(g.DV1))
+	edgeLabel(c, posH2, posY, 14, fmt.Sprintf("v2=%.2f", w.V2), fmt.Sprintf("∂L/∂v2=%.3f", g.DV2), gradColorFor(g.DV2))
+
+	node(c, posX, "x", fmt.Sprintf("x=%.2f", x), "")
+	node(c, posH1, "h1", fmt.Sprintf("h1=%.3f", a.H1), fmt.Sprintf("δ1=%.3f", g.Delta1))
+	node(c, posH2, "h2", fmt.Sprintf("h2=%.3f", a.H2), fmt.Sprintf("δ2=%.3f", g.Delta2))
+	node(c, posY, "y", fmt.Sprintf("y=%.3f", a.Y), fmt.Sprintf("δ3=%.3f", g.Delta3))
+
+	c.Text(20, 22, fmt.Sprintf("forward: x=%.2f → z1=%.2f,h1=%.3f | z2=%.2f,h2=%.3f → z3=%.2f,y=%.3f", x, a.Z1, a.H1, a.Z2, a.H2, a.Z3, a.Y), 13, viz.Ink, "start")
+	c.Text(20, 42, fmt.Sprintf("target=%.2f    Loss = ½(y−target)² = %.4f", Target, a.Loss), 13, viz.Muted, "start")
+	c.Text(20, 64, "one backward pass computes every δ once; each weight's gradient = its δ × what fed it", 12, viz.Muted, "start")
+	c.Text(20, 84, "white = neuron label   black = activation   orange = δ, the term backprop reuses", 12, viz.Muted, "start")
+
+	c.Text(20, 490, fmt.Sprintf("gradients: w1=%.3f  b1=%.3f  w2=%.3f  b2=%.3f  v1=%.3f  v2=%.3f  b3=%.3f",
+		g.DW1, g.DB1, g.DW2, g.DB2, g.DV1, g.DV2, g.DB3), 12, viz.Ink, "start")
+	c.Text(20, 512, fmt.Sprintf("gradient-descent step (lr=%.2f): Loss %.4f → %.4f", lr, a.Loss, newLoss), 13, viz.Good, "start")
+	c.Text(20, 534, "bias gradients equal δ1, δ2, δ3 exactly — a bias's \"input\" is always 1", 12, viz.Muted, "start")
+
 	return c.String()
 }
