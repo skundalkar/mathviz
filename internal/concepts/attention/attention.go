@@ -8,6 +8,8 @@
 package attention
 
 import (
+	"fmt"
+
 	"mathviz/internal/concept"
 	"mathviz/internal/viz"
 )
@@ -137,8 +139,62 @@ func init() {
 	})
 }
 
+// tokenColor colors a bar by that token's own value: positive (contributes
+// toward "animal") in green, negative ("street") in red, zero ("The", no
+// content) in grey -- independent of the current attention weight.
+func tokenColor(value float64) string {
+	switch {
+	case value > 0:
+		return viz.Good
+	case value < 0:
+		return viz.Bad
+	default:
+		return viz.Muted
+	}
+}
+
 func render(p map[string]float64) string {
-	c := viz.New(680, 420, 0, 1, 0, 1)
-	c.Text(16, 24, "attention-mechanism: scaffold -- render not implemented yet", 14, viz.Ink, "start")
+	qx, qy, temp := p["qx"], p["qy"], p["temp"]
+	if temp < 0.05 {
+		temp = 0.05
+	}
+
+	scores := ScaledScores(qx, qy)
+	weights := Softmax(scores, temp)
+	output := Output(weights)
+
+	c := viz.New(680, 440, 0, 1, 0, 1)
+
+	c.Text(16, 24, fmt.Sprintf("query q = (%.2f, %.2f)      softmax temperature = %.1f", qx, qy, temp),
+		14, viz.Ink, "start")
+	c.Text(16, 44, "\"The animal didn't cross the street because it was too tired\" -- q stands in for \"it\"",
+		12, viz.Muted, "start")
+
+	const barBase, barMaxH, barW, gap = 310.0, 170.0, 130.0, 55.0
+	const firstX = 60.0
+	for i, t := range Tokens {
+		x := firstX + float64(i)*(barW+gap)
+		h := weights[i] * barMaxH
+		color := tokenColor(t.Value)
+		c.Rect(x, barBase-h, barW, h, color, 0.8)
+		c.Text(x+barW/2, barBase-h-10, fmt.Sprintf("%.1f%%", weights[i]*100), 14, viz.Ink, "middle")
+		c.Text(x+barW/2, barBase+22, fmt.Sprintf("\"%s\"", t.Name), 13, viz.Ink, "middle")
+		c.Text(x+barW/2, barBase+40, fmt.Sprintf("score=%.2f  value=%.0f", scores[i], t.Value), 11, viz.Muted, "middle")
+	}
+
+	outputColor := viz.Muted
+	verdict := "ambiguous -- no token clearly dominates"
+	switch {
+	case output > 0.15:
+		outputColor = viz.Good
+		verdict = "\"it\" mostly resolves to \"animal\""
+	case output < -0.15:
+		outputColor = viz.Bad
+		verdict = "\"it\" mostly resolves to \"street\""
+	}
+
+	c.Text(16, 390, fmt.Sprintf("output = Σ weight×value = %.3f", output), 15, outputColor, "start")
+	c.Text(16, 412, verdict, 13, outputColor, "start")
+
 	return c.String()
 }
