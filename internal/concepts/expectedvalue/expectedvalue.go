@@ -6,6 +6,8 @@
 package expectedvalue
 
 import (
+	"math"
+
 	"mathviz/internal/concept"
 	"mathviz/internal/viz"
 )
@@ -28,6 +30,42 @@ func init() {
 		},
 		Render: render,
 	})
+}
+
+// TwoOutcome returns the expected value of a random variable with exactly
+// two possible outcomes: win with probability p, lose with probability
+// 1-p. E[X] = p*win + (1-p)*lose -- the probability-weighted average of the
+// two outcomes, not a plain average of win and lose.
+func TwoOutcome(win, lose, p float64) float64 {
+	return p*win + (1-p)*lose
+}
+
+// Discrete returns the expected value of a random variable with an
+// arbitrary number of outcomes: E[X] = Sum(values[i] * probs[i]). This is
+// the general form TwoOutcome is a two-outcome special case of. Mismatched
+// slice lengths or a nil/empty input return 0.
+func Discrete(values, probs []float64) float64 {
+	sum := 0.0
+	n := len(values)
+	if len(probs) < n {
+		n = len(probs)
+	}
+	for i := 0; i < n; i++ {
+		sum += values[i] * probs[i]
+	}
+	return sum
+}
+
+// Breakeven returns the win probability p at which TwoOutcome(win, lose, p)
+// is exactly 0 -- the threshold above which the bet is favorable on average
+// and below which it isn't. Solving p*win + (1-p)*lose = 0 for p gives
+// p = -lose / (win - lose). Returns NaN if win == lose (every p gives the
+// same expected value, so no single breakeven point exists).
+func Breakeven(win, lose float64) float64 {
+	if win == lose {
+		return math.NaN()
+	}
+	return -lose / (win - lose)
 }
 
 func render(p map[string]float64) string {
