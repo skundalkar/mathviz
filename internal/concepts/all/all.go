@@ -40,6 +40,7 @@ import (
 	_ "mathviz/internal/concepts/fibonacci"
 	_ "mathviz/internal/concepts/fourier"
 	_ "mathviz/internal/concepts/gaussianelim"
+	_ "mathviz/internal/concepts/geometric"
 	_ "mathviz/internal/concepts/gradientboosting"
 	_ "mathviz/internal/concepts/gradientdescent"
 	_ "mathviz/internal/concepts/huffman"
