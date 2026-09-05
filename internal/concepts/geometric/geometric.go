@@ -7,6 +7,7 @@
 package geometric
 
 import (
+	"fmt"
 	"math"
 
 	"mathviz/internal/concept"
@@ -76,6 +77,66 @@ func Variance(p float64) float64 {
 	return (1 - p) / (p * p)
 }
 
-func render(p map[string]float64) string {
-	return viz.New(680, 420, 0, 1, 0, 1).String()
+// displayTrials is how many trials the bar chart shows -- fixed regardless
+// of p so the picture's shape (a steadily shrinking tail) is comparable
+// across slider settings, matching the k slider's own range.
+const displayTrials = 25
+
+func render(params map[string]float64) string {
+	p := params["p"]
+	if p < 0.01 {
+		p = 0.01
+	}
+	if p > 1 {
+		p = 1
+	}
+	k := int(params["k"] + 0.5)
+	if k < 1 {
+		k = 1
+	}
+	if k > displayTrials {
+		k = displayTrials
+	}
+
+	pmf := make([]float64, displayTrials+1) // index 0 unused, trials are 1-based
+	maxP := 0.0
+	for i := 1; i <= displayTrials; i++ {
+		pmf[i] = PMF(p, i)
+		if pmf[i] > maxP {
+			maxP = pmf[i]
+		}
+	}
+	yMax := maxP * 1.2
+	if yMax <= 0 {
+		yMax = 1
+	}
+
+	c := viz.New(680, 420, 0.5, float64(displayTrials)+0.5, 0, yMax)
+	c.Axes()
+	for x := 1.0; x <= displayTrials; x += 5 {
+		c.Tick(x, fmt.Sprintf("%.0f", x))
+	}
+
+	mean := Mean(p)
+	if mean <= float64(displayTrials) {
+		c.Path([][2]float64{{mean, 0}, {mean, yMax}}, viz.Muted, 1)
+	}
+
+	barHalfW := 0.4
+	for i := 1; i <= displayTrials; i++ {
+		color := viz.Accent
+		if i == k {
+			color = viz.Warm
+		}
+		x0, x1 := c.X(float64(i)-barHalfW), c.X(float64(i)+barHalfW)
+		y0, y1 := c.Y(0), c.Y(pmf[i])
+		c.Rect(x0, y1, x1-x0, y0-y1, color, 0.8)
+	}
+
+	c.Text(16, 24, fmt.Sprintf("p=%.2f    mean trials until first success=1/p=%.2f    variance=%.2f",
+		p, mean, Variance(p)), 14, viz.Ink, "start")
+	c.Text(16, 44, fmt.Sprintf("P(X=%d)=%.4f    P(X<=%d)=%.4f    P(X>%d)=%.4f",
+		k, PMF(p, k), k, CDF(p, k), k, 1-CDF(p, k)), 15, viz.Warm, "start")
+
+	return c.String()
 }
