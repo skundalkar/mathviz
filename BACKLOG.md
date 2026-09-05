@@ -97,9 +97,9 @@ Format: `- [ ] <id> — <one-line description of the concept to visualize>`
 - [x] attention-mechanism — weighting how much each input token contributes to an output using scaled dot-product similarity, built from cosine-similarity and sigmoid-softmax
 - [x] expected-value — the probability-weighted average outcome of a random variable, and why it's the number a bet or gamble centers on
 - [x] geometric-distribution — the probability the first success comes on trial k, and how it complements binomial-distribution
+- [x] law-of-total-probability — splitting a hard-to-compute overall probability into a probability-weighted combination of easier per-scenario pieces, built from bayes-theorem and expected-value
 
 ## Up next (statistics & ML intuition)
-- [ ] law-of-total-probability — splitting a hard-to-compute overall probability into a probability-weighted combination of easier per-scenario pieces, built from bayes-theorem and expected-value
 - [ ] hidden-markov-models — inferring a hidden state sequence from observed emissions using transition and emission probabilities, built from markov-chains
 
 ## Up next (math foundations)
