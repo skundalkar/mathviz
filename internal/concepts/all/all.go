@@ -35,6 +35,7 @@ import (
 	_ "mathviz/internal/concepts/euclidalg"
 	_ "mathviz/internal/concepts/evalplaybook"
 	_ "mathviz/internal/concepts/expdist"
+	_ "mathviz/internal/concepts/expectedvalue"
 	_ "mathviz/internal/concepts/expgrowth"
 	_ "mathviz/internal/concepts/fibonacci"
 	_ "mathviz/internal/concepts/fourier"
