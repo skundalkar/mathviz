@@ -50,6 +50,7 @@ import (
 	_ "mathviz/internal/concepts/kmeans"
 	_ "mathviz/internal/concepts/knn"
 	_ "mathviz/internal/concepts/lagrange"
+	_ "mathviz/internal/concepts/lawtotalprob"
 	_ "mathviz/internal/concepts/limits"
 	_ "mathviz/internal/concepts/linreg"
 	_ "mathviz/internal/concepts/lln"
