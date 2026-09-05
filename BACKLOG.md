@@ -97,10 +97,20 @@ Format: `- [ ] <id> — <one-line description of the concept to visualize>`
 - [x] attention-mechanism — weighting how much each input token contributes to an output using scaled dot-product similarity, built from cosine-similarity and sigmoid-softmax
 
 ## Up next (statistics & ML intuition)
+- [ ] expected-value — the probability-weighted average outcome of a random variable, and why it's the number a bet or gamble centers on
+- [ ] geometric-distribution — the probability the first success comes on trial k, and how it complements binomial-distribution
+- [ ] law-of-total-probability — splitting a hard-to-compute overall probability into a probability-weighted combination of easier per-scenario pieces, built from bayes-theorem and expected-value
+- [ ] hidden-markov-models — inferring a hidden state sequence from observed emissions using transition and emission probabilities, built from markov-chains
 
 ## Up next (math foundations)
+- [ ] vector-norms — measuring vector magnitude with L1, L2, and L∞ norms, and how each shapes distance and regularization, built from vectors
+- [ ] convolution — sliding one function across another and summing the overlap, the operation behind smoothing, edge detection, and CNN filters, built from integral
+- [ ] lu-decomposition — factoring a matrix into lower- and upper-triangular pieces to solve linear systems faster than repeating elimination, built from gaussian-elimination
+- [ ] dijkstras-algorithm — finding the shortest path through a weighted graph by greedily expanding the nearest unvisited node
 
 ## Up next (statistics & ML intuition, batch 2)
+- [ ] kernel-trick — implicitly mapping data into a higher-dimensional space to make it linearly separable without ever computing the mapping, built from support-vector-machine
+- [ ] adaboost — reweighting misclassified examples each round so later weak learners focus on the hardest cases, built from decision-trees
 
 ## How to add work
 Append an unchecked line under the right section by hand any time — the loop
