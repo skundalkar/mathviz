@@ -7,6 +7,8 @@
 package lawtotalprob
 
 import (
+	"fmt"
+
 	"mathviz/internal/concept"
 	"mathviz/internal/viz"
 )
@@ -85,6 +87,83 @@ func NaiveAverage(rates []float64) float64 {
 	return sum / float64(len(rates))
 }
 
-func render(p map[string]float64) string {
-	return viz.New(680, 420, 0, 1, 0, 1).String()
+// rateA and rateC are held fixed: both are reliable machines with the same
+// low defect rate, so the picture isolates the effect of the mix (shareA,
+// shareB) and the problem machine's own rate (rateB) without adding a
+// fourth and fifth slider.
+const rateA, rateC = 0.01, 0.01
+
+func render(params map[string]float64) string {
+	shareA, shareB, shareC := Shares(params["shareA"], params["shareB"])
+	rateB := params["rateB"]
+	if rateB < 0 {
+		rateB = 0
+	}
+
+	shares := []float64{shareA, shareB, shareC}
+	rates := []float64{rateA, rateB, rateC}
+	weighted := TotalProbability(shares, rates)
+	naive := NaiveAverage(rates)
+
+	c := viz.New(680, 420, 0, 1, 0, 1)
+
+	c.Text(16, 24, "A factory floor: three machines, each a different share of output, each its own defect rate",
+		13, viz.Muted, "start")
+
+	// Stacked bar: one horizontal segment per machine, width proportional
+	// to its share of total output, filled more deeply red the higher its
+	// own defect rate.
+	const barX0, barY0, barW, barH = 20.0, 50.0, 640.0, 60.0
+	names := []string{"A", "B", "C"}
+	maxRate := rateA
+	for _, r := range rates {
+		if r > maxRate {
+			maxRate = r
+		}
+	}
+	x := barX0
+	for i, share := range shares {
+		w := share * barW
+		opacity := 0.15 + 0.85*(rates[i]/maxRate)
+		c.Rect(x, barY0, w, barH, viz.Bad, opacity)
+		if w > 30 {
+			c.Text(x+w/2, barY0+barH/2+5, names[i], 14, viz.Ink, "middle")
+		}
+		c.Text(x+w/2, barY0+barH+18, fmt.Sprintf("share=%.0f%%", share*100), 12, viz.Muted, "middle")
+		c.Text(x+w/2, barY0+barH+34, fmt.Sprintf("rate=%.0f%%", rates[i]*100), 12, viz.Muted, "middle")
+		x += w
+	}
+
+	c.Text(16, 160, fmt.Sprintf("P(defect) = %.2f×%.2f + %.2f×%.2f + %.2f×%.2f = %.2f%%",
+		shareA, rateA, shareB, rateB, shareC, rateC, weighted*100), 14, viz.Ink, "start")
+
+	// A small number line contrasting the correctly weighted total
+	// probability against the naive (wrong) unweighted average of the
+	// three rates -- the "What's the common mistake here?" section made
+	// visible.
+	const axisX0, axisX1, axisY = 40.0, 640.0, 260.0
+	maxPct := naive * 100 * 1.3
+	if weighted*100*1.3 > maxPct {
+		maxPct = weighted * 100 * 1.3
+	}
+	if maxPct < 10 {
+		maxPct = 10
+	}
+	toX := func(pct float64) float64 {
+		return axisX0 + (pct/maxPct)*(axisX1-axisX0)
+	}
+	c.Rect(axisX0, axisY, axisX1-axisX0, 2, viz.Muted, 1)
+	for pct := 0.0; pct <= maxPct; pct += maxPct / 5 {
+		c.Text(toX(pct), axisY+20, fmt.Sprintf("%.0f%%", pct), 11, viz.Muted, "middle")
+	}
+
+	weightedX := toX(weighted * 100)
+	c.Rect(weightedX-2, axisY-16, 4, 16, viz.Good, 1)
+	c.Text(weightedX, axisY-22, fmt.Sprintf("correct: %.2f%%", weighted*100), 12, viz.Good, "middle")
+
+	naiveX := toX(naive * 100)
+	c.Rect(naiveX-2, axisY-16, 4, 16, viz.Warm, 0.6)
+	c.Text(naiveX, axisY+50, fmt.Sprintf("naive unweighted avg: %.2f%% (wrong)", naive*100), 12, viz.Warm, "middle")
+
+	return c.String()
 }
