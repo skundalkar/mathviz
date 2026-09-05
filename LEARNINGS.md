@@ -6,6 +6,97 @@ code. Newest entries go at the top.
 
 ---
 
+## expected-value — the number a bet centers on
+**Why would you need this?** `bayes-theorem` and `binomial-distribution`
+both showed how to find the probability of one particular outcome. But
+knowing a probability doesn't by itself tell you whether a bet is worth
+taking. A carnival booth charges $5 to play: flip a weighted coin that
+lands heads 20% of the time; heads pays $20 (a net $15 win after the $5
+you paid), tails pays nothing (a net $5 loss). Most people's gut reaction
+latches onto one branch and stops there — either "it pays $20, that's a
+big win" or "80% of the time I lose, skip it." Is there a single number
+that honestly accounts for *both* branches at once, weighted by how often
+each one actually happens, so this game (and any other bet) can be judged
+on equal footing?
+
+**How does it actually work?** Work the carnival game by hand. There are
+two outcomes: win $15 net with probability 0.20, or lose $5 net with
+probability 0.80. Weight each outcome by how often it happens, and add:
+- P(win)=0.20, payoff=+$15 → contributes 0.20×15 = $3.00 to the average.
+- P(lose)=0.80, payoff=−$5 → contributes 0.80×(−5) = −$4.00 to the average.
+- Total: $3.00 + (−$4.00) = −$1.00 — the expected value, E[X].
+
+So on average you lose $1 per play, even though the $15 win looks
+tempting on any single flip. That's the general recipe for any random
+variable with outcomes x1..xn and probabilities p1..pn (which must sum to
+1): E[X] = Σ xi·pi — a probability-weighted average, not a plain average
+across the branches (a plain average of $15 and −$5 would give $5, a
+wildly different and wrong answer). The weighting is everything: flip the
+win probability to 50% and the same game becomes E[X] = 0.5×15 + 0.5×(−5)
+= 7.5 − 2.5 = $5, a good bet instead of a bad one, with nothing about the
+payoffs themselves having changed.
+
+| win probability p | E[X] | verdict |
+|---|---|---|
+| 10% | 0.10×15 + 0.90×(−5) = −3.00 | unfavorable |
+| 20% (default) | 0.20×15 + 0.80×(−5) = −1.00 | unfavorable |
+| 25% | 0.25×15 + 0.75×(−5) = 0.00 | breakeven |
+| 50% | 0.50×15 + 0.50×(−5) = 5.00 | favorable |
+
+The breakeven row isn't a coincidence: solving p×15 + (1−p)×(−5) = 0 for p
+gives p = 5/20 = 0.25 — below a 25% win chance this game loses money on
+average at these payoffs; above it, it's profitable on average.
+
+**What does the picture show?** Two bars sit along a number line of net
+dollar outcomes: a green bar at the win amount, height equal to the win
+probability p, and a red bar at the lose amount, height equal to 1−p. p,
+win amount, and lose amount are all sliders. The dashed orange line marks
+E[X] — the probability-weighted balance point between the two bars, the
+same way a see-saw balances around a point that depends on both how heavy
+each side is (the probability) and how far out it sits (the payoff). Push
+p up and the line slides toward the win bar; push it down and the line
+slides toward the lose bar — at the default 20% it sits closer to the
+loss, which is exactly why the verdict below reads unfavorable.
+
+**What can you do now that you couldn't before?** Compare two different
+gambles, deals, or business decisions on equal footing with a single
+number, instead of an intuition that only looks at one branch. This is
+also the bridge to two concepts already in this gallery: `variance-vs-stddev`
+measured spread around a sample's mean — expected value is the
+theoretical center that spread is measured around in the first place,
+Var(X) = E[(X−E[X])²]. And `mean-median-mode`'s "mean" is the average of
+data you've already collected; expected value is the average you'd
+converge to over infinitely many repetitions of a random process you
+haven't run yet — `law-of-large-numbers` is precisely the statement that
+the first approaches the second as your sample grows.
+
+**Where does this show up in real life?** Insurance companies set
+premiums above the expected payout so their expected value across many
+policies is positive, even though any single policyholder might file a
+large claim. State lotteries are built so a ticket's expected value is
+always negative — that shortfall is exactly how the lottery funds its
+payouts and overhead. Casino games are engineered the same way: the
+house's expected value per bet is always slightly positive, which is why
+a casino profits reliably even though any individual gambler might win
+big on any individual night. The same arithmetic applies to everyday
+choices: deciding whether to buy an extended warranty, whether a
+coin-flip signing bonus is worth taking over a smaller guaranteed one, or
+whether a marketing campaign with an uncertain payoff is worth its cost.
+
+**What's the common mistake here?** Say it like this: expected value is a
+long-run average across many repetitions, not a prediction about what
+happens on any single play — you'll never actually observe a −$1.00
+outcome playing the carnival game once; you'll observe either +$15 or
+−$5, and −$1 is only where those two outcomes average out over many
+plays. Not like this: assuming a positive expected value guarantees a win
+this time, or that the expected value is close to what will "usually"
+happen. `binomial-distribution` already made this exact point about its
+mean n·p — the single most likely count still isn't a promise about any
+one trial — and the same caution applies here, now measured in dollars
+instead of counts.
+
+---
+
 ## attention-mechanism — who does "it" refer to?
 **Why would you need this?** `cosine-similarity` showed how to measure
 whether two vectors point the same way — handy for comparing exactly two
