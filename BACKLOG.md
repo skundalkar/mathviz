@@ -99,9 +99,9 @@ Format: `- [ ] <id> — <one-line description of the concept to visualize>`
 - [x] geometric-distribution — the probability the first success comes on trial k, and how it complements binomial-distribution
 - [x] law-of-total-probability — splitting a hard-to-compute overall probability into a probability-weighted combination of easier per-scenario pieces, built from bayes-theorem and expected-value
 - [x] hidden-markov-models — inferring a hidden state sequence from observed emissions using transition and emission probabilities, built from markov-chains
+- [x] vector-norms — measuring vector magnitude with L1, L2, and L∞ norms, and how each shapes distance and regularization, built from vectors
 
 ## Up next (math foundations)
-- [ ] vector-norms — measuring vector magnitude with L1, L2, and L∞ norms, and how each shapes distance and regularization, built from vectors
 - [ ] convolution — sliding one function across another and summing the overlap, the operation behind smoothing, edge detection, and CNN filters, built from integral
 - [ ] lu-decomposition — factoring a matrix into lower- and upper-triangular pieces to solve linear systems faster than repeating elimination, built from gaussian-elimination
 - [ ] dijkstras-algorithm — finding the shortest path through a weighted graph by greedily expanding the nearest unvisited node
