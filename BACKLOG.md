@@ -98,9 +98,7 @@ Format: `- [ ] <id> — <one-line description of the concept to visualize>`
 - [x] expected-value — the probability-weighted average outcome of a random variable, and why it's the number a bet or gamble centers on
 - [x] geometric-distribution — the probability the first success comes on trial k, and how it complements binomial-distribution
 - [x] law-of-total-probability — splitting a hard-to-compute overall probability into a probability-weighted combination of easier per-scenario pieces, built from bayes-theorem and expected-value
-
-## Up next (statistics & ML intuition)
-- [ ] hidden-markov-models — inferring a hidden state sequence from observed emissions using transition and emission probabilities, built from markov-chains
+- [x] hidden-markov-models — inferring a hidden state sequence from observed emissions using transition and emission probabilities, built from markov-chains
 
 ## Up next (math foundations)
 - [ ] vector-norms — measuring vector magnitude with L1, L2, and L∞ norms, and how each shapes distance and regularization, built from vectors
