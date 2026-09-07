@@ -7,6 +7,7 @@
 package vectornorms
 
 import (
+	"fmt"
 	"math"
 
 	"mathviz/internal/concept"
@@ -183,7 +184,83 @@ func NormLp(x, y, p float64) float64 {
 	return m * math.Pow(math.Pow(rx, p)+math.Pow(ry, p), 1/p)
 }
 
+// boundary samples the scaled boundary of a norm's unit ball: the curve of
+// points whose value under norm equals target. Since every norm here is
+// homogeneous (norm(r*u) == r*norm(u) for r>=0), scaling the direction
+// (cos θ, sin θ) by target/norm(cos θ, sin θ) lands exactly on that curve,
+// for every θ -- so the boundary always passes exactly through whichever
+// vector target was measured from.
+func boundary(norm func(x, y float64) float64, target float64, steps int) [][2]float64 {
+	if target <= 0 {
+		return nil
+	}
+	pts := make([][2]float64, 0, steps+1)
+	for i := 0; i <= steps; i++ {
+		theta := 2 * math.Pi * float64(i) / float64(steps)
+		dx, dy := math.Cos(theta), math.Sin(theta)
+		r := target / norm(dx, dy)
+		pts = append(pts, [2]float64{r * dx, r * dy})
+	}
+	return pts
+}
+
 func render(p map[string]float64) string {
+	x, y := p["x"], p["y"]
+	pExp := p["p"]
+
+	l1 := NormL1(x, y)
+	l2 := NormL2(x, y)
+	linf := NormLInf(x, y)
+	lp := NormLp(x, y, pExp)
+
 	c := viz.New(534, 520, -11, 11, -11, 11)
+
+	// Axes through the origin.
+	c.Path([][2]float64{{c.XMin, 0}, {c.XMax, 0}}, viz.Muted, 1)
+	c.Path([][2]float64{{0, c.YMin}, {0, c.YMax}}, viz.Muted, 1)
+
+	const steps = 128
+	// Three fixed reference shapes, each scaled to pass exactly through v.
+	c.Path(boundary(NormL1, l1, steps), viz.Good, 1.5)
+	c.Path(boundary(NormL2, l2, steps), viz.Accent, 1.5)
+	c.Path(boundary(NormLInf, linf, steps), viz.Bad, 1.5)
+	// The general Lp shape for the current slider, also through v; at
+	// p=1/p=2 it sits exactly on top of the L1/L2 shapes above.
+	c.Path(boundary(func(dx, dy float64) float64 { return NormLp(dx, dy, pExp) }, lp, steps), viz.Warm, 3)
+
+	arrow(c, 0, 0, x, y, viz.Ink, 2.5)
+
+	c.Text(16, 24, fmt.Sprintf("v = (%.2f, %.2f)", x, y), 14, viz.Ink, "start")
+	c.Text(16, 44, fmt.Sprintf("L1 = %.4f (green diamond)   L2 = %.4f (blue circle)   L∞ = %.4f (red square)",
+		l1, l2, linf), 13, viz.Muted, "start")
+	c.Text(16, 64, fmt.Sprintf("Lp with p=%.1f → %.4f (orange curve, always through v)", pExp, lp), 14, viz.Warm, "start")
+
 	return c.String()
+}
+
+// arrow draws a straight line from (x0,y0) to (x1,y1) in data space, with a
+// small V-shaped arrowhead at the end. Mirrors vectors's own arrow helper:
+// the data range here is kept square too (see render), so a fixed
+// data-space arrowhead reads correctly on both axes.
+func arrow(c *viz.Canvas, x0, y0, x1, y1 float64, color string, width float64) {
+	c.Path([][2]float64{{x0, y0}, {x1, y1}}, color, width)
+
+	dx, dy := x1-x0, y1-y0
+	length := math.Hypot(dx, dy)
+	if length < 1e-9 {
+		return
+	}
+	ux, uy := dx/length, dy/length
+	const headLen = 0.45
+	const headAngle = 0.5 // radians, ~29° off the shaft on each side
+
+	barb := func(theta float64) (float64, float64) {
+		cos, sin := math.Cos(theta), math.Sin(theta)
+		bx, by := -ux, -uy // pointing back along the shaft
+		return bx*cos - by*sin, bx*sin + by*cos
+	}
+	b1x, b1y := barb(headAngle)
+	b2x, b2y := barb(-headAngle)
+	c.Path([][2]float64{{x1, y1}, {x1 + headLen*b1x, y1 + headLen*b1y}}, color, width)
+	c.Path([][2]float64{{x1, y1}, {x1 + headLen*b2x, y1 + headLen*b2y}}, color, width)
 }
