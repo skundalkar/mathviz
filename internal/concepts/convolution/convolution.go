@@ -134,6 +134,63 @@ func init() {
 	})
 }
 
+// Signal is the fixed pulse signal every Section walks through: a flat
+// baseline of 0s, a plateau of 1s, and back to 0 -- a sharp rise and a
+// sharp fall to smooth out or detect.
+var Signal = []float64{0, 0, 1, 1, 1, 1, 0, 0}
+
+// Kernels holds the two small kernels the picture can slide across Signal:
+// a moving average that smooths, and a finite-difference kernel that
+// detects rises and falls. Both have length 3.
+var Kernels = [][]float64{
+	{1.0 / 3, 1.0 / 3, 1.0 / 3}, // smoothing (moving average)
+	{-1, 0, 1},                  // edge detector (finite difference)
+}
+
+// KernelNames labels Kernels, in the same order.
+var KernelNames = []string{"Smoothing (moving average)", "Edge detector (finite difference)"}
+
+// Convolve returns the discrete linear convolution of x and kernel in
+// "valid" mode (no zero-padding): output length is len(x)-len(kernel)+1,
+// or nil if kernel is longer than x. True convolution reads the kernel
+// backwards as it slides -- (x*k)[i] = sum over j of x[i+j]*k[len(k)-1-j]
+// -- which matters whenever kernel isn't its own mirror image.
+func Convolve(x, kernel []float64) []float64 {
+	n := len(x) - len(kernel) + 1
+	if n <= 0 {
+		return nil
+	}
+	out := make([]float64, n)
+	last := len(kernel) - 1
+	for i := 0; i < n; i++ {
+		sum := 0.0
+		for j := 0; j < len(kernel); j++ {
+			sum += x[i+j] * kernel[last-j]
+		}
+		out[i] = sum
+	}
+	return out
+}
+
+// CrossCorrelate is the same sliding-window sum as Convolve but without
+// flipping the kernel -- what most machine-learning frameworks (and the
+// phrase "CNN filter") actually call convolution in practice.
+func CrossCorrelate(x, kernel []float64) []float64 {
+	n := len(x) - len(kernel) + 1
+	if n <= 0 {
+		return nil
+	}
+	out := make([]float64, n)
+	for i := 0; i < n; i++ {
+		sum := 0.0
+		for j := 0; j < len(kernel); j++ {
+			sum += x[i+j] * kernel[j]
+		}
+		out[i] = sum
+	}
+	return out
+}
+
 func render(p map[string]float64) string {
 	c := viz.New(680, 460, 0, 1, 0, 1)
 	return c.String()
