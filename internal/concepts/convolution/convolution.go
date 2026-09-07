@@ -8,6 +8,10 @@
 package convolution
 
 import (
+	"fmt"
+	"math"
+	"strings"
+
 	"mathviz/internal/concept"
 	"mathviz/internal/viz"
 )
@@ -191,7 +195,110 @@ func CrossCorrelate(x, kernel []float64) []float64 {
 	return out
 }
 
+// Layout constants for render's two bar rows, chosen so both rows (the
+// input signal, values 0..1, and the output, values -1..1) fit within the
+// canvas with room for labels above and below each.
+const (
+	canvasW, canvasH = 680, 460
+	barWidthFrac     = 0.6
+
+	signalBaseline = 210.0
+	signalScale    = 110.0
+
+	outputBaseline = 360.0
+	outputScale    = 60.0
+)
+
 func render(p map[string]float64) string {
-	c := viz.New(680, 460, 0, 1, 0, 1)
+	n := len(Signal)
+	kernelIdx := int(p["kernel"] + 0.5)
+	if kernelIdx < 0 || kernelIdx >= len(Kernels) {
+		kernelIdx = 0
+	}
+	kernel := Kernels[kernelIdx]
+	kernelLen := len(kernel)
+	flip := p["flip"] >= 0.5
+
+	maxT := n - kernelLen
+	t := int(p["t"] + 0.5)
+	if t < 0 {
+		t = 0
+	}
+	if t > maxT {
+		t = maxT
+	}
+
+	var full []float64
+	modeLabel := "cross-correlation (no flip)"
+	if flip {
+		full = Convolve(Signal, kernel)
+		modeLabel = "true convolution (flipped)"
+	} else {
+		full = CrossCorrelate(Signal, kernel)
+	}
+
+	// The weight actually multiplying each highlighted signal value at
+	// this slide position -- the kernel read backwards when flipped,
+	// forwards otherwise.
+	weights := make([]float64, kernelLen)
+	for j := 0; j < kernelLen; j++ {
+		if flip {
+			weights[j] = kernel[kernelLen-1-j]
+		} else {
+			weights[j] = kernel[j]
+		}
+	}
+
+	c := viz.New(canvasW, canvasH, 0, float64(n), 0, 1)
+	unitW := (c.W - c.PadL - c.PadR) / float64(n)
+	barW := unitW * barWidthFrac
+	colX := func(i int) float64 { return c.X(float64(i) + 0.5) }
+
+	// Row 1: the fixed input signal, with the current slide window
+	// highlighted.
+	c.Rect(c.PadL, signalBaseline, c.W-c.PadL-c.PadR, 1, viz.Muted, 1)
+	for i, v := range Signal {
+		cx := colX(i)
+		h := v * signalScale
+		color := viz.Accent
+		if i >= t && i < t+kernelLen {
+			color = viz.Warm
+		}
+		c.Rect(cx-barW/2, signalBaseline-h, barW, h, color, 0.85)
+		c.Text(cx, signalBaseline+18, fmt.Sprintf("%.0f", v), 11, viz.Muted, "middle")
+	}
+	for j := 0; j < kernelLen; j++ {
+		cx := colX(t + j)
+		c.Text(cx, signalBaseline-signalScale-16, fmt.Sprintf("×%.2f", weights[j]), 12, viz.Warm, "middle")
+	}
+
+	// Row 2: the output, revealed one bar at a time up to t, each bar
+	// centered under its 3-wide window's middle tap.
+	c.Rect(c.PadL, outputBaseline, c.W-c.PadL-c.PadR, 1, viz.Muted, 1)
+	for i := 0; i <= t; i++ {
+		v := full[i]
+		cx := colX(i + kernelLen/2)
+		h := v * outputScale
+		color := viz.Good
+		y := outputBaseline - h
+		if v < 0 {
+			color = viz.Bad
+			y = outputBaseline
+		}
+		c.Rect(cx-barW/2, y, barW, math.Abs(h), color, 0.85)
+		c.Text(cx, 442, fmt.Sprintf("%.2f", v), 11, viz.Muted, "middle")
+	}
+
+	terms := make([]string, kernelLen)
+	nums := make([]string, kernelLen)
+	for j := 0; j < kernelLen; j++ {
+		terms[j] = fmt.Sprintf("x[%d]·%.2f", t+j, weights[j])
+		nums[j] = fmt.Sprintf("%.2f·%.2f", Signal[t+j], weights[j])
+	}
+
+	c.Text(16, 24, fmt.Sprintf("kernel: %s    mode: %s", KernelNames[kernelIdx], modeLabel), 13, viz.Ink, "start")
+	c.Text(16, 44, fmt.Sprintf("output[%d] = %s", t, strings.Join(terms, " + ")), 13, viz.Muted, "start")
+	c.Text(16, 64, fmt.Sprintf("= %s = %.4f", strings.Join(nums, " + "), full[t]), 14, viz.Warm, "start")
+
 	return c.String()
 }
