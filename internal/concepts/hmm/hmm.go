@@ -150,6 +150,99 @@ func init() {
 	})
 }
 
+// Hidden-state indices, in the same order as StateNames.
+const (
+	Sunny = 0
+	Rainy = 1
+)
+
+// Observed-activity indices, in the same order as ObservationNames.
+const (
+	Walk  = 0
+	Shop  = 1
+	Clean = 2
+)
+
+// StateNames labels the two hidden states, indexed the same way as Sunny/Rainy.
+var StateNames = []string{"Sunny", "Rainy"}
+
+// ObservationNames labels the three observable activities, indexed the same
+// way as Walk/Shop/Clean.
+var ObservationNames = []string{"Walk", "Shop", "Clean"}
+
+// Emission is the fixed emission matrix: Emission[state][observation] is
+// P(observation | state). These are the textbook values -- a sunny day is
+// six times more likely to produce a Walk than a rainy one is, and a rainy
+// day is five times more likely to produce Cleaning.
+var Emission = [2][3]float64{
+	{0.6, 0.3, 0.1}, // Sunny
+	{0.1, 0.4, 0.5}, // Rainy
+}
+
+// InitialDist is the fixed prior over the hidden state on day 0: P(Sunny),
+// P(Rainy).
+var InitialDist = [2]float64{0.4, 0.6}
+
+// Sequence is the fixed 3-day observed activity sequence every Section
+// walks through: Walk, Shop, Clean.
+var Sequence = []int{Walk, Shop, Clean}
+
+// Transition returns the 2x2 transition matrix for stickiness a (P(stay
+// Sunny)) and b (P(stay Rainy)), using the exact same convention as
+// markov-chains.Step: Transition[from][to].
+func Transition(a, b float64) [2][2]float64 {
+	return [2][2]float64{
+		{a, 1 - a},
+		{1 - b, b},
+	}
+}
+
+// Viterbi runs the Viterbi dynamic-programming algorithm: for every day t
+// and hidden state s, it finds delta[t][s], the probability of the single
+// most likely path of hidden states ending in s at time t that is
+// consistent with the observations seen so far. It returns that full delta
+// table (for visualizing how the trellis fills in), the overall best
+// hidden-state path (found by backtracking from the largest final-day
+// delta), and that path's probability. obs must be non-empty; an empty obs
+// returns a nil path and zero probability.
+func Viterbi(trans [2][2]float64, emit [2][3]float64, initial [2]float64, obs []int) (delta [][2]float64, path []int, prob float64) {
+	n := len(obs)
+	if n == 0 {
+		return nil, nil, 0
+	}
+
+	delta = make([][2]float64, n)
+	backptr := make([][2]int, n)
+	for s := 0; s < 2; s++ {
+		delta[0][s] = initial[s] * emit[s][obs[0]]
+		backptr[0][s] = -1 // no predecessor on day 0
+	}
+	for t := 1; t < n; t++ {
+		for s := 0; s < 2; s++ {
+			best, bestPrev := -1.0, 0
+			for sp := 0; sp < 2; sp++ {
+				v := delta[t-1][sp] * trans[sp][s]
+				if v > best {
+					best, bestPrev = v, sp
+				}
+			}
+			delta[t][s] = best * emit[s][obs[t]]
+			backptr[t][s] = bestPrev
+		}
+	}
+
+	path = make([]int, n)
+	if delta[n-1][Sunny] >= delta[n-1][Rainy] {
+		path[n-1], prob = Sunny, delta[n-1][Sunny]
+	} else {
+		path[n-1], prob = Rainy, delta[n-1][Rainy]
+	}
+	for t := n - 2; t >= 0; t-- {
+		path[t] = backptr[t+1][path[t+1]]
+	}
+	return delta, path, prob
+}
+
 func render(p map[string]float64) string {
 	c := viz.New(680, 460, 0, 1, 0, 1)
 	return c.String()
