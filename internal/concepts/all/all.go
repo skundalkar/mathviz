@@ -20,6 +20,7 @@ import (
 	_ "mathviz/internal/concepts/complexnumbers"
 	_ "mathviz/internal/concepts/confint"
 	_ "mathviz/internal/concepts/confusionmatrix"
+	_ "mathviz/internal/concepts/convolution"
 	_ "mathviz/internal/concepts/correlation"
 	_ "mathviz/internal/concepts/cosinesimilarity"
 	_ "mathviz/internal/concepts/covariance"
