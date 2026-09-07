@@ -10,6 +10,9 @@
 package hmm
 
 import (
+	"fmt"
+	"strings"
+
 	"mathviz/internal/concept"
 	"mathviz/internal/viz"
 )
@@ -243,7 +246,112 @@ func Viterbi(trans [2][2]float64, emit [2][3]float64, initial [2]float64, obs []
 	return delta, path, prob
 }
 
+// backpointers recomputes, for every day t>=1 and state s, which previous
+// day's state actually produced the highest delta[t-1][sp]*trans[sp][s] --
+// the single "surviving" predecessor arrow Viterbi kept while filling in
+// delta[t][s]. It's derived directly from delta (already computed by
+// Viterbi) purely for drawing the trellis; day 0 has no predecessor and is
+// left zeroed.
+func backpointers(delta [][2]float64, trans [2][2]float64) [][2]int {
+	n := len(delta)
+	plink := make([][2]int, n)
+	for day := 1; day < n; day++ {
+		for s := 0; s < 2; s++ {
+			if delta[day-1][Sunny]*trans[Sunny][s] >= delta[day-1][Rainy]*trans[Rainy][s] {
+				plink[day][s] = Sunny
+			} else {
+				plink[day][s] = Rainy
+			}
+		}
+	}
+	return plink
+}
+
+// columnX is the day-0/1/2 x positions on the unit-square canvas, and rowY
+// the Sunny/Rainy y positions -- Sunny drawn on top, Rainy on the bottom,
+// matching markov-chains's "sunny is the tracked state" convention.
+var columnX = []float64{0.15, 0.5, 0.85}
+var rowY = [2]float64{0.75, 0.25}
+
 func render(p map[string]float64) string {
+	a := p["a"]
+	b := p["b"]
+	t := int(p["t"] + 0.5)
+	maxT := len(Sequence) - 1
+	if t < 0 {
+		t = 0
+	}
+	if t > maxT {
+		t = maxT
+	}
+
+	trans := Transition(a, b)
+	delta, path, prob := Viterbi(trans, Emission, InitialDist, Sequence)
+	plink := backpointers(delta, trans)
+
+	maxDelta := 0.0
+	for _, d := range delta {
+		for s := 0; s < 2; s++ {
+			if d[s] > maxDelta {
+				maxDelta = d[s]
+			}
+		}
+	}
+
 	c := viz.New(680, 460, 0, 1, 0, 1)
+
+	// The surviving backpointer arrow into each revealed day -- the single
+	// predecessor delta actually kept, not every possible transition.
+	for day := 1; day <= t; day++ {
+		for s := 0; s < 2; s++ {
+			from := [2]float64{columnX[day-1], rowY[plink[day][s]]}
+			to := [2]float64{columnX[day], rowY[s]}
+			c.Path([][2]float64{from, to}, viz.Muted, 1.5)
+		}
+	}
+
+	// Once every day is revealed, bold the one path Viterbi actually
+	// decoded by backtracking from the largest final-day delta.
+	if t == maxT {
+		pathPts := make([][2]float64, len(path))
+		for day, s := range path {
+			pathPts[day] = [2]float64{columnX[day], rowY[s]}
+		}
+		c.Path(pathPts, viz.Warm, 3)
+	}
+
+	stateColor := [2]string{viz.Accent, viz.Bad} // Sunny, Rainy
+	for day := 0; day <= t; day++ {
+		c.Text(c.X(columnX[day]), 28, ObservationNames[Sequence[day]], 13, viz.Muted, "middle")
+		for s := 0; s < 2; s++ {
+			px, py := c.X(columnX[day]), c.Y(rowY[s])
+			side := 14.0
+			if maxDelta > 0 {
+				side = 14 + 46*(delta[day][s]/maxDelta)
+			}
+			color := stateColor[s]
+			if t == maxT && path[day] == s {
+				color = viz.Warm
+			}
+			c.Rect(px-side/2, py-side/2, side, side, color, 0.85)
+			c.Text(px, py+side/2+16, fmt.Sprintf("%.4f", delta[day][s]), 11, viz.Muted, "middle")
+		}
+	}
+
+	c.Text(16, c.H-52, StateNames[Sunny], 12, viz.Accent, "start")
+	c.Text(16, c.H-32, StateNames[Rainy], 12, viz.Bad, "start")
+	c.Text(16, 44, fmt.Sprintf("P(stay Sunny)=%.2f    P(stay Rainy)=%.2f", a, b), 14, viz.Ink, "start")
+
+	if t == maxT {
+		names := make([]string, len(path))
+		for i, s := range path {
+			names[i] = StateNames[s]
+		}
+		c.Text(16, 64, fmt.Sprintf("most likely path: %s (probability %.5f)", strings.Join(names, " → "), prob),
+			14, viz.Warm, "start")
+	} else {
+		c.Text(16, 64, "drag the day slider to reveal each day's trellis and see the decode", 12, viz.Muted, "start")
+	}
+
 	return c.String()
 }
