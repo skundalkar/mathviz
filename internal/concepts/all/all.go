@@ -93,6 +93,7 @@ import (
 	_ "mathviz/internal/concepts/taylorseries"
 	_ "mathviz/internal/concepts/tdist"
 	_ "mathviz/internal/concepts/variancestddev"
+	_ "mathviz/internal/concepts/vectornorms"
 	_ "mathviz/internal/concepts/vectors"
 	_ "mathviz/internal/concepts/zscore"
 )
