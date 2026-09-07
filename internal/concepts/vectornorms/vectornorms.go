@@ -7,6 +7,8 @@
 package vectornorms
 
 import (
+	"math"
+
 	"mathviz/internal/concept"
 	"mathviz/internal/viz"
 )
@@ -144,6 +146,41 @@ func init() {
 		},
 		Render: render,
 	})
+}
+
+// NormL1 returns the L1 (Manhattan / city-block) norm of the vector (x,y):
+// the sum of the absolute values of its components.
+func NormL1(x, y float64) float64 {
+	return math.Abs(x) + math.Abs(y)
+}
+
+// NormL2 returns the L2 (Euclidean / ruler) norm of the vector (x,y): its
+// straight-line length.
+func NormL2(x, y float64) float64 {
+	return math.Hypot(x, y)
+}
+
+// NormLInf returns the L∞ (Chebyshev / max) norm of the vector (x,y): its
+// largest single component's absolute value.
+func NormLInf(x, y float64) float64 {
+	return math.Max(math.Abs(x), math.Abs(y))
+}
+
+// NormLp returns the general Lp norm of the vector (x,y) for any p>=1:
+// (|x|^p + |y|^p)^(1/p), which collapses to NormL1 at p=1 and NormL2 at
+// p=2, and converges to NormLInf as p grows without bound. The largest
+// component is factored out before raising to the p-th power so the
+// computation stays well-behaved (no overflow to +Inf) even for very
+// large p, where a naive |x|^p would blow past float64's range long
+// before the 1/p root could bring it back down.
+func NormLp(x, y, p float64) float64 {
+	ax, ay := math.Abs(x), math.Abs(y)
+	m := math.Max(ax, ay)
+	if m == 0 {
+		return 0
+	}
+	rx, ry := ax/m, ay/m
+	return m * math.Pow(math.Pow(rx, p)+math.Pow(ry, p), 1/p)
 }
 
 func render(p map[string]float64) string {
