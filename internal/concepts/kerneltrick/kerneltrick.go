@@ -8,6 +8,9 @@
 package kerneltrick
 
 import (
+	"math"
+	"sort"
+
 	"mathviz/internal/concept"
 	"mathviz/internal/viz"
 )
@@ -118,6 +121,125 @@ func init() {
 		},
 		Render: render,
 	})
+}
+
+// Point is one labeled 1D data point: X is its position on the number
+// line, Label is +1 for class A or -1 for class B.
+type Point struct {
+	X     float64
+	Label int
+}
+
+// Points is the fixed 7-point example every Section walks through: class A
+// (label +1) sits near zero, class B (label -1) sits on both ends, so no
+// single threshold on X alone separates them.
+var Points = []Point{
+	{-3, -1},
+	{-2, -1},
+	{-1, 1},
+	{0, 1},
+	{1, 1},
+	{2, -1},
+	{3, -1},
+}
+
+// Phi is the explicit feature map used throughout: keep the original value
+// and add its square as a second coordinate.
+func Phi(x float64) (float64, float64) {
+	return x, x * x
+}
+
+// Kernel computes K(a, b) = Phi(a)·Phi(b) -- the dot product the mapped
+// space's classifier actually needs -- directly from a and b, without ever
+// building the two Phi vectors. See PhiDot for the same number computed the
+// long way; TestKernelMatchesExplicitPhiDot checks they always agree.
+func Kernel(a, b float64) float64 {
+	return a*b + a*a*b*b
+}
+
+// PhiDot computes Phi(a)·Phi(b) the long way -- explicitly mapping both
+// points first, then dotting the resulting vectors. Exists purely so tests
+// (and the concept's Sections) can show Kernel gives the identical answer
+// without doing that work.
+func PhiDot(a, b float64) float64 {
+	a1, a2 := Phi(a)
+	b1, b2 := Phi(b)
+	return a1*b1 + a2*b2
+}
+
+// MarginThreshold finds the maximum-margin split in the mapped space's
+// second coordinate (x²), the same "split the difference between the
+// nearest opposite-class points" rule support-vector-machine uses: the
+// midpoint between the largest x² among class-A points and the smallest x²
+// among class-B points. It also returns those two bracketing values, the
+// mapped-space support points.
+func MarginThreshold(points []Point) (threshold, innerMax, outerMin float64) {
+	innerMax = math.Inf(-1)
+	outerMin = math.Inf(1)
+	for _, pt := range points {
+		_, y := Phi(pt.X)
+		if pt.Label == 1 && y > innerMax {
+			innerMax = y
+		}
+		if pt.Label == -1 && y < outerMin {
+			outerMin = y
+		}
+	}
+	return (innerMax + outerMin) / 2, innerMax, outerMin
+}
+
+// Classify decides a point's class in the mapped space: +1 if its mapped
+// x² sits below threshold, -1 otherwise.
+func Classify(x, threshold float64) int {
+	_, y := Phi(x)
+	if y < threshold {
+		return 1
+	}
+	return -1
+}
+
+// SeparableByThreshold reports whether ANY single threshold on vals (with
+// "below the threshold is one class, above is the other", in either
+// direction) classifies every corresponding label correctly -- the general
+// test for "is this 1D representation linearly separable". Candidates are
+// every midpoint between consecutive sorted values, plus one threshold
+// below all of them and one above, which is exhaustive: a threshold
+// anywhere between two candidate points behaves identically to the
+// midpoint between them.
+func SeparableByThreshold(vals []float64, labels []int) bool {
+	n := len(vals)
+	if n == 0 {
+		return true
+	}
+	sorted := append([]float64(nil), vals...)
+	sort.Float64s(sorted)
+
+	candidates := make([]float64, 0, n+1)
+	candidates = append(candidates, sorted[0]-1)
+	for i := 0; i+1 < n; i++ {
+		candidates = append(candidates, (sorted[i]+sorted[i+1])/2)
+	}
+	candidates = append(candidates, sorted[n-1]+1)
+
+	for _, t := range candidates {
+		belowIsPositive, aboveIsPositive := true, true
+		for i, v := range vals {
+			pred := -1
+			if v < t {
+				pred = 1
+			}
+			if pred != labels[i] {
+				belowIsPositive = false
+			}
+			if -pred != labels[i] {
+				aboveIsPositive = false
+			}
+		}
+		if belowIsPositive || aboveIsPositive {
+			return true
+		}
+	}
+	return false
 }
 
 func render(p map[string]float64) string {
