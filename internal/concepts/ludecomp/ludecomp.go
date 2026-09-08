@@ -7,6 +7,8 @@
 package ludecomp
 
 import (
+	"math"
+
 	"mathviz/internal/concept"
 	"mathviz/internal/viz"
 )
@@ -120,6 +122,141 @@ func init() {
 		},
 		Render: render,
 	})
+}
+
+// tol is the tolerance below which a pivot is treated as zero -- this
+// simple (no-pivoting) Doolittle factorization can't proceed past a pivot
+// that small, exactly the failure mode the concept's "common mistake"
+// section calls out.
+const tol = 1e-9
+
+// A is the fixed 3x3 example every Section walks through: it has three
+// clean, nonzero pivots under plain Doolittle elimination, so no row
+// swapping is ever needed.
+var A = Matrix{
+	{4, 3, 2},
+	{2, 3, 1},
+	{1, 1, 2},
+}
+
+// Matrix is a square matrix stored row-major, dense.
+type Matrix [][]float64
+
+// cloneMatrix returns a deep copy so Decompose never mutates its input.
+func cloneMatrix(m Matrix) Matrix {
+	out := make(Matrix, len(m))
+	for i, row := range m {
+		out[i] = append([]float64(nil), row...)
+	}
+	return out
+}
+
+// identity returns the n x n identity matrix.
+func identity(n int) Matrix {
+	m := make(Matrix, n)
+	for i := range m {
+		m[i] = make([]float64, n)
+		m[i][i] = 1
+	}
+	return m
+}
+
+// Decompose factors square matrix a into a unit-lower-triangular L and an
+// upper-triangular U such that L*U = a, using Doolittle's method: run
+// ordinary forward Gaussian elimination, but instead of discarding the
+// multiplier used to zero out each entry, record it into L. U ends up
+// holding exactly the echelon form elimination produces. It reports
+// ok=false the moment a pivot (U's diagonal entry at that step) would be
+// ~zero, since this simple version has no way to swap in a better row --
+// see gaussianelim.Eliminate for the row-swap gaussian-elimination itself
+// relies on to handle that case.
+func Decompose(a Matrix) (L, U Matrix, ok bool) {
+	n := len(a)
+	L = identity(n)
+	U = make(Matrix, n)
+	for i := range U {
+		U[i] = make([]float64, n)
+	}
+
+	work := cloneMatrix(a)
+	for i := 0; i < n; i++ {
+		for k := i; k < n; k++ {
+			U[i][k] = work[i][k]
+		}
+		if math.Abs(U[i][i]) < tol {
+			return nil, nil, false
+		}
+		for r := i + 1; r < n; r++ {
+			factor := work[r][i] / U[i][i]
+			L[r][i] = factor
+			for k := i; k < n; k++ {
+				work[r][k] -= factor * U[i][k]
+			}
+		}
+	}
+	return L, U, true
+}
+
+// ForwardSubstitute solves L y = b for y, where L is unit lower triangular
+// (as Decompose produces): each row's diagonal entry is always 1, so no
+// division is needed, only subtracting off the contribution of the y
+// values already found above it.
+func ForwardSubstitute(L Matrix, b []float64) []float64 {
+	n := len(L)
+	y := make([]float64, n)
+	for i := 0; i < n; i++ {
+		sum := b[i]
+		for j := 0; j < i; j++ {
+			sum -= L[i][j] * y[j]
+		}
+		y[i] = sum
+	}
+	return y
+}
+
+// BackSubstitute solves U x = y for x, where U is upper triangular (as
+// Decompose produces): works from the last row up, subtracting off the
+// contribution of the x values already found below it before dividing by
+// the diagonal pivot.
+func BackSubstitute(U Matrix, y []float64) []float64 {
+	n := len(U)
+	x := make([]float64, n)
+	for i := n - 1; i >= 0; i-- {
+		sum := y[i]
+		for j := i + 1; j < n; j++ {
+			sum -= U[i][j] * x[j]
+		}
+		x[i] = sum / U[i][i]
+	}
+	return x
+}
+
+// Solve factors a once via Decompose and solves A x = b via forward then
+// back substitution, reporting ok=false if a couldn't be factored.
+func Solve(a Matrix, b []float64) (x []float64, ok bool) {
+	L, U, ok := Decompose(a)
+	if !ok {
+		return nil, false
+	}
+	y := ForwardSubstitute(L, b)
+	return BackSubstitute(U, y), true
+}
+
+// Determinant computes det(a) as the product of U's diagonal entries after
+// LU decomposition -- valid because det(L)=1 (unit diagonal, triangular)
+// and det of a triangular matrix is the product of its diagonal, so
+// det(a) = det(L)*det(U) = det(U). Reports ok=false if a couldn't be
+// factored.
+func Determinant(a Matrix) (det float64, ok bool) {
+	_, U, ok := Decompose(a)
+	if !ok {
+		return 0, false
+	}
+	det = 1
+	for i := range U {
+		det *= U[i][i]
+	}
+	return det, true
 }
 
 func render(p map[string]float64) string {
