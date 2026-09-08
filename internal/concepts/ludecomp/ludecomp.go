@@ -7,6 +7,7 @@
 package ludecomp
 
 import (
+	"fmt"
 	"math"
 
 	"mathviz/internal/concept"
@@ -259,7 +260,168 @@ func Determinant(a Matrix) (det float64, ok bool) {
 	return det, true
 }
 
+// bVecs holds the four right-hand sides the b slider picks between: a
+// general system, then the identity's three columns, whose solutions are
+// A⁻¹'s columns (see "What can you do now that you couldn't before?").
+var bVecs = [][]float64{
+	{9, 7, 6},
+	{1, 0, 0},
+	{0, 1, 0},
+	{0, 0, 1},
+}
+
+var bNames = []string{
+	"b = [9, 7, 6]",
+	"b = e0 = [1, 0, 0]  (solving recovers column 0 of A⁻¹)",
+	"b = e1 = [0, 1, 0]  (solving recovers column 1 of A⁻¹)",
+	"b = e2 = [0, 0, 1]  (solving recovers column 2 of A⁻¹)",
+}
+
+// Layout constants for render's matrix grids and vector columns, in pixels.
+const (
+	cellW, cellH = 58.0, 38.0
+	gridAx       = 24.0
+	gridLx       = gridAx + 3*cellW + 40
+	gridUx       = gridLx + 3*cellW + 40
+	gridY        = 100.0
+
+	vecY    = gridY + 3*cellH + 56
+	vecBx   = 24.0
+	vecYx   = vecBx + 190
+	vecXx   = vecYx + 190
+	vecRowH = 26.0
+)
+
+// drawMatrix draws an n x n matrix as a grid of cells at (x0, gridY). When
+// revealed is false every cell shows "?" instead of its value, dimmed --
+// used for L and U before the factorization step.
+func drawMatrix(c *viz.Canvas, m Matrix, x0 float64, revealed bool, label string) {
+	c.Text(x0, gridY-14, label, 13, viz.Muted, "start")
+	for r, row := range m {
+		for col, v := range row {
+			x := x0 + float64(col)*cellW
+			y := gridY + float64(r)*cellH
+			opacity := 0.3
+			if revealed {
+				opacity = 0.6
+			}
+			c.Rect(x, y, cellW-4, cellH-4, viz.Faint, opacity)
+			text, color := "?", viz.Muted
+			if revealed {
+				text, color = fmt.Sprintf("%.2f", v), viz.Ink
+			}
+			c.Text(x+(cellW-4)/2, y+(cellH-4)/2+5, text, 12, color, "middle")
+		}
+	}
+}
+
+// drawVector draws one labeled column of an n-entry vector, one row per
+// entry, revealing only the rows revealedUpTo allows and highlighting
+// activeRow (the entry the current step is computing) in a different color
+// -- revealedUpTo(i) true means row i already shows its value.
+func drawVector(c *viz.Canvas, vals []float64, x0 float64, symbol string, revealedUpTo func(i int) bool, activeRow int) {
+	c.Text(x0, vecY-14, symbol, 13, viz.Muted, "start")
+	for i, v := range vals {
+		y := vecY + float64(i)*vecRowH
+		text, color := "?", viz.Muted
+		switch {
+		case i == activeRow:
+			color = viz.Warm
+			if revealedUpTo(i) {
+				text = fmt.Sprintf("%.3f", v)
+			}
+		case revealedUpTo(i):
+			text, color = fmt.Sprintf("%.3f", v), viz.Ink
+		}
+		c.Text(x0, y, fmt.Sprintf("%s[%d] = %s", symbol, i, text), 13, color, "start")
+	}
+}
+
 func render(p map[string]float64) string {
-	c := viz.New(760, 420, 0, 1, 0, 1)
+	n := len(A)
+	bIdx := int(p["b"] + 0.5)
+	if bIdx < 0 {
+		bIdx = 0
+	}
+	if bIdx > len(bVecs)-1 {
+		bIdx = len(bVecs) - 1
+	}
+	b := bVecs[bIdx]
+
+	// Total steps: 1 (start) + 1 (factored) + n (forward) + n (back).
+	maxStep := 1 + 2*n
+	step := int(p["step"] + 0.5)
+	if step < 0 {
+		step = 0
+	}
+	if step > maxStep {
+		step = maxStep
+	}
+
+	L, U, _ := Decompose(A) // A is fixed and known to factor cleanly.
+	y := ForwardSubstitute(L, b)
+	x := BackSubstitute(U, y)
+	det, _ := Determinant(A)
+
+	factored := step >= 1
+	forwardRevealed := step - 1
+	if forwardRevealed < 0 {
+		forwardRevealed = 0
+	}
+	if forwardRevealed > n {
+		forwardRevealed = n
+	}
+	backRevealed := step - 1 - n
+	if backRevealed < 0 {
+		backRevealed = 0
+	}
+	if backRevealed > n {
+		backRevealed = n
+	}
+	forwardActive, backActive := -1, -1
+	if step >= 2 && step <= 1+n {
+		forwardActive = step - 2
+	}
+	if step >= 2+n && step <= 1+2*n {
+		backActive = n - 1 - (step - (2 + n))
+	}
+
+	c := viz.New(760, 460, 0, 1, 0, 1)
+
+	c.Text(16, 26, fmt.Sprintf("A = [[4,3,2],[2,3,1],[1,1,2]]      %s", bNames[bIdx]), 13, viz.Ink, "start")
+
+	var stepDesc string
+	switch {
+	case step == 0:
+		stepDesc = "Start: A given, not yet factored -- every b would require full elimination again."
+	case step == 1:
+		stepDesc = fmt.Sprintf("Factored: A = L*U (Doolittle elimination; multipliers recorded into L). det(A) = product(diag(U)) = %.2f*%.2f*%.2f = %.2f.",
+			U[0][0], U[1][1], U[2][2], det)
+	case forwardActive >= 0:
+		row := forwardActive
+		terms := ""
+		for j := 0; j < row; j++ {
+			terms += fmt.Sprintf(" - L[%d][%d]*y[%d](%.2f*%.3f)", row, j, j, L[row][j], y[j])
+		}
+		stepDesc = fmt.Sprintf("Forward substitution: y[%d] = b[%d]%s = %.3f", row, row, terms, y[row])
+	case backActive >= 0:
+		row := backActive
+		terms := ""
+		for j := row + 1; j < n; j++ {
+			terms += fmt.Sprintf(" - U[%d][%d]*x[%d](%.2f*%.3f)", row, j, j, U[row][j], x[j])
+		}
+		stepDesc = fmt.Sprintf("Back substitution: x[%d] = (y[%d]%s) / U[%d][%d](%.2f) = %.3f",
+			row, row, terms, row, row, U[row][row], x[row])
+	}
+	c.Text(16, 48, stepDesc, 13, viz.Accent, "start")
+
+	drawMatrix(c, A, gridAx, true, "A")
+	drawMatrix(c, L, gridLx, factored, "L")
+	drawMatrix(c, U, gridUx, factored, "U")
+
+	drawVector(c, b, vecBx, "b", func(i int) bool { return true }, -1)
+	drawVector(c, y, vecYx, "y", func(i int) bool { return i < forwardRevealed }, forwardActive)
+	drawVector(c, x, vecXx, "x", func(i int) bool { return i >= n-backRevealed }, backActive)
+
 	return c.String()
 }
