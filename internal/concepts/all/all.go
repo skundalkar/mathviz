@@ -49,6 +49,7 @@ import (
 	_ "mathviz/internal/concepts/huffman"
 	_ "mathviz/internal/concepts/hypergeometric"
 	_ "mathviz/internal/concepts/integral"
+	_ "mathviz/internal/concepts/kerneltrick"
 	_ "mathviz/internal/concepts/kldivergence"
 	_ "mathviz/internal/concepts/kmeans"
 	_ "mathviz/internal/concepts/knn"
