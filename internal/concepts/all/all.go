@@ -30,6 +30,7 @@ import (
 	_ "mathviz/internal/concepts/derivative"
 	_ "mathviz/internal/concepts/determinant"
 	_ "mathviz/internal/concepts/diffiehellman"
+	_ "mathviz/internal/concepts/dijkstra"
 	_ "mathviz/internal/concepts/eigen"
 	_ "mathviz/internal/concepts/elbowsilhouette"
 	_ "mathviz/internal/concepts/entropy"
