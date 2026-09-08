@@ -1,0 +1,128 @@
+// Package ludecomp visualizes LU decomposition: factoring a square matrix A
+// into a unit-lower-triangular L and an upper-triangular U such that A =
+// L*U, by recording the multipliers gaussian-elimination normally discards.
+// Once L and U are known, solving A x = b for any b becomes two cheap
+// triangular substitutions (forward through L, back through U) instead of
+// repeating the full O(n^3) elimination from scratch for every new b.
+package ludecomp
+
+import (
+	"mathviz/internal/concept"
+	"mathviz/internal/viz"
+)
+
+func init() {
+	concept.Register(concept.Concept{
+		ID:    "lu-decomposition",
+		Seq:   95,
+		Title: "LU decomposition (factor once, solve many)",
+		Sections: []concept.Section{
+			{
+				Heading: "Why would you need this?",
+				Body: []string{
+					"gaussian-elimination solves A x = b by bolting b onto A as one augmented " +
+						"matrix and row-reducing the whole thing together. That works, but notice " +
+						"what it throws away: every row operation elimination performs — which " +
+						"multiple of which row to subtract from which other row — depends only on " +
+						"A, never on b. Now suppose you need to solve the same system again with a " +
+						"different b: a bridge's force-balance equations under a second load " +
+						"scenario, or a circuit's equations for a second input signal. " +
+						"gaussian-elimination has no memory of the work it already did — it " +
+						"augments the new b onto A and repeats the entire elimination from " +
+						"scratch, redoing the O(n^3) row-reduction work even though A itself, and " +
+						"therefore every multiplier elimination computes, hasn't changed at all. " +
+						"Is there a way to do A's elimination work exactly once, and reuse it " +
+						"cheaply for every new b?",
+				},
+			},
+			{
+				Heading: "How does it actually work?",
+				Body: []string{
+					"Take A = [[4,3,2],[2,3,1],[1,1,2]]. Run the exact same forward elimination " +
+						"gaussian-elimination does, but this time keep the multiplier used at each " +
+						"step instead of discarding it once the row is updated:",
+					"• Zero A's column 0 below row 0: row 1's multiplier is 2/4=0.5, row 2's is " +
+						"1/4=0.25. Store these in a matrix L at positions L[1][0] and L[2][0]; " +
+						"apply them to update rows 1 and 2, same as gaussian-elimination always did.",
+					"• Zero column 1 below row 1 (now [0, 1.5, 0]): row 2's multiplier is " +
+						"0.25/1.5=1/6. Store it at L[2][1]; apply it, leaving row 2 = [0, 0, 1.5].",
+					"• L gets 1s on its diagonal (a row is never eliminated using itself), and U " +
+						"is exactly the echelon form elimination produced: U = [[4,3,2],[0,1.5,0]," +
+						"[0,0,1.5]], L = [[1,0,0],[0.5,1,0],[0.25,1/6,1]].",
+					"Multiply L by U back out and you get A again exactly — L*U = A. That's the " +
+						"whole factorization: L records *how* elimination combined the rows, U " +
+						"records *what* it produced. Now for any b, substitute A x = (L U) x = b, " +
+						"and let y = U x: first solve L y = b for y (forward substitution, top " +
+						"row down — cheap, since L is triangular and each row only needs the y " +
+						"values already found above it), then solve U x = y for x (back " +
+						"substitution, bottom row up). For b = [9, 7, 6]: forward gives y = " +
+						"[9, 2.5, 3.333]; back-substituting through U gives x ≈ [−0.111, 1.667, " +
+						"2.222] — two O(n^2) triangular solves, no re-elimination of A at all.",
+				},
+			},
+			{
+				Heading: "What does the picture show?",
+				Body: []string{
+					"The b slider picks which right-hand side to solve for; the step slider " +
+						"scrubs through the process in order: A sits unfactored, then L and U " +
+						"appear (the one-time O(n^3) factoring work), then y fills in row by row " +
+						"as forward substitution walks down through L, then x fills in row by row " +
+						"as back substitution walks back up through U. Switching b never changes " +
+						"L or U — only the forward/back substitution numbers change — which is the " +
+						"whole point made visible.",
+				},
+			},
+			{
+				Heading: "What can you do now that you couldn't before?",
+				Body: []string{
+					"Solve A x = b for as many different b vectors as you need, each one costing " +
+						"only two cheap triangular substitutions instead of a full re-elimination. " +
+						"Solving with b set to each of the identity's columns (e0, e1, e2) one at " +
+						"a time, and stacking the resulting x's side by side, gives you the columns " +
+						"of A⁻¹ — the same inverse matrix-inverse computes by row-reducing [A|I], " +
+						"just reusing one L/U factorization instead of row-reducing from scratch. " +
+						"And because L's diagonal is all 1s, det(A) = det(U) = the product of U's " +
+						"diagonal entries — 4×1.5×1.5 = 9 here — a byproduct of the factorization " +
+						"determinant would otherwise compute separately.",
+				},
+			},
+			{
+				Heading: "Where does this show up in real life?",
+				Body: []string{
+					"Structural engineers solving the same bridge or truss equations under many " +
+						"different load scenarios factor the stiffness matrix once and re-solve " +
+						"for each load with cheap substitutions. Circuit simulators do the same " +
+						"across many input signals. Numerical libraries like LAPACK use LU " +
+						"decomposition as the default way to solve linear systems and compute " +
+						"determinants and inverses, precisely because factoring once and reusing " +
+						"it is so much cheaper than re-deriving from scratch every time.",
+				},
+			},
+			{
+				Heading: "What's the common mistake here?",
+				Body: []string{
+					"Say it like this: 'factor A into L and U once, then solve L y = b and " +
+						"U x = y for each new b' — the factorization is reused, only the two " +
+						"triangular solves repeat.",
+					"Not like this: assuming this simple no-pivoting version (called Doolittle's " +
+						"method) always works. If elimination ever lands on a ~zero pivot — U's " +
+						"diagonal entry at that step — it can't proceed without first swapping in " +
+						"a row that has a nonzero entry there, exactly the row-swap move " +
+						"gaussian-elimination already uses. The fix, used by real numerical " +
+						"libraries, is 'LU with partial pivoting' (PA = LU for some permutation " +
+						"matrix P) rather than assuming a plain factorization always exists.",
+				},
+			},
+		},
+		Params: []concept.ParamSpec{
+			{Key: "b", Label: "Right-hand side b (0=[9,7,6], 1..3=unit vectors e0..e2)", Min: 0, Max: 3, Step: 1, Def: 0},
+			{Key: "step", Label: "Solve step", Min: 0, Max: 7, Step: 1, Def: 0},
+		},
+		Render: render,
+	})
+}
+
+func render(p map[string]float64) string {
+	c := viz.New(760, 420, 0, 1, 0, 1)
+	return c.String()
+}
