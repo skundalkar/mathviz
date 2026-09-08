@@ -8,6 +8,7 @@
 package kerneltrick
 
 import (
+	"fmt"
 	"math"
 	"sort"
 
@@ -242,7 +243,90 @@ func SeparableByThreshold(vals []float64, labels []int) bool {
 	return false
 }
 
+const tol = 1e-9
+
 func render(p map[string]float64) string {
-	c := viz.New(680, 460, 0, 1, 0, 1)
+	view := int(p["view"] + 0.5)
+	query := p["query"]
+	threshold, innerMax, outerMin := MarginThreshold(Points)
+	queryClass := Classify(query, threshold)
+
+	if view != 0 {
+		return renderMapped(query, threshold, innerMax, outerMin, queryClass)
+	}
+	return renderOriginal(query)
+}
+
+// renderOriginal draws the plain 1D number line: points colored by class,
+// with the query point marked, and no split line -- there isn't one that
+// works here.
+func renderOriginal(query float64) string {
+	c := viz.New(680, 460, -3.5, 3.5, -1, 1)
+	lineY := c.Y(0)
+
+	c.Path([][2]float64{{-3.5, 0}, {3.5, 0}}, viz.Muted, 1.5)
+	for i := -3; i <= 3; i++ {
+		x := float64(i)
+		c.Tick(x, fmt.Sprintf("%d", i))
+	}
+
+	for _, pt := range Points {
+		color := viz.Bad
+		if pt.Label == 1 {
+			color = viz.Good
+		}
+		px := c.X(pt.X)
+		c.Rect(px-6, lineY-6, 12, 12, color, 0.9)
+	}
+
+	qx := c.X(query)
+	c.Rect(qx-5, lineY-26, 10, 10, viz.Warm, 0.95)
+	c.Text(qx, lineY-32, "query", 11, viz.Warm, "middle")
+
+	c.Text(16, 24, fmt.Sprintf("Original 1D space -- query x=%.2f", query), 14, viz.Ink, "start")
+	c.Text(16, 44, "No single split point separates green (class A) from red (class B): B sits on both ends.",
+		12, viz.Muted, "start")
+
+	return c.String()
+}
+
+// renderMapped draws the mapped 2D space: every point at (x, x^2), the
+// margin threshold as a horizontal line, the mapped-space support points
+// highlighted, and the query point plotted and classified.
+func renderMapped(query, threshold, innerMax, outerMin float64, queryClass int) string {
+	c := viz.New(680, 460, -3.5, 3.5, -0.5, 10)
+
+	c.Path([][2]float64{{-3.5, threshold}, {3.5, threshold}}, viz.Accent, 2)
+	c.Text(c.X(3.3), c.Y(threshold)-8, fmt.Sprintf("threshold=%.1f", threshold), 11, viz.Accent, "end")
+
+	for _, pt := range Points {
+		_, y := Phi(pt.X)
+		color := viz.Bad
+		if pt.Label == 1 {
+			color = viz.Good
+		}
+		size := 10.0
+		if math.Abs(y-innerMax) < tol || math.Abs(y-outerMin) < tol {
+			size = 16.0 // mapped-space support point
+		}
+		px, py := c.X(pt.X), c.Y(y)
+		c.Rect(px-size/2, py-size/2, size, size, color, 0.9)
+	}
+
+	qx2, qy2 := Phi(query)
+	qcolor := viz.Bad
+	if queryClass == 1 {
+		qcolor = viz.Good
+	}
+	qpx, qpy := c.X(qx2), c.Y(qy2)
+	c.Rect(qpx-9, qpy-9, 18, 18, viz.Warm, 0.4) // a highlight ring under the classified color
+	c.Rect(qpx-6, qpy-6, 12, 12, qcolor, 0.95)
+	c.Text(qpx, qpy-16, "query", 11, viz.Warm, "middle")
+
+	c.Text(16, 24, fmt.Sprintf("Mapped 2D space (x, x^2) -- query x=%.2f maps to (%.2f, %.2f), classified %+d",
+		query, qx2, qy2, queryClass), 14, viz.Ink, "start")
+	c.Text(16, 44, fmt.Sprintf("K(query, x=1) = %.3f    K(query, x=2) = %.3f    (support points at x^2=%.0f and x^2=%.0f)",
+		Kernel(query, 1), Kernel(query, 2), innerMax, outerMin), 12, viz.Muted, "start")
+
 	return c.String()
 }
