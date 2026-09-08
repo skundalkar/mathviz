@@ -101,9 +101,9 @@ Format: `- [ ] <id> — <one-line description of the concept to visualize>`
 - [x] hidden-markov-models — inferring a hidden state sequence from observed emissions using transition and emission probabilities, built from markov-chains
 - [x] vector-norms — measuring vector magnitude with L1, L2, and L∞ norms, and how each shapes distance and regularization, built from vectors
 - [x] convolution — sliding one function across another and summing the overlap, the operation behind smoothing, edge detection, and CNN filters, built from integral
+- [x] lu-decomposition — factoring a matrix into lower- and upper-triangular pieces to solve linear systems faster than repeating elimination, built from gaussian-elimination
 
 ## Up next (math foundations)
-- [ ] lu-decomposition — factoring a matrix into lower- and upper-triangular pieces to solve linear systems faster than repeating elimination, built from gaussian-elimination
 - [ ] dijkstras-algorithm — finding the shortest path through a weighted graph by greedily expanding the nearest unvisited node
 
 ## Up next (statistics & ML intuition, batch 2)

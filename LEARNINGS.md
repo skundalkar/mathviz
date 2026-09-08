@@ -6,6 +6,103 @@ code. Newest entries go at the top.
 
 ---
 
+## lu-decomposition — factor once, solve many
+**Why would you need this?** `gaussian-elimination` solves A x = b by
+bolting b onto A as one augmented matrix and row-reducing the whole thing
+together. That works, but notice what it throws away: every row operation
+elimination performs — which multiple of which row to subtract from which
+other row — depends only on A, never on b. Now suppose you need to solve
+the same system again with a different b: a bridge's force-balance
+equations under a second load scenario, or a circuit's equations for a
+second input signal. `gaussian-elimination` has no memory of the work it
+already did — it augments the new b onto A and repeats the entire
+elimination from scratch, redoing the O(n³) row-reduction work even though
+A itself, and therefore every multiplier elimination computes, hasn't
+changed at all. Is there a way to do A's elimination work exactly once, and
+reuse it cheaply for every new b?
+
+**How does it actually work?** Take A = [[4,3,2],[2,3,1],[1,1,2]]. Run the
+exact same forward elimination `gaussian-elimination` does, but this time
+keep the multiplier used at each step instead of discarding it once the row
+is updated:
+- Zero A's column 0 below row 0: row 1's multiplier is 2/4=0.5, row 2's is
+  1/4=0.25. Store these in a matrix L at positions L[1][0] and L[2][0];
+  apply them to update rows 1 and 2, same as `gaussian-elimination` always
+  did.
+- Zero column 1 below row 1 (now [0, 1.5, 0]): row 2's multiplier is
+  0.25/1.5=1/6. Store it at L[2][1]; apply it, leaving row 2 = [0, 0, 1.5].
+- L gets 1s on its diagonal (a row is never eliminated using itself), and U
+  is exactly the echelon form elimination produced: U = [[4,3,2],[0,1.5,0],
+  [0,0,1.5]], L = [[1,0,0],[0.5,1,0],[0.25,1/6,1]].
+
+Multiply L by U back out and you get A again exactly — L·U = A. That's the
+whole factorization: L records *how* elimination combined the rows, U
+records *what* it produced. Now for any b, substitute A x = (L U) x = b,
+and let y = U x: first solve L y = b for y (forward substitution, top row
+down — cheap, since L is triangular and each row only needs the y values
+already found above it), then solve U x = y for x (back substitution,
+bottom row up). For b = [9, 7, 6]:
+- Forward: y₀ = 9. y₁ = 7 − 0.5×9 = 2.5. y₂ = 6 − 0.25×9 − (1/6)×2.5 = 3.333.
+- Back: x₂ = 3.333/1.5 = 2.222. x₁ = (2.5 − 0×2.222)/1.5 = 1.667.
+  x₀ = (9 − 3×1.667 − 2×2.222)/4 = −0.111.
+
+Two O(n²) triangular solves, no re-elimination of A at all.
+
+**What does the picture show?** The b slider picks which right-hand side
+to solve for; the step slider scrubs through the process in order: A sits
+unfactored, then L and U appear (the one-time O(n³) factoring work), then
+y fills in row by row as forward substitution walks down through L, then x
+fills in row by row as back substitution walks back up through U.
+Switching b never changes L or U — only the forward/back substitution
+numbers change — which is the whole point made visible.
+
+**What can you do now that you couldn't before?** Solve A x = b for as
+many different b vectors as you need, each one costing only two cheap
+triangular substitutions instead of a full re-elimination. Solving with b
+set to each of the identity's columns (e0, e1, e2) one at a time, and
+stacking the resulting x's side by side, gives you the columns of A⁻¹ —
+the same inverse `matrix-inverse` computes by row-reducing [A|I], just
+reusing one L/U factorization instead of row-reducing from scratch:
+
+| b | solution x | column of A⁻¹ |
+|---|---|---|
+| e0 = [1,0,0] | [0.556, −0.333, −0.111] | column 0 |
+| e1 = [0,1,0] | [−0.444, 0.667, −0.111] | column 1 |
+| e2 = [0,0,1] | [−0.333, 0, 0.667] | column 2 |
+
+And because L's diagonal is all 1s, det(A) = det(U) = the product of U's
+diagonal entries — 4×1.5×1.5 = 9 here — a byproduct of the factorization
+`determinant` would otherwise compute separately.
+
+**Where does this show up in real life?** Structural engineers solving the
+same bridge or truss equations under many different load scenarios factor
+the stiffness matrix once and re-solve for each load with cheap
+substitutions. Circuit simulators do the same across many input signals.
+Numerical libraries like LAPACK use LU decomposition as the default way to
+solve linear systems and compute determinants and inverses, precisely
+because factoring once and reusing it is so much cheaper than re-deriving
+from scratch every time.
+
+**What's the common mistake here?** Say it like this: "factor A into L and
+U once, then solve L y = b and U x = y for each new b" — the factorization
+is reused, only the two triangular solves repeat.
+
+Not like this: assuming this simple no-pivoting version (called Doolittle's
+method) always works. If elimination ever lands on a ~zero pivot — U's
+diagonal entry at that step — it can't proceed without first swapping in a
+row that has a nonzero entry there, exactly the row-swap move
+`gaussian-elimination` already uses. The fix, used by real numerical
+libraries, is "LU with partial pivoting" (PA = LU for some permutation
+matrix P) rather than assuming a plain factorization always exists.
+
+*Implementation note: the concept's b slider offers four fixed right-hand
+sides (the general [9,7,6] case plus the three unit vectors) rather than a
+free-form vector editor, since a slider can't cleanly author an arbitrary
+vector — the four presets were chosen specifically because they cover both
+the "solve once" case and the "recover A⁻¹" case the Sections build toward.*
+
+---
+
 ## convolution — sliding, flipping, and summing overlap
 **Why would you need this?** `integral` chopped a curve into tiny slabs
 and summed them down to a single number: the total area. Convolution
