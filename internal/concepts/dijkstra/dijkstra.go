@@ -8,7 +8,9 @@
 package dijkstra
 
 import (
+	"fmt"
 	"math"
+	"strings"
 
 	"mathviz/internal/concept"
 	"mathviz/internal/viz"
@@ -246,7 +248,119 @@ func ShortestPath(prev []int, src, target int) []int {
 	return path
 }
 
+// positions lays the 5-city example graph out on a unit square, in the same
+// index order as Graph and NodeNames.
+var positions = [][2]float64{
+	{0.08, 0.5}, // S, left
+	{0.4, 0.18}, // A, upper
+	{0.4, 0.82}, // B, lower
+	{0.68, 0.5}, // C, middle-right
+	{0.92, 0.5}, // D, right
+}
+
+// roadEdges is Graph flattened into one entry per undirected road, purely
+// for drawing (Graph itself stores each road twice, once per direction).
+var roadEdges = []struct {
+	A, B int
+	W    float64
+}{
+	{0, 1, 4}, // S-A
+	{0, 2, 1}, // S-B
+	{1, 2, 2}, // A-B
+	{1, 3, 1}, // A-C
+	{2, 3, 5}, // B-C
+	{2, 4, 8}, // B-D
+	{3, 4, 3}, // C-D
+}
+
 func render(p map[string]float64) string {
+	steps := Dijkstra(Graph, 0)
+	maxStep := len(steps) - 1
+
+	step := int(p["step"] + 0.5)
+	if step < 0 {
+		step = 0
+	}
+	if step > maxStep {
+		step = maxStep
+	}
+	cur := steps[step]
+
+	target := int(p["target"] + 0.5)
+	if target < 0 {
+		target = 0
+	}
+	if target > len(NodeNames)-1 {
+		target = len(NodeNames) - 1
+	}
+	path := ShortestPath(cur.Prev, 0, target)
+	onPath := make(map[[2]int]bool)
+	for i := 0; i+1 < len(path); i++ {
+		onPath[[2]int{path[i], path[i+1]}] = true
+		onPath[[2]int{path[i+1], path[i]}] = true
+	}
+
+	relaxed := make(map[int]bool, len(cur.Relaxed))
+	for _, r := range cur.Relaxed {
+		relaxed[r] = true
+	}
+
+	// A 0..1 x 0..1 canvas we never call Axes()/Sample() on -- this is a
+	// node-and-edge diagram, not a function plot.
 	c := viz.New(700, 460, 0, 1, 0, 1)
+
+	// Roads, drawn first so nodes and the path highlight sit on top.
+	for _, e := range roadEdges {
+		color, width := viz.Muted, 1.5
+		if onPath[[2]int{e.A, e.B}] {
+			color, width = viz.Warm, 3
+		}
+		sx, sy := positions[e.A][0], positions[e.A][1]
+		ex, ey := positions[e.B][0], positions[e.B][1]
+		c.Path([][2]float64{{sx, sy}, {ex, ey}}, color, width)
+		mx, my := (sx+ex)/2, (sy+ey)/2
+		c.Text(c.X(mx), c.Y(my)-6, fmt.Sprintf("%.0f", e.W), 12, viz.Muted, "middle")
+	}
+
+	for i, pos := range positions {
+		px, py := c.X(pos[0]), c.Y(pos[1])
+		const side = 44.0
+
+		color := viz.Faint
+		switch {
+		case i == cur.Current:
+			color = viz.Warm
+		case cur.Visited[i]:
+			color = viz.Good
+		case !math.IsInf(cur.Dist[i], 1):
+			color = viz.Accent
+		}
+		c.Rect(px-side/2, py-side/2, side, side, color, 0.85)
+		c.Text(px, py+5, NodeNames[i], 15, "white", "middle")
+
+		distLabel := "∞"
+		if !math.IsInf(cur.Dist[i], 1) {
+			distLabel = fmt.Sprintf("%.0f", cur.Dist[i])
+		}
+		if relaxed[i] {
+			distLabel += " ↓"
+		}
+		c.Text(px, py+side/2+18, distLabel, 12, viz.Muted, "middle")
+	}
+
+	c.Text(16, 24, fmt.Sprintf("Step %d/%d: %s", step, maxStep, cur.Description), 13, viz.Ink, "start")
+	if path != nil {
+		names := make([]string, len(path))
+		for i, v := range path {
+			names[i] = NodeNames[v]
+		}
+		c.Text(16, 44, fmt.Sprintf("Route to %s so far: %s (cost %.0f)",
+			NodeNames[target], strings.Join(names, "→"), cur.Dist[target]), 13, viz.Accent, "start")
+	} else {
+		c.Text(16, 44, fmt.Sprintf("%s not reached yet", NodeNames[target]), 13, viz.Muted, "start")
+	}
+	c.Text(16, 440, "green=finalized  orange=just finalized  blue=reachable, still tentative  gray=unreached",
+		12, viz.Muted, "start")
+
 	return c.String()
 }
