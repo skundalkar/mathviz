@@ -8,6 +8,9 @@
 package adaboost
 
 import (
+	"math"
+	"sort"
+
 	"mathviz/internal/concept"
 	"mathviz/internal/viz"
 )
@@ -129,6 +132,188 @@ func init() {
 		},
 		Render: render,
 	})
+}
+
+// Xs and Ys are the eight points every Section walks through: labels
+// alternate in pairs by class -- x=1,2 and x=5,6 are +1; x=3,4 and x=7,8
+// are -1 -- so no single stump can separate them, forcing AdaBoost to
+// actually combine more than one.
+var (
+	Xs = []float64{1, 2, 3, 4, 5, 6, 7, 8}
+	Ys = []int{1, 1, -1, -1, 1, 1, -1, -1}
+)
+
+// Stump is one weighted decision stump: predict LeftLabel for x<=Threshold,
+// RightLabel otherwise. Unlike a single "flip both sides" polarity, each
+// side's label is chosen independently by whichever class carries more of
+// the weighted vote on that side, so a stump can predict +1 on both sides,
+// -1 on both sides, or either order.
+type Stump struct {
+	Threshold             float64
+	LeftLabel, RightLabel int
+}
+
+// StumpPredict returns a stump's predicted label (+1 or -1) for one x.
+func StumpPredict(s Stump, x float64) int {
+	if x <= s.Threshold {
+		return s.LeftLabel
+	}
+	return s.RightLabel
+}
+
+func predictAll(s Stump, xs []float64) []int {
+	preds := make([]int, len(xs))
+	for i, x := range xs {
+		preds[i] = StumpPredict(s, x)
+	}
+	return preds
+}
+
+// weightedLabel returns the weighted-majority label (+1 or -1) on each side
+// of threshold th: whichever label carries more total weight among the
+// points on that side. Ties resolve to +1.
+func weightedLabel(xs []float64, ys []int, weights []float64, th float64) (left, right int) {
+	var leftPos, leftNeg, rightPos, rightNeg float64
+	for i, x := range xs {
+		pos, neg := &rightPos, &rightNeg
+		if x <= th {
+			pos, neg = &leftPos, &leftNeg
+		}
+		if ys[i] == 1 {
+			*pos += weights[i]
+		} else {
+			*neg += weights[i]
+		}
+	}
+	left, right = 1, 1
+	if leftNeg > leftPos {
+		left = -1
+	}
+	if rightNeg > rightPos {
+		right = -1
+	}
+	return
+}
+
+// WeightedError returns the total weight of the points where predicted
+// disagrees with actual. actual, predicted, and weights must be the same
+// length and index-aligned.
+func WeightedError(actual, predicted []int, weights []float64) float64 {
+	var err float64
+	for i := range actual {
+		if actual[i] != predicted[i] {
+			err += weights[i]
+		}
+	}
+	return err
+}
+
+// FitWeightedStump scans every midpoint between consecutive distinct sorted
+// x values and returns the threshold (with each side's weighted-majority
+// label) that minimizes total weighted classification error, plus that
+// error. xs, ys, and weights must be the same length and index-aligned.
+func FitWeightedStump(xs []float64, ys []int, weights []float64) (Stump, float64) {
+	uniq := append([]float64(nil), xs...)
+	sort.Float64s(uniq)
+	dedup := uniq[:0]
+	for i, x := range uniq {
+		if i == 0 || x != dedup[len(dedup)-1] {
+			dedup = append(dedup, x)
+		}
+	}
+
+	best := Stump{Threshold: dedup[len(dedup)-1], LeftLabel: 1, RightLabel: 1}
+	bestErr := math.Inf(1)
+	for i := 0; i < len(dedup)-1; i++ {
+		th := (dedup[i] + dedup[i+1]) / 2
+		left, right := weightedLabel(xs, ys, weights, th)
+		st := Stump{Threshold: th, LeftLabel: left, RightLabel: right}
+		err := WeightedError(ys, predictAll(st, xs), weights)
+		if err < bestErr {
+			bestErr = err
+			best = st
+		}
+	}
+	return best, bestErr
+}
+
+// Alpha is AdaBoost's per-round classifier vote weight: 0.5*ln((1-err)/err).
+// It's positive whenever err<0.5 (better than a coin flip) and grows
+// without bound as err shrinks toward 0 -- a near-perfect stump dominates
+// the combined vote.
+func Alpha(err float64) float64 {
+	if err <= 0 {
+		err = 1e-10
+	}
+	if err >= 1 {
+		err = 1 - 1e-10
+	}
+	return 0.5 * math.Log((1-err)/err)
+}
+
+// UpdateWeights reweights each point by exp(-alpha*actual*predicted): a
+// point the current stump got right (actual*predicted=+1) shrinks by
+// exp(-alpha), a point it got wrong (actual*predicted=-1) grows by
+// exp(alpha), then the whole set is renormalized back to sum to 1 so it
+// stays a valid distribution for the next round's fit.
+func UpdateWeights(actual, predicted []int, weights []float64, alpha float64) []float64 {
+	out := make([]float64, len(weights))
+	var sum float64
+	for i := range weights {
+		out[i] = weights[i] * math.Exp(-alpha*float64(actual[i]*predicted[i]))
+		sum += out[i]
+	}
+	for i := range out {
+		out[i] /= sum
+	}
+	return out
+}
+
+// Round is the record of one boosting round: the stump fit to that round's
+// weights, its weighted error, and the resulting vote weight alpha.
+type Round struct {
+	Stump Stump
+	Err   float64
+	Alpha float64
+}
+
+// Run performs numRounds rounds of AdaBoost on (xs, ys), starting from
+// uniform weights 1/n. It returns the sequence of rounds in order and the
+// weights history: weightsHistory[0] is the initial uniform weights, and
+// weightsHistory[t] for t>0 is what round t produced (and what round t+1,
+// if any, was fit on). Pure and deterministic: same inputs always produce
+// the same rounds, no randomness -- unlike random-forest's resampling,
+// every round here is a direct function of the round before it.
+func Run(xs []float64, ys []int, numRounds int) (rounds []Round, weightsHistory [][]float64) {
+	weights := make([]float64, len(xs))
+	for i := range weights {
+		weights[i] = 1.0 / float64(len(xs))
+	}
+	weightsHistory = append(weightsHistory, append([]float64(nil), weights...))
+
+	for t := 0; t < numRounds; t++ {
+		st, err := FitWeightedStump(xs, ys, weights)
+		alpha := Alpha(err)
+		weights = UpdateWeights(ys, predictAll(st, xs), weights, alpha)
+		rounds = append(rounds, Round{Stump: st, Err: err, Alpha: alpha})
+		weightsHistory = append(weightsHistory, append([]float64(nil), weights...))
+	}
+	return
+}
+
+// Predict returns the ensemble's predicted label at x: the sign of the
+// alpha-weighted sum of every round's stump prediction. A sum of exactly
+// 0 (never reached on this dataset, but defined for completeness) resolves
+// to +1.
+func Predict(rounds []Round, x float64) int {
+	var sum float64
+	for _, r := range rounds {
+		sum += r.Alpha * float64(StumpPredict(r.Stump, x))
+	}
+	if sum < 0 {
+		return -1
+	}
+	return 1
 }
 
 func render(p map[string]float64) string {
