@@ -8,6 +8,7 @@
 package adaboost
 
 import (
+	"fmt"
 	"math"
 	"sort"
 
@@ -316,8 +317,96 @@ func Predict(rounds []Round, x float64) int {
 	return 1
 }
 
+// maxRounds is the deepest boosting sequence Render ever needs. Fitting it
+// once and slicing prefixes is equivalent to re-running Run at each smaller
+// round count, since round t's stump only ever depends on the rounds
+// before it.
+const maxRounds = 3
+
+// lineColors gives each active round's threshold line (and matching
+// readout text) a distinct, consistent color across the whole rounds
+// slider, so round 1's line is always the same color whether it's the
+// only one showing or one of three.
+var lineColors = []string{viz.Good, viz.Warm, viz.Accent}
+
 func render(p map[string]float64) string {
-	c := viz.New(680, 460, 0, 1, 0, 1)
+	rounds := int(p["rounds"])
+
+	allRounds, weightsHistory := Run(Xs, Ys, maxRounds)
+	active := allRounds[:rounds]
+	weights := weightsHistory[rounds]
+
+	// Scale point size against the largest weight seen across ANY round,
+	// not just this frame's, so a point's square is directly comparable
+	// as the rounds slider moves -- watch x=5,6 balloon after round 1, then
+	// shrink back as x=3,4 balloon after round 2.
+	globalMax := 0.0
+	for _, ws := range weightsHistory {
+		for _, w := range ws {
+			if w > globalMax {
+				globalMax = w
+			}
+		}
+	}
+
+	c := viz.New(680, 460, 0.3, 8.7, 0, 1)
+	c.PadT = 130
+	c.PadB = 40
 	c.Axes()
+	for x := 1.0; x <= 8; x++ {
+		c.Tick(x, fmt.Sprintf("%g", x))
+	}
+
+	c.Text(10, c.Y(0.72), "+1", 11, viz.Accent, "start")
+	c.Text(10, c.Y(0.32), "-1", 11, viz.Warm, "start")
+
+	for i, r := range active {
+		c.VLine(r.Stump.Threshold, lineColors[i%len(lineColors)], true)
+	}
+
+	nWrong := 0
+	for i, x := range Xs {
+		y, classColor := 0.3, viz.Warm
+		if Ys[i] == 1 {
+			y, classColor = 0.7, viz.Accent
+		}
+		px, py := c.X(x), c.Y(y)
+
+		size := 10.0
+		if globalMax > 0 {
+			size = 10 + 24*(weights[i]/globalMax)
+		}
+
+		if rounds > 0 {
+			ring := viz.Good
+			if Predict(active, x) != Ys[i] {
+				ring = viz.Bad
+				nWrong++
+			}
+			c.Rect(px-size/2, py-size/2, size, size, ring, 1)
+			inner := size - 6
+			if inner < 2 {
+				inner = 2
+			}
+			c.Rect(px-inner/2, py-inner/2, inner, inner, classColor, 1)
+		} else {
+			c.Rect(px-size/2, py-size/2, size, size, classColor, 1)
+		}
+	}
+
+	c.Text(16, 20, fmt.Sprintf("rounds = %d of %d   square size = current point weight", rounds, maxRounds), 14, viz.Ink, "start")
+	ty := 44.0
+	for i, r := range active {
+		c.Text(16, ty, fmt.Sprintf("round %d: split at x=%.1f, weighted error=%.3f, alpha=%.3f",
+			i+1, r.Stump.Threshold, r.Err, r.Alpha), 13, lineColors[i%len(lineColors)], "start")
+		ty += 20
+	}
+	if rounds == 0 {
+		c.Text(16, ty, "no classifier yet -- every point starts at weight 1/8", 13, viz.Muted, "start")
+	} else {
+		c.Text(16, ty, fmt.Sprintf("ensemble vote so far: %d/%d correct   (green ring = correct, red ring = wrong)",
+			len(Xs)-nWrong, len(Xs)), 13, viz.Ink, "start")
+	}
+
 	return c.String()
 }
