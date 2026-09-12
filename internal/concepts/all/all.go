@@ -54,6 +54,7 @@ import (
 	_ "mathviz/internal/concepts/kerneltrick"
 	_ "mathviz/internal/concepts/kldivergence"
 	_ "mathviz/internal/concepts/kmeans"
+	_ "mathviz/internal/concepts/knapsack"
 	_ "mathviz/internal/concepts/knn"
 	_ "mathviz/internal/concepts/kruskal"
 	_ "mathviz/internal/concepts/lagrange"
