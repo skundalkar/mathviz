@@ -25,7 +25,115 @@ func init() {
 			{
 				Heading: "Why would you need this?",
 				Body: []string{
-					"Placeholder -- filled in once the math and picture exist.",
+					"dijkstras-algorithm finds the guaranteed-cheapest route from a source to " +
+						"every other node by working outward layer by layer, always finalizing " +
+						"whichever unfinalized node currently has the smallest known distance -- it " +
+						"never actually knows, or uses, where the target is, because it's solving " +
+						"for every node at once. But most of the time you don't want a distance to " +
+						"every city in the country -- you want the cheapest route to one specific " +
+						"destination, and you already have a rough idea which direction that " +
+						"destination is in. Take the 6-node network S,A,B,C,D,G below and suppose " +
+						"you only care about the cheapest route from S to G. Gut instinct: the road " +
+						"S→A (cost ≈3.6) looks like the shorter first step, cheaper than S→B (cost " +
+						"4.0), so surely it's the more promising direction to explore first. That " +
+						"instinct is wrong here -- A sits off to one side, and every route through A " +
+						"ends up costing more overall than going through B does. Dijkstra's " +
+						"algorithm, having no notion of where G actually is, would spend just as " +
+						"much effort exploring the A branch as the B branch before it finally works " +
+						"its way around to G. Is there a way to use a rough sense of 'how far away " +
+						"is the goal from here' to steer the search toward it, without losing the " +
+						"guarantee that the route you end up with is still the cheapest possible one?",
+				},
+			},
+			{
+				Heading: "How does it actually work?",
+				Body: []string{
+					"Lay the 6 nodes out by 2D coordinates: S=(0,0), A=(2,3), B=(4,0), C=(6,3), " +
+						"D=(8,0), G=(10,0), with roads S-A, S-B, A-B, A-C, B-C, B-D, C-D, C-G, D-G, " +
+						"each road's cost simply the straight-line (Euclidean) distance between its " +
+						"two endpoints -- S-A, A-B, B-C, and C-D each work out to √13≈3.6; S-B, A-C, " +
+						"and B-D each equal 4.0; C-G is 5.0 (a 3-4-5 triangle); D-G is 2.0. Alongside " +
+						"the running cost-so-far g(n) that Dijkstra tracks, define a heuristic h(n): " +
+						"the straight-line distance from n directly to G -- h(S)=10, h(A)=√73≈8.5, " +
+						"h(B)=6, h(C)=5, h(D)=2, h(G)=0 -- and at every round, expand whichever " +
+						"not-yet-closed node has the smallest f(n)=g(n)+h(n), instead of Dijkstra's " +
+						"plain smallest g(n).",
+					"• Start: g(S)=0, f(S)=0+10=10. Expand S, the only open node. Relax A: " +
+						"g=3.6, f=3.6+8.5=12.1. Relax B: g=4.0, f=4.0+6.0=10.0.",
+					"• Smallest open f is B (10.0, beating A's 12.1). Expand B. Relax C: " +
+						"g=4.0+3.6=7.6, f=7.6+5.0=12.6. Relax D: g=4.0+4.0=8.0, f=8.0+2.0=10.0.",
+					"• Smallest open f is D (10.0). Expand D. Relax G: g=8.0+2.0=10.0, " +
+						"f=10.0+0=10.0.",
+					"• Smallest open f is G (10.0) -- and because G is the goal, stop right here.",
+					"The route: G's best predecessor is D, D's is B, B's is S, giving S→B→D→G at " +
+						"cost 10.0 -- and the search only ever had to expand 4 nodes (S, B, D, G) to " +
+						"find it, never once opening A or C. Run the exact same relaxation rule with " +
+						"h(n)=0 everywhere (that's plain Dijkstra) on this same graph instead, and it " +
+						"expands S, then A (g=3.6, the smaller raw cost that looked more promising in " +
+						"section 1), then B, then C, then D, and only then G -- 6 expansions instead " +
+						"of 4, for the identical final answer.",
+				},
+			},
+			{
+				Heading: "What does the picture show?",
+				Body: []string{
+					"Each node is a box positioned at its actual 2D coordinate; roads are the " +
+						"lines between them, labeled with cost. The heuristic toggle switches " +
+						"between plain Dijkstra (h=0, priority is just g) and A* (priority is g+h, " +
+						"shown under each reached node); the step slider scrubs through that " +
+						"algorithm's own trace one expansion at a time. Green boxes are closed " +
+						"(expanded), orange is the node just expanded this step, blue is " +
+						"open-but-not-yet-closed (its g is still a tentative cost-so-far, able to " +
+						"drop further), and gray hasn't been reached at all. Flip the toggle at the " +
+						"same step number and watch A stay gray in A*'s run while it's already " +
+						"green partway through Dijkstra's -- the same final route, S→B→D→G, lights " +
+						"up as a heavier highlight in both, but A* gets there having expanded fewer " +
+						"nodes.",
+				},
+			},
+			{
+				Heading: "What can you do now that you couldn't before?",
+				Body: []string{
+					"Find the guaranteed-cheapest route to one specific destination while " +
+						"skipping over branches that a straight-line distance already rules out as " +
+						"not worth exploring -- 4 node expansions here instead of Dijkstra's 6. On a " +
+						"toy 6-node graph that's a modest saving, but on a real road network with " +
+						"millions of intersections the same gap can mean the difference between a " +
+						"pathfinder that returns instantly and one that grinds through a large " +
+						"fraction of the map, all for a single-destination query where Dijkstra's " +
+						"'find the distance to everywhere' approach was never actually needed.",
+				},
+			},
+			{
+				Heading: "Where does this show up in real life?",
+				Body: []string{
+					"GPS navigation and mapping software use A* (or a close variant) whenever you " +
+						"ask for a route to one specific destination rather than distances to " +
+						"everywhere -- the straight-line distance to your destination is a natural, " +
+						"cheap-to-compute heuristic. Video games use A* constantly for character and " +
+						"unit pathfinding across a map, with the heuristic usually just the " +
+						"on-screen straight-line distance to the target tile. Robotics motion " +
+						"planners use the same idea to steer a search toward a goal configuration " +
+						"instead of exploring blindly in every direction.",
+				},
+			},
+			{
+				Heading: "What's the common mistake here?",
+				Body: []string{
+					"Say it like this: expand whichever open node has the smallest g(n)+h(n) " +
+						"next, and only trust the result once you've confirmed h(n) can never " +
+						"overestimate the true remaining distance to the goal -- straight-line " +
+						"distance always qualifies, because no real route can ever be shorter than " +
+						"a straight line between two points.",
+					"Not like this: plugging in a heuristic that sometimes overestimates the true " +
+						"remaining cost, on the theory that 'a more confident guess is always " +
+						"better.' If h(n) ever overshoots (say, a heuristic based on typical driving " +
+						"speed that assumes a faster road than actually exists), A* can lock in and " +
+						"expand the goal too early, along a route that only looked cheapest because " +
+						"the heuristic underrated how much farther a competing, truly better route " +
+						"still had left to go. The guarantee that A* finds the optimal path depends " +
+						"entirely on h(n) never overestimating (an 'admissible' heuristic), not just " +
+						"on it being a reasonable-looking guess.",
 				},
 			},
 		},

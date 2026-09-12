@@ -105,9 +105,9 @@ Format: `- [ ] <id> — <one-line description of the concept to visualize>`
 - [x] dijkstras-algorithm — finding the shortest path through a weighted graph by greedily expanding the nearest unvisited node
 - [x] kernel-trick — implicitly mapping data into a higher-dimensional space to make it linearly separable without ever computing the mapping, built from support-vector-machine
 - [x] adaboost — reweighting misclassified examples each round so later weak learners focus on the hardest cases, built from decision-trees
+- [x] a-star-search — extending dijkstras-algorithm with a heuristic estimate of remaining distance so the search reaches the goal faster without sacrificing optimality
 
 ## Up next (math foundations)
-- [ ] a-star-search — extending dijkstras-algorithm with a heuristic estimate of remaining distance so the search reaches the goal faster without sacrificing optimality
 - [ ] kruskals-mst — building the cheapest tree connecting every node using union-find to skip edges that would form a cycle, built from dijkstras-algorithm
 - [ ] dynamic-programming-knapsack — solving the 0/1 knapsack problem by building up a table of optimal subproblem solutions instead of trying every combination
 
