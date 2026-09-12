@@ -6,6 +6,7 @@ package all
 import (
 	_ "mathviz/internal/concepts/adaboost"
 	_ "mathviz/internal/concepts/anova"
+	_ "mathviz/internal/concepts/astar"
 	_ "mathviz/internal/concepts/attention"
 	_ "mathviz/internal/concepts/backprop"
 	_ "mathviz/internal/concepts/bayestheorem"
