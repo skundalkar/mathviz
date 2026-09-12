@@ -10,7 +10,9 @@
 package kruskal
 
 import (
+	"fmt"
 	"sort"
+	"strings"
 
 	"mathviz/internal/concept"
 	"mathviz/internal/viz"
@@ -197,6 +199,136 @@ func describe(e Edge, added bool) string {
 	return "Already connected -- adding this road would only close a cycle, skip it"
 }
 
+// positions lays the 5-city example graph out on a unit square, in the same
+// index order as NodeNames -- the identical layout dijkstras-algorithm uses,
+// so the two concepts' pictures of "the same graph" line up.
+var positions = [][2]float64{
+	{0.08, 0.5}, // S, left
+	{0.4, 0.18}, // A
+	{0.4, 0.82}, // B
+	{0.68, 0.5}, // C
+	{0.92, 0.5}, // D, right
+}
+
+// groupPalette colors the (at most two, on this graph) currently-merged,
+// multi-city components; a city still alone in its own singleton component
+// is drawn in viz.Faint instead, since there's nothing yet to distinguish
+// it from any other lone city.
+var groupPalette = []string{viz.Accent, viz.Warm, viz.Good, viz.Bad}
+
+// groupColors picks one fill color per node from components (a Find() root
+// per node, as Step.Components stores it). Every node sharing a component
+// gets the same color, chosen from groupPalette by that component's
+// lowest-indexed member -- not by the union-find root value itself, which
+// can change identity across steps as trees merge -- so a component's color
+// stays stable across the trace instead of jumping around as it grows.
+// Singleton (not-yet-merged) components are all drawn in viz.Faint.
+func groupColors(components []int) []string {
+	groups := map[int][]int{}
+	for i, root := range components {
+		groups[root] = append(groups[root], i)
+	}
+	colors := make([]string, len(components))
+	for _, members := range groups {
+		if len(members) < 2 {
+			colors[members[0]] = viz.Faint
+			continue
+		}
+		minIdx := members[0]
+		for _, m := range members {
+			if m < minIdx {
+				minIdx = m
+			}
+		}
+		col := groupPalette[minIdx%len(groupPalette)]
+		for _, m := range members {
+			colors[m] = col
+		}
+	}
+	return colors
+}
+
 func render(p map[string]float64) string {
-	return viz.New(700, 460, 0, 1, 0, 1).String()
+	steps := Kruskal(Edges, len(NodeNames))
+	sorted := SortedEdges(Edges)
+	maxStep := len(steps) - 1
+
+	step := int(p["step"] + 0.5)
+	if step < 0 {
+		step = 0
+	}
+	if step > maxStep {
+		step = maxStep
+	}
+	cur := steps[step]
+
+	inMST := make(map[Edge]bool, len(cur.MST))
+	for _, e := range cur.MST {
+		inMST[e] = true
+	}
+
+	c := viz.New(700, 460, 0, 1, 0, 1)
+	colors := groupColors(cur.Components)
+
+	// Roads, drawn first so nodes and highlights sit on top. cur.EdgeIndex
+	// is the edge this exact step just considered (-1 on the start step,
+	// before anything has been looked at).
+	for i, e := range sorted {
+		color, width, dash := viz.Muted, 1.5, false
+		switch {
+		case i == cur.EdgeIndex:
+			// The edge this step's Description is about -- orange whether
+			// it ends up added or skipped, so it's easy to find on the page.
+			color, width = viz.Warm, 3.5
+		case inMST[e]:
+			color, width = viz.Good, 3
+		case i < cur.EdgeIndex:
+			// Already considered and skipped in an earlier step.
+			color, dash = viz.Bad, true
+		default:
+			// Not reached yet.
+		}
+		sx, sy := positions[e.U][0], positions[e.U][1]
+		ex, ey := positions[e.V][0], positions[e.V][1]
+		c.Path([][2]float64{{sx, sy}, {ex, ey}}, color, width)
+		if dash {
+			// viz.Path has no native dash option; an "x" marks a skipped
+			// road instead, at its midpoint.
+			mx, my := (sx+ex)/2, (sy+ey)/2
+			c.Text(c.X(mx), c.Y(my)+4, "✕", 14, viz.Bad, "middle")
+		}
+		lx, ly := sx*0.6+ex*0.4, sy*0.6+ey*0.4
+		c.Text(c.X(lx), c.Y(ly)-6, fmt.Sprintf("%.0f", e.Weight), 12, viz.Muted, "middle")
+	}
+
+	for i, pos := range positions {
+		px, py := c.X(pos[0]), c.Y(pos[1])
+		const side = 44.0
+		c.Rect(px-side/2, py-side/2, side, side, colors[i], 0.85)
+		c.Text(px, py+5, NodeNames[i], 15, "white", "middle")
+	}
+
+	if cur.EdgeIndex < 0 {
+		c.Text(16, 24, fmt.Sprintf("Step %d/%d: %s", step, maxStep, cur.Description), 13, viz.Ink, "start")
+	} else {
+		e := sorted[cur.EdgeIndex]
+		verdict := "ADD"
+		if !cur.Added {
+			verdict = "SKIP"
+		}
+		c.Text(16, 24, fmt.Sprintf("Step %d/%d: consider %s-%s (%.0f) -- %s: %s",
+			step, maxStep, NodeNames[e.U], NodeNames[e.V], e.Weight, verdict, cur.Description), 13, viz.Ink, "start")
+	}
+
+	names := make([]string, len(cur.MST))
+	for i, e := range cur.MST {
+		names[i] = fmt.Sprintf("%s-%s", NodeNames[e.U], NodeNames[e.V])
+	}
+	c.Text(16, 44, fmt.Sprintf("Network so far: %s (total cost %.0f, %d/%d roads)",
+		strings.Join(names, ", "), TotalWeight(cur.MST), len(cur.MST), len(NodeNames)-1), 13, viz.Accent, "start")
+
+	c.Text(16, 440, "green=in the network  orange=considering now  red ✕=skipped (cycle)  gray=not reached yet",
+		12, viz.Muted, "start")
+
+	return c.String()
 }
