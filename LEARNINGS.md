@@ -6,6 +6,102 @@ code. Newest entries go at the top.
 
 ---
 
+## dynamic-programming-knapsack — build a table instead of checking every subset
+**Why would you need this?** Say you're packing a knapsack with capacity
+5, choosing among three items: A (weight 1, value 6), B (weight 2, value
+10), C (weight 3, value 12). Each item is all-or-nothing -- you either
+take the whole thing or leave it, no splitting an item in half. Gut
+instinct: rank items by value per unit of weight (A: 6/1=6.0, B: 10/2=5.0,
+C: 12/3=4.0) and grab the richest ones first, as long as they still fit.
+That takes A (weight 1, 4 left), then B (weight 2, 2 left) -- C needs
+weight 3 and only 2 remains, so it's skipped. Total value: 6+10=16, with 2
+units of capacity left unused. That instinct is wrong: leaving A out
+entirely and taking B and C instead uses the full capacity (2+3=5) for
+value 10+12=22 -- six points better, just by NOT taking the single
+best-ratio item. With only 3 items you could check every subset by hand
+(2^3=8 of them) to find that out, but that approach doubles in cost with
+every single item added -- 20 items would mean checking over a million
+subsets. Is there a way to find the guaranteed-best combination without
+either a flawed shortcut or checking every possibility one by one?
+
+**How does it actually work?** Build a table: one row per item added so
+far (row 0 = no items available yet), one column per capacity from 0 up
+to 5. Each cell dp[i][w] answers a smaller version of the same question:
+"using only the first i items, what's the most value you can pack into
+capacity w?" Row 0 is all zeros -- with no items to choose from, nothing
+can be packed no matter the capacity. Every later cell reuses the row
+above it (an already-solved smaller subproblem) instead of starting over:
+dp[i][w] is the better of leaving item i out (dp[i-1][w], unchanged from
+the row above) or, if it fits, taking it (dp[i-1][w-weight]+value, the
+best the REMAINING capacity could do without this item, plus this item's
+value).
+
+- Row 1 (+A, weight 1, value 6): for every capacity 1 through 5, taking A
+  (dp[0][w-1]+6 = 0+6 = 6) beats leaving it out (dp[0][w]=0), so
+  dp[1][w]=6 for w=1..5, and dp[1][0]=0 (no room even for A).
+- Row 2 (+B, weight 2, value 10): dp[2][2] = max(dp[1][2]=6,
+  dp[1][0]+10=10) = 10 -- take B. dp[2][3] = max(dp[1][3]=6,
+  dp[1][1]+10=16) = 16 -- take B AND still have A's row-1 value banked at
+  capacity 1. dp[2][5] = max(dp[1][5]=6, dp[1][3]+10=16) = 16.
+- Row 3 (+C, weight 3, value 12): dp[3][4] = max(dp[2][4]=16,
+  dp[2][1]+12=12) = 16 -- leave C out here, it doesn't help yet. dp[3][5]
+  = max(dp[2][5]=16, dp[2][2]+12=10+12=22) = 22 -- taking C, on top of
+  whatever capacity 2 could best achieve without it (dp[2][2]=10, which
+  is B alone), wins.
+
+The bottom-right cell, dp[3][5]=22, is the answer. Walking back from
+there -- did dp[3][5] change from dp[2][5]? Yes (22 vs 16), so C is in;
+drop to capacity 5-3=2. Did dp[2][2] change from dp[1][2]? Yes (10 vs 6),
+so B is in; drop to capacity 2-2=0. Did dp[1][0] change from dp[0][0]? No
+(0 vs 0), so A is out -- recovers the exact combination, {B, C}, not just
+its value.
+
+**What does the picture show?** The grid is the dp table: rows are
+"items considered so far", columns are capacity 0 through 5. The step
+slider fills the table left-to-right, top-to-bottom, one cell at a time --
+orange is the cell just filled, gray is already filled, and the
+description line above explains that cell's take-it-or-leave-it decision
+in the same terms as the worked example above. Once every cell is filled,
+the backtrack chain -- the specific cells that explain where the final
+answer came from -- lights up green, and a line below compares that
+optimal combination to what ranking by value/weight ratio would have
+picked instead.
+
+**What can you do now that you couldn't before?** Find the provably best
+combination of all-or-nothing choices under a shared limit -- guaranteed
+optimal, not just a plausible-looking shortcut -- by solving it bottom-up
+from tiny subproblems instead of checking every combination by brute
+force. The table has only (items+1)×(capacity+1) cells, so it grows by
+simple multiplication as more items are added, not by doubling the way
+checking every subset does -- the difference between a method that still
+works with hundreds of items and one that stops being practical past
+about 25.
+
+**Where does this show up in real life?** A shipping company deciding
+which packages fit on a delivery truck's remaining weight allowance, to
+maximize total delivered value. A cloud provider deciding which jobs to
+run on a server with a fixed memory budget. A student with 5 hours left
+before an exam deciding which subset of practice topics (each taking a
+known amount of time and worth a known number of expected points) to
+study -- exactly this problem, at a scale small enough to solve by hand.
+More generally, dynamic programming (reusing solved subproblems instead
+of recomputing them) is the same idea behind edit-distance spell
+checkers, DNA sequence alignment, and shortest-path routing over a
+schedule of connections.
+
+**What's the common mistake here?** Say it like this: dp[i][w] is always
+the better of "leave item i out" and "take item i and add its value to
+whatever the remaining capacity already achieved without it" -- both
+options reuse an already-solved, smaller subproblem from the row above;
+neither one is solved from scratch. Not like this: ranking items by
+value-per-weight and taking the richest ones first. That greedy shortcut
+is exactly right for the fractional version of this problem (where you're
+allowed to take, say, half of an item), but for the ALL-OR-NOTHING
+version it can miss the true optimum, as A/B/C above shows -- the single
+best-ratio item (A) isn't even in the optimal combination.
+
+---
+
 ## kruskals-mst — cheapest network connecting every node
 **Why would you need this?** `dijkstras-algorithm` answers "what's the
 cheapest ROUTE between two specific cities" -- it only ever needs some of a

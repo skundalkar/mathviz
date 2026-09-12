@@ -107,9 +107,9 @@ Format: `- [ ] <id> — <one-line description of the concept to visualize>`
 - [x] adaboost — reweighting misclassified examples each round so later weak learners focus on the hardest cases, built from decision-trees
 - [x] a-star-search — extending dijkstras-algorithm with a heuristic estimate of remaining distance so the search reaches the goal faster without sacrificing optimality
 - [x] kruskals-mst — building the cheapest tree connecting every node using union-find to skip edges that would form a cycle, built from dijkstras-algorithm
+- [x] dynamic-programming-knapsack — solving the 0/1 knapsack problem by building up a table of optimal subproblem solutions instead of trying every combination
 
 ## Up next (math foundations)
-- [ ] dynamic-programming-knapsack — solving the 0/1 knapsack problem by building up a table of optimal subproblem solutions instead of trying every combination
 
 ## Up next (statistics & ML intuition, batch 2)
 - [ ] multi-armed-bandit — balancing exploration vs exploitation when repeatedly choosing among options with unknown reward rates, built from expected-value
