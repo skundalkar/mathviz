@@ -107,8 +107,14 @@ Format: `- [ ] <id> — <one-line description of the concept to visualize>`
 - [x] adaboost — reweighting misclassified examples each round so later weak learners focus on the hardest cases, built from decision-trees
 
 ## Up next (math foundations)
+- [ ] a-star-search — extending dijkstras-algorithm with a heuristic estimate of remaining distance so the search reaches the goal faster without sacrificing optimality
+- [ ] kruskals-mst — building the cheapest tree connecting every node using union-find to skip edges that would form a cycle, built from dijkstras-algorithm
+- [ ] dynamic-programming-knapsack — solving the 0/1 knapsack problem by building up a table of optimal subproblem solutions instead of trying every combination
 
 ## Up next (statistics & ML intuition, batch 2)
+- [ ] multi-armed-bandit — balancing exploration vs exploitation when repeatedly choosing among options with unknown reward rates, built from expected-value
+- [ ] autocorrelation — measuring how a time series correlates with a lagged copy of itself, and reading the resulting correlogram, built from correlation
+- [ ] bonferroni-correction — adjusting significance thresholds when running many hypothesis tests at once so false positives don't pile up, built from p-value
 
 ## How to add work
 Append an unchecked line under the right section by hand any time — the loop
