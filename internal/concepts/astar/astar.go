@@ -8,7 +8,9 @@
 package astar
 
 import (
+	"fmt"
 	"math"
+	"strings"
 
 	"mathviz/internal/concept"
 	"mathviz/internal/viz"
@@ -218,6 +220,129 @@ func PathTo(prev []int, src, target int) []int {
 	return path
 }
 
+// plotPositions maps each node's real Pos coordinate into the unit square
+// the viz.Canvas draws in, preserving relative layout (S at far left, G at
+// far right, A and C on a top row above the S-B-D-G baseline) so the
+// straight-line intuition behind Heuristic is visible on the page, not just
+// in the numbers.
+var plotPositions = func() [][2]float64 {
+	out := make([][2]float64, len(Pos))
+	for i, pos := range Pos {
+		out[i] = [2]float64{
+			0.08 + pos[0]/10*0.84,
+			0.25 + pos[1]/3*0.5,
+		}
+	}
+	return out
+}()
+
 func render(p map[string]float64) string {
-	return viz.New(700, 460, 0, 1, 0, 1).String()
+	useHeuristic := p["heuristic"] >= 0.5
+	steps := Search(Graph, 0, Goal, useHeuristic)
+	maxStep := len(steps) - 1
+
+	step := int(p["step"] + 0.5)
+	if step < 0 {
+		step = 0
+	}
+	if step > maxStep {
+		step = maxStep
+	}
+	cur := steps[step]
+
+	path := PathTo(cur.Prev, 0, Goal)
+	onPath := make(map[[2]int]bool)
+	for i := 0; i+1 < len(path); i++ {
+		onPath[[2]int{path[i], path[i+1]}] = true
+		onPath[[2]int{path[i+1], path[i]}] = true
+	}
+
+	relaxed := make(map[int]bool, len(cur.Relaxed))
+	for _, r := range cur.Relaxed {
+		relaxed[r] = true
+	}
+
+	// A 0..1 x 0..1 canvas we never call Axes()/Sample() on -- this is a
+	// node-and-edge diagram, not a function plot.
+	c := viz.New(700, 460, 0, 1, 0, 1)
+
+	// Roads, drawn first so nodes and the path highlight sit on top.
+	for _, pr := range roadPairs {
+		a, b := pr[0], pr[1]
+		color, width := viz.Muted, 1.5
+		if onPath[[2]int{a, b}] {
+			color, width = viz.Warm, 3
+		}
+		sx, sy := plotPositions[a][0], plotPositions[a][1]
+		ex, ey := plotPositions[b][0], plotPositions[b][1]
+		c.Path([][2]float64{{sx, sy}, {ex, ey}}, color, width)
+		mx, my := (sx+ex)/2, (sy+ey)/2
+		c.Text(c.X(mx), c.Y(my)-6, fmt.Sprintf("%.1f", dist(Pos[a], Pos[b])), 11, viz.Muted, "middle")
+	}
+
+	for i, pos := range plotPositions {
+		px, py := c.X(pos[0]), c.Y(pos[1])
+		const side = 44.0
+
+		color := viz.Faint
+		switch {
+		case i == cur.Current:
+			color = viz.Warm
+		case cur.Closed[i]:
+			color = viz.Good
+		case !math.IsInf(cur.G[i], 1):
+			color = viz.Accent
+		}
+		c.Rect(px-side/2, py-side/2, side, side, color, 0.85)
+		c.Text(px, py+5, NodeNames[i], 15, "white", "middle")
+
+		gLabel := "∞"
+		if !math.IsInf(cur.G[i], 1) {
+			gLabel = fmt.Sprintf("g=%.1f", cur.G[i])
+		}
+		if relaxed[i] {
+			gLabel += " ↓"
+		}
+		c.Text(px, py+side/2+16, gLabel, 11, viz.Muted, "middle")
+		if useHeuristic {
+			c.Text(px, py+side/2+30, fmt.Sprintf("h=%.1f", Heuristic(i, Goal)), 11, viz.Muted, "middle")
+		}
+	}
+
+	algoLabel := "Plain Dijkstra (priority = g)"
+	if useHeuristic {
+		algoLabel = "A* (priority = g+h)"
+	}
+	c.Text(16, 24, fmt.Sprintf("%s -- step %d/%d: %s", algoLabel, step, maxStep, cur.Description), 13, viz.Ink, "start")
+	if path != nil && cur.Current == Goal {
+		names := make([]string, len(path))
+		for i, v := range path {
+			names[i] = NodeNames[v]
+		}
+		c.Text(16, 44, fmt.Sprintf("Reached G: %s (cost %.1f), %d node(s) expanded",
+			strings.Join(names, "→"), cur.G[Goal], countClosed(cur.Closed)), 13, viz.Accent, "start")
+	} else if path != nil {
+		names := make([]string, len(path))
+		for i, v := range path {
+			names[i] = NodeNames[v]
+		}
+		c.Text(16, 44, fmt.Sprintf("Best route to G so far: %s (cost %.1f so far)",
+			strings.Join(names, "→"), cur.G[Goal]), 13, viz.Accent, "start")
+	} else {
+		c.Text(16, 44, "G not reached yet", 13, viz.Muted, "start")
+	}
+	c.Text(16, 440, "green=expanded (closed)  orange=expanding now  blue=open, still tentative  gray=unreached",
+		12, viz.Muted, "start")
+
+	return c.String()
+}
+
+func countClosed(closed []bool) int {
+	n := 0
+	for _, b := range closed {
+		if b {
+			n++
+		}
+	}
+	return n
 }
