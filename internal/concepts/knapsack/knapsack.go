@@ -6,7 +6,9 @@
 package knapsack
 
 import (
+	"fmt"
 	"sort"
+	"strings"
 
 	"mathviz/internal/concept"
 	"mathviz/internal/viz"
@@ -148,6 +150,119 @@ func TotalWeight(items []Item, chosen []int) int {
 	return sum
 }
 
+// backtrackPath returns the sequence of table cells Backtrack visits while
+// walking from the finished answer back to the base case, purely so render
+// can highlight that exact chain once the table is complete.
+func backtrackPath(dp [][]int, items []Item) [][2]int {
+	w := Capacity
+	path := [][2]int{{len(items), w}}
+	for i := len(items); i > 0; i-- {
+		if dp[i][w] != dp[i-1][w] {
+			w -= items[i-1].Weight
+		}
+		path = append(path, [2]int{i - 1, w})
+	}
+	return path
+}
+
 func render(p map[string]float64) string {
-	return viz.New(700, 460, 0, 1, 0, 1).String()
+	dp := KnapsackTable(Items, Capacity)
+	n, capW := len(Items), Capacity
+	maxStep := n * (capW + 1)
+
+	step := int(p["step"] + 0.5)
+	if step < 0 {
+		step = 0
+	}
+	if step > maxStep {
+		step = maxStep
+	}
+
+	onPath := make(map[[2]int]bool)
+	if step == maxStep {
+		for _, cell := range backtrackPath(dp, Items) {
+			onPath[cell] = true
+		}
+	}
+
+	c := viz.New(700, 460, 0, 1, 0, 1)
+
+	const originX, originY, cellW, cellH, gap = 170.0, 78.0, 78.0, 46.0, 6.0
+
+	// Column headers (capacity 0..Capacity) and row headers (item names).
+	for w := 0; w <= capW; w++ {
+		x := originX + float64(w)*(cellW+gap) + cellW/2
+		c.Text(x, originY-14, fmt.Sprintf("w=%d", w), 12, viz.Muted, "middle")
+	}
+	c.Text(originX-16, originY+cellH/2+5, "no items", 12, viz.Muted, "end")
+	for i, it := range Items {
+		y := originY + float64(i+1)*(cellH+gap) + cellH/2 + 5
+		c.Text(originX-16, y, fmt.Sprintf("+%s (w%d,v%d)", it.Name, it.Weight, it.Value), 12, viz.Muted, "end")
+	}
+
+	for i := 0; i <= n; i++ {
+		for w := 0; w <= capW; w++ {
+			filled := i == 0
+			flatIdx := -1
+			if i > 0 {
+				flatIdx = (i-1)*(capW+1) + w
+				filled = flatIdx < step
+			}
+			isCurrent := flatIdx == step-1
+
+			x := originX + float64(w)*(cellW+gap)
+			y := originY + float64(i)*(cellH+gap)
+
+			color, opacity := "white", 1.0
+			switch {
+			case isCurrent:
+				color, opacity = viz.Warm, 0.85
+			case onPath[[2]int{i, w}]:
+				color, opacity = viz.Good, 0.55
+			case filled:
+				color, opacity = viz.Faint, 1.0
+			default:
+				opacity = 0
+			}
+			c.Rect(x, y, cellW-2, cellH-2, color, opacity)
+			if filled || isCurrent {
+				c.Text(x+cellW/2-1, y+cellH/2+5, fmt.Sprintf("%d", dp[i][w]), 14, viz.Ink, "middle")
+			}
+		}
+	}
+
+	if step == 0 {
+		c.Text(16, 24, "Step 0: no items considered yet -- every cell in row 0 is 0", 13, viz.Ink, "start")
+	} else if step < maxStep {
+		i := (step-1)/(capW+1) + 1
+		w := (step - 1) % (capW + 1)
+		it := Items[i-1]
+		took := dp[i][w] != dp[i-1][w]
+		verdict := "leave it out (doesn't improve on the row above)"
+		if took {
+			verdict = fmt.Sprintf("take it: dp[%d][%d]+%d beats the row above", i-1, w-it.Weight, it.Value)
+		}
+		c.Text(16, 24, fmt.Sprintf("Step %d/%d: dp[%d][%d], considering %s (w%d,v%d) -- %s",
+			step, maxStep, i, w, it.Name, it.Weight, it.Value, verdict), 13, viz.Ink, "start")
+	} else {
+		chosen := Backtrack(dp, Items, Capacity)
+		names := make([]string, len(chosen))
+		for i, idx := range chosen {
+			names[i] = Items[idx].Name
+		}
+		greedy := GreedyByRatio(Items, Capacity)
+		greedyNames := make([]string, len(greedy))
+		for i, idx := range greedy {
+			greedyNames[i] = Items[idx].Name
+		}
+		c.Text(16, 24, fmt.Sprintf("Table complete. Optimal: {%s} = value %d (weight %d/%d) -- highlighted in green",
+			strings.Join(names, ","), TotalValue(Items, chosen), TotalWeight(Items, chosen), Capacity), 13, viz.Accent, "start")
+		c.Text(16, 44, fmt.Sprintf("Greedy by value/weight would have picked {%s} = value %d instead",
+			strings.Join(greedyNames, ","), TotalValue(Items, greedy)), 13, viz.Bad, "start")
+	}
+
+	c.Text(16, 440, "orange=cell just filled  gray=already filled  green=on the optimal backtrack path",
+		12, viz.Muted, "start")
+
+	return c.String()
 }
