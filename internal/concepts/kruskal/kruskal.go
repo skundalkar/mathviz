@@ -27,7 +27,109 @@ func init() {
 			{
 				Heading: "Why would you need this?",
 				Body: []string{
-					"Placeholder -- filled in once the math and picture exist.",
+					"dijkstras-algorithm answers 'what's the cheapest ROUTE between two " +
+						"specific cities' -- it only ever needs some of a network's roads, the " +
+						"ones on the one route it's tracing. Suppose the question is different: " +
+						"you're planning which roads to actually build so every city in the " +
+						"5-city network S,A,B,C,D is reachable from every other one, as cheaply as " +
+						"possible overall -- not the cheapest route between any one pair, the " +
+						"cheapest whole network. Gut instinct: build every road that's individually " +
+						"cheap, in order -- S-B (cost 1) and A-C (cost 1) both look like obvious " +
+						"first picks, and so does A-B (cost 2) right after. Keep blindly grabbing " +
+						"the next-cheapest road and by the time C-D (cost 3) goes in, every city is " +
+						"already connected -- so what happens when S-A (cost 4) comes up next? It's " +
+						"cheaper than B-D (cost 8), so the same instinct says build it too. But S and " +
+						"A are already both reachable from each other (through B and C) -- adding " +
+						"S-A wouldn't connect anything new, it would just add a second, redundant " +
+						"route between two cities that don't need one. Is there a way to grab roads " +
+						"cheapest-first while automatically recognizing the moment a 'cheap' road " +
+						"has stopped being useful?",
+				},
+			},
+			{
+				Heading: "How does it actually work?",
+				Body: []string{
+					"Take the same 5-city network dijkstras-algorithm uses -- S-A(4), S-B(1), " +
+						"A-B(2), A-C(1), B-C(5), B-D(8), C-D(3) -- and sort its 7 roads " +
+						"cheapest-first: S-B(1), A-C(1), A-B(2), C-D(3), S-A(4), B-C(5), B-D(8). " +
+						"Track which cities are already connected to which (a 'components' " +
+						"grouping, starting with every city in its own group of one), and go " +
+						"through the sorted list: if a road's two cities are still in different " +
+						"groups, build it and merge the groups; if they're already in the same " +
+						"group, skip it -- building it could only create a redundant loop.",
+					"• S-B(1): S and B are in different groups -- build it. Groups: {S,B}, {A}, " +
+						"{C}, {D}.",
+					"• A-C(1): A and C are in different groups -- build it. Groups: {S,B}, " +
+						"{A,C}, {D}.",
+					"• A-B(2): A (in {A,C}) and B (in {S,B}) are in different groups -- build " +
+						"it, merging them. Groups: {S,A,B,C}, {D}.",
+					"• C-D(3): C (in {S,A,B,C}) and D (in {D}) are in different groups -- build " +
+						"it. Groups: {S,A,B,C,D} -- every city is now connected.",
+					"• S-A(4): S and A are already in the SAME group -- skip it. Building it " +
+						"would only close a loop between two cities that can already reach each " +
+						"other.",
+					"• B-C(5): same group -- skip.",
+					"• B-D(8): same group -- skip.",
+					"4 roads got built (S-B, A-C, A-B, C-D) for a total cost of 1+1+2+3=7, " +
+						"connecting all 5 cities -- and the 3 roads that got skipped (S-A, B-C, " +
+						"B-D) are exactly the ones that would only have added a redundant loop, " +
+						"never a new connection.",
+				},
+			},
+			{
+				Heading: "What does the picture show?",
+				Body: []string{
+					"Cities sit at the same positions dijkstras-algorithm uses; roads are the " +
+						"lines between them, labeled with cost. The step slider walks through the " +
+						"roads in cheapest-first order one at a time: the road being considered " +
+						"this step is drawn in orange, roads already built are green, roads " +
+						"already skipped are a dashed red line marked ✕, and roads not reached yet " +
+						"stay a plain gray line. Every city is colored by which group it currently " +
+						"belongs to -- watch S and B share a color as soon as step 1 builds S-B, A " +
+						"and C share a different color after step 2, and by step 4 every city " +
+						"shares one color, the visual signal that the network is now fully " +
+						"connected.",
+				},
+			},
+			{
+				Heading: "What can you do now that you couldn't before?",
+				Body: []string{
+					"Build the cheapest possible network that still connects every node, " +
+						"instead of just the cheapest route between one pair -- and know for " +
+						"certain when a cheap-looking edge is actually redundant (S-A here, at " +
+						"cost 4, cheaper than two of the roads that DID get built) rather than " +
+						"having to guess or check by hand. dijkstras-algorithm tells you the best " +
+						"way from S to any one city; kruskals-mst tells you the fewest, cheapest " +
+						"roads needed to keep every city reachable from every other one at once.",
+				},
+			},
+			{
+				Heading: "Where does this show up in real life?",
+				Body: []string{
+					"Utility companies use minimum spanning trees to plan the cheapest layout " +
+						"of power lines, water pipes, or fiber-optic cable that still reaches " +
+						"every building in a service area. Network engineers use the same idea to " +
+						"design a backbone that connects every office or data center for the least " +
+						"total cable cost. It also shows up inside other algorithms -- some image " +
+						"segmentation and clustering methods build a minimum spanning tree over " +
+						"data points and then cut its most expensive edges to find natural " +
+						"groupings.",
+				},
+			},
+			{
+				Heading: "What's the common mistake here?",
+				Body: []string{
+					"Say it like this: sort every edge cheapest-first, and add each one only if " +
+						"its two endpoints are still in different components -- the union-find " +
+						"structure that tracks components is what makes 'would this close a " +
+						"loop' a cheap, certain check instead of a guess.",
+					"Not like this: assuming the cheapest edges you accept will always be the " +
+						"first ones in sorted order, with no skips in between. S-A(4) here is " +
+						"cheaper than B-C(5) and B-D(8), yet it's the one that gets skipped, " +
+						"because by the time the algorithm reaches it, S and A are already " +
+						"connected through B and C -- being cheap doesn't matter once an edge's " +
+						"two endpoints are already reachable from each other; only whether it " +
+						"still connects something new does.",
 				},
 			},
 		},
