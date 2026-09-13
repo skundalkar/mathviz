@@ -8,6 +8,7 @@
 package autocorr
 
 import (
+	"fmt"
 	"math"
 
 	"mathviz/internal/concept"
@@ -121,5 +122,108 @@ func ACF(series []float64, lag int) float64 {
 }
 
 func render(p map[string]float64) string {
-	return viz.New(700, 460, 0, 1, 0, 1).String()
+	lag := int(p["lag"] + 0.5)
+	if lag < 0 {
+		lag = 0
+	}
+	if lag > MaxLag {
+		lag = MaxLag
+	}
+
+	series := Series()
+	seriesMin, seriesMax := series[0], series[0]
+	for _, v := range series {
+		if v < seriesMin {
+			seriesMin = v
+		}
+		if v > seriesMax {
+			seriesMax = v
+		}
+	}
+	pad := (seriesMax - seriesMin) * 0.15
+	seriesMin -= pad
+	seriesMax += pad
+
+	// The series overlay lives in the lower band of the canvas, using the
+	// canvas's one data-space mapping (x = time step, y = series value);
+	// the correlogram above it is drawn in raw pixel space, same technique
+	// dynamic-programming-knapsack and multi-armed-bandit use to keep two
+	// panels from fighting over one coordinate system.
+	c := viz.New(700, 560, 0, float64(SeriesLength-1), seriesMin, seriesMax)
+	c.PadT = 360
+	c.PadB = 40
+
+	// The correlogram: one bar per lag 0..MaxLag, height/direction given by
+	// ACF, drawn in raw pixel space above the series panel.
+	const zeroY, scale = 200.0, 80.0
+	const barW, spacing = 18.0, 30.0
+	leftMargin := (700.0 - float64(MaxLag)*spacing) / 2
+
+	c.Rect(leftMargin-16, zeroY-1, float64(MaxLag)*spacing+32, 2, viz.Muted, 0.9)
+	c.Text(leftMargin-26, zeroY+4, "0", 11, viz.Muted, "end")
+	c.Text(leftMargin-26, zeroY-scale+4, "+1", 11, viz.Muted, "end")
+	c.Text(leftMargin-26, zeroY+scale+4, "-1", 11, viz.Muted, "end")
+
+	acf := ACF(series, lag)
+	for l := 0; l <= MaxLag; l++ {
+		x := leftMargin + float64(l)*spacing
+		lacf := ACF(series, l)
+		barY := zeroY - lacf*scale
+		top, height := barY, zeroY-barY
+		if height < 0 {
+			top, height = zeroY, -height
+		}
+		color, opacity := viz.Accent, 0.6
+		if l == lag {
+			color, opacity = viz.Warm, 0.95
+		}
+		c.Rect(x-barW/2, top, barW, height, color, opacity)
+		if l%5 == 0 {
+			c.Text(x, zeroY+scale+18, fmt.Sprintf("%d", l), 11, viz.Muted, "middle")
+		}
+	}
+	c.Text(leftMargin, zeroY+scale+36, "lag", 11, viz.Muted, "start")
+
+	c.Axes()
+	for t := 0; t < SeriesLength; t += 5 {
+		c.Tick(float64(t), fmt.Sprintf("t=%d", t))
+	}
+
+	// Original series, solid.
+	pts := make([][2]float64, SeriesLength)
+	for t, v := range series {
+		pts[t] = [2]float64{float64(t), v}
+	}
+	c.Path(pts, viz.Accent, 2)
+
+	// The same series shifted forward by lag steps, in orange: at time t
+	// this plots series[t-lag], so it visually lines up what ACF is
+	// comparing -- how well the value `lag` steps ago predicts the current
+	// one.
+	if lag > 0 && lag < SeriesLength {
+		shifted := make([][2]float64, SeriesLength-lag)
+		for t := lag; t < SeriesLength; t++ {
+			shifted[t-lag] = [2]float64{float64(t), series[t-lag]}
+		}
+		c.Path(shifted, viz.Warm, 2)
+	}
+
+	verdict := "weak: barely related to a copy of itself this far off"
+	switch {
+	case acf > 0.7:
+		verdict = "strong positive: a lagged copy tracks the original closely"
+	case acf < -0.7:
+		verdict = "strong negative: a lagged copy runs opposite the original"
+	case acf > 0.3:
+		verdict = "moderate positive"
+	case acf < -0.3:
+		verdict = "moderate negative"
+	}
+	c.Text(16, 24, fmt.Sprintf("lag = %d    ACF(%d) = %.3f    %s", lag, lag, acf, verdict), 13, viz.Ink, "start")
+	c.Text(16, 44, fmt.Sprintf("period baked into this series ≈ %.0f steps -- correlogram peaks near lag %.0f and %.0f",
+		Period, Period, 2*Period), 13, viz.Muted, "start")
+	c.Text(16, 64, "orange bar = current lag    blue line = original series    orange line = series shifted by that lag",
+		12, viz.Muted, "start")
+
+	return c.String()
 }
