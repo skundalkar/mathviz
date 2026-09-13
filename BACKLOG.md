@@ -108,11 +108,11 @@ Format: `- [ ] <id> — <one-line description of the concept to visualize>`
 - [x] a-star-search — extending dijkstras-algorithm with a heuristic estimate of remaining distance so the search reaches the goal faster without sacrificing optimality
 - [x] kruskals-mst — building the cheapest tree connecting every node using union-find to skip edges that would form a cycle, built from dijkstras-algorithm
 - [x] dynamic-programming-knapsack — solving the 0/1 knapsack problem by building up a table of optimal subproblem solutions instead of trying every combination
+- [x] multi-armed-bandit — balancing exploration vs exploitation when repeatedly choosing among options with unknown reward rates, built from expected-value
 
 ## Up next (math foundations)
 
 ## Up next (statistics & ML intuition, batch 2)
-- [ ] multi-armed-bandit — balancing exploration vs exploitation when repeatedly choosing among options with unknown reward rates, built from expected-value
 - [ ] autocorrelation — measuring how a time series correlates with a lagged copy of itself, and reading the resulting correlogram, built from correlation
 - [ ] bonferroni-correction — adjusting significance thresholds when running many hypothesis tests at once so false positives don't pile up, built from p-value
 

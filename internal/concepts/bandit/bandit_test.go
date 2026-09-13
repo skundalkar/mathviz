@@ -172,6 +172,25 @@ func TestEpsilonPointTwoEventuallyFindsBestArm(t *testing.T) {
 	}
 }
 
+// TestSimulateIntermediateHorizons is pinned to the same deterministic
+// sequence at the waypoints LEARNINGS.md and the concept's own Sections
+// walk through: noise keeps a worse arm (C) looking best through pull 150,
+// and only by pull 300 does B's higher true rate show through as more
+// pulls to B than to C.
+func TestSimulateIntermediateHorizons(t *testing.T) {
+	cases := map[int][3]int{
+		60:  {25, 9, 26},
+		150: {34, 49, 67},
+		300: {45, 155, 100},
+	}
+	for n, want := range cases {
+		got := Simulate(0.2, n)[n-1].Counts
+		if got != want {
+			t.Errorf("Simulate(0.2,%d) final Counts = %v, want %v", n, got, want)
+		}
+	}
+}
+
 func TestRenderProducesSVG(t *testing.T) {
 	c, ok := concept.Get("multi-armed-bandit")
 	if !ok {

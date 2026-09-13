@@ -24,7 +24,135 @@ func init() {
 			{
 				Heading: "Why would you need this?",
 				Body: []string{
-					"Placeholder -- filled in once the math and picture exist.",
+					"expected-value showed how to judge a single gamble once you already know its " +
+						"odds. But say you walk up to three slot machines -- A, B, C -- and none of " +
+						"them come with their win probabilities printed on the front. The only way to " +
+						"learn one is to spend a pull actually playing it, and you only have a limited " +
+						"number of pulls before you have to walk away.",
+					"Here's the trap either extreme falls into. Play only whichever machine looks " +
+						"best so far, based on very few pulls: an early unlucky streak on the actual " +
+						"best machine can make it look like the worst one, and a purely 'stick with " +
+						"the leader' rule then never gives it another chance to prove otherwise -- one " +
+						"bad first impression, permanently misjudged. Or play all three equally the " +
+						"whole time, just to be thorough: now you're spending just as many pulls on " +
+						"machines you've already gathered good evidence are worse, when those pulls " +
+						"could have gone to the one that's actually paying off.",
+					"Is there a rule for choosing which machine to pull next that keeps testing " +
+						"enough to avoid the first trap, without wasting pulls the way the second one " +
+						"does?",
+				},
+			},
+			{
+				Heading: "How does it actually work?",
+				Body: []string{
+					"Fix three machines with true win probabilities A=0.20, B=0.50, C=0.35 -- kept " +
+						"secret from the player, revealed here only to grade the strategy. Each pull " +
+						"pays 1 on a win and 0 on a loss, so a machine's true win probability IS its " +
+						"expected value per pull (E[X] = p\u00b71 + (1\u2212p)\u00b70 = p, the same formula " +
+						"expected-value defined). Epsilon-greedy: pull each machine once to start (a " +
+						"forced pull, so every machine has at least one data point), then for every " +
+						"later pull, explore with probability \u03b5 (a uniformly random machine) or " +
+						"otherwise exploit (whichever machine currently has the highest observed win " +
+						"rate, ties toward the earliest one).",
+					"\u2022 Pull 1 (forced): A -- wins. A's estimate: 1/1 = 1.00.",
+					"\u2022 Pull 2 (forced): B -- loses. B's estimate: 0/1 = 0.00.",
+					"\u2022 Pull 3 (forced): C -- wins. C's estimate: 1/1 = 1.00.",
+					"Already, the first trap from Section 1 is visible: B is secretly the BEST " +
+						"machine (true rate 0.50), but its one data point was a loss, so it now looks " +
+						"like the worst of the three. A player with \u03b5=0 (pure exploit, never explore) " +
+						"would never touch B again -- nothing changes its estimate away from 0.00 " +
+						"except another pull, and a purely greedy rule never chooses a machine that " +
+						"isn't currently in the lead. At \u03b5=0 in this exact simulation, that's exactly " +
+						"what happens: B is pulled exactly once, forever, no matter how many pulls " +
+						"follow.",
+					"At the default \u03b5=0.20, pulls 4-14 all happen to exploit (A or C, whichever is " +
+						"ahead) -- until pull 15, which explores: a uniformly random draw lands on B. " +
+						"B wins, its estimate jumps to 1/2 = 0.50, and it's back in contention. That's " +
+						"exactly what \u03b5 buys: without pull 15's exploration, B would never have gotten " +
+						"a second chance.",
+					"|pulls so far|A pulls (true 0.20)|B pulls (true 0.50)|C pulls (true 0.35)|B's estimate|",
+					"|60|25|9|26|0.33|",
+					"|150|34|49|67|0.37|",
+					"|300|45|155|100|0.46|",
+					"|1000|91|758|151|0.53|",
+					"By pull 60, B has barely been explored (9 pulls) and C's early lucky wins have " +
+						"it looking best. By pull 150, more exploring pulls have found B more often, " +
+						"but C (67 pulls, estimate 0.40) still edges it out by chance. Only by pull " +
+						"300 does the noise wash out enough for B's true 0.50 rate to show through -- " +
+						"155 pulls to B versus 100 to C -- and by pull 1000 B dominates outright. " +
+						"Nothing about the RULE changed between pull 60 and pull 1000; more pulls just " +
+						"gave the sampling noise more chances to average out, the same " +
+						"shrinking-uncertainty effect law-of-large-numbers describes for one running " +
+						"average, now racing across three of them at once.",
+					"Regret measures the running cost of not always pulling the best machine: each " +
+						"pull adds (best true rate \u2212 chosen arm's true rate) to a cumulative total, " +
+						"0.30 for a pull of A, 0 for a pull of B, 0.15 for a pull of C. In this run, " +
+						"cumulative regret is 11.40 by pull 60 (0.19/pull), 28.50 by pull 300 " +
+						"(0.095/pull), and 49.95 by pull 1000 (0.05/pull) -- still growing, but slower " +
+						"and slower per pull as the strategy locks onto B, which is exactly the " +
+						"signature of a strategy that's working.",
+				},
+			},
+			{
+				Heading: "What does the picture show?",
+				Body: []string{
+					"Three bars, one per machine, height equal to its current estimated win rate; " +
+						"the thin black line across each bar marks that machine's TRUE win rate -- the " +
+						"target the bar is trying to converge to. The bar just pulled lights up orange " +
+						"(this pull explored) or green (this pull exploited); the step slider scrubs " +
+						"through pulls 1-300 of the exact run worked above. Drag it past pull 15 and " +
+						"watch B's bar jump for the first time since pull 2; drag it toward 300 and " +
+						"watch B's bar climb past C's as the counts in the table above play out live. " +
+						"Below, the cumulative regret curve only ever rises, but its slope visibly " +
+						"flattens as more pulls go to B instead of A or C.",
+				},
+			},
+			{
+				Heading: "What can you do now that you couldn't before?",
+				Body: []string{
+					"Choose defensibly among several options of unknown quality under a limited " +
+						"budget of trials, without falling into either trap Section 1 named: never " +
+						"permanently writing off an option that had one unlucky early result, and " +
+						"never spending equal effort on options you already have good evidence are " +
+						"worse. The \u03b5 dial makes that trade-off explicit and tunable instead of " +
+						"implicit: raise it and you find the best option faster on average (more " +
+						"exploring pulls, like B's early rescue at pull 15) but permanently spend more " +
+						"pulls on options you already know are worse; lower it and you exploit your " +
+						"current best guess more often, at the risk of an early bad impression sticking " +
+						"the way it did for B at \u03b5=0. There's no setting that avoids the trade-off " +
+						"entirely -- only ways to match it to how many pulls you actually have.",
+				},
+			},
+			{
+				Heading: "Where does this show up in real life?",
+				Body: []string{
+					"The name comes from exactly this picture: a row of casino slot machines " +
+						"('one-armed bandits'), each with an unknown payout rate, and a gambler with a " +
+						"limited bankroll deciding which lever to keep pulling. The same everyday " +
+						"decision shows up outside a casino: sticking with your usual lunch spot versus " +
+						"trying the new place down the street, or always taking the same route to work " +
+						"versus occasionally testing an alternate one that might be faster. At larger " +
+						"scale, a website deciding which of several headlines or ad creatives to show " +
+						"more often as click data comes in, a streaming service deciding which shows to " +
+						"promote to more viewers, and a clinical trial deciding how to allocate the " +
+						"next patient between two treatments as early results come in are all running " +
+						"this exact explore/exploit trade-off, usually with more than three arms and " +
+						"smarter strategies than plain epsilon-greedy.",
+				},
+			},
+			{
+				Heading: "What's the common mistake here?",
+				Body: []string{
+					"Say it like this: epsilon-greedy lowers the AVERAGE regret over many pulls and " +
+						"finds the best arm often enough given enough exploration -- it does not " +
+						"guarantee that after any fixed, finite number of pulls, whichever arm " +
+						"currently looks best (or has been pulled the most) actually IS the best one.",
+					"Not like this: assuming whichever option 'looks best' after a modest amount of " +
+						"testing must be the true best -- this exact run is the counterexample, at " +
+						"pull 150 C (not B) had the highest estimate, purely from lucky results. The " +
+						"fix isn't to stop testing once something looks good; it's to keep enough " +
+						"exploration going that a close-looking alternative still gets tested before " +
+						"you commit to it.",
 				},
 			},
 		},
