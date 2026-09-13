@@ -8,6 +8,7 @@
 package bandit
 
 import (
+	"fmt"
 	"math"
 
 	"mathviz/internal/concept"
@@ -189,6 +190,128 @@ func Simulate(epsilon float64, steps int) []Step {
 	return results
 }
 
+// barColors: default fill, then fill when this arm is the one just pulled,
+// split by whether that pull explored or exploited.
+const (
+	barDefault = viz.Accent
+	barExplore = viz.Warm
+	barExploit = viz.Good
+)
+
 func render(p map[string]float64) string {
-	return viz.New(700, 460, 0, 1, 0, 1).String()
+	epsilon := p["epsilon"]
+	if epsilon < 0 {
+		epsilon = 0
+	}
+	if epsilon > 1 {
+		epsilon = 1
+	}
+	step := int(p["step"] + 0.5)
+	if step < 0 {
+		step = 0
+	}
+	if step > MaxSteps {
+		step = MaxSteps
+	}
+
+	all := Simulate(epsilon, MaxSteps)
+	maxRegret := all[len(all)-1].CumRegret
+	if maxRegret < 1 {
+		maxRegret = 1
+	}
+
+	// The line chart lives in the lower band of the canvas (PadT pushed
+	// down past the bar chart and header text above it); the bar chart is
+	// drawn in raw pixel space, same technique dynamic-programming-knapsack
+	// uses for its table grid, so the two panels never fight over one
+	// coordinate system.
+	c := viz.New(700, 520, 0, float64(MaxSteps), 0, maxRegret*1.15)
+	c.PadT = 340
+	c.PadB = 40
+	c.Axes()
+	for x := 0; x <= MaxSteps; x += 50 {
+		c.Tick(float64(x), fmt.Sprintf("%d", x))
+	}
+	c.Text(52, c.PadT-14, "cumulative regret so far (cost of not always pulling the best arm)", 12, viz.Muted, "start")
+
+	const barTop, barBottom = 110.0, 280.0
+	const barW, gap = 90.0, 90.0
+	startX := (700.0 - 3*barW - 2*gap) / 2
+
+	var current *Step
+	if step > 0 {
+		current = &all[step-1]
+	}
+
+	for i, name := range ArmNames {
+		x := startX + float64(i)*(barW+gap)
+		est := 0.0
+		count := 0
+		if current != nil {
+			est = current.Estimates[i]
+			count = current.Counts[i]
+		}
+		barH := est * (barBottom - barTop)
+		color, opacity := barDefault, 0.6
+		if current != nil && current.Arm == i {
+			opacity = 0.95
+			if current.Explored {
+				color = barExplore
+			} else if step > len(TrueProbs) {
+				color = barExploit
+			}
+		}
+		c.Rect(x, barBottom-barH, barW, barH, color, opacity)
+
+		// True win rate, shown as a thin reference line spanning a little
+		// past the bar's edges -- what the estimate is trying to converge
+		// to, kept visible whether it falls inside a tall bar or floats
+		// above a short one.
+		trueY := barBottom - TrueProbs[i]*(barBottom-barTop)
+		c.Rect(x-6, trueY-1.5, barW+12, 3, viz.Ink, 1)
+
+		c.Text(x+barW/2, barTop-10, fmt.Sprintf("%s: true p=%.2f", name, TrueProbs[i]), 12, viz.Muted, "middle")
+		label := "unpulled"
+		if count > 0 {
+			label = fmt.Sprintf("n=%d  est=%.2f", count, est)
+		}
+		c.Text(x+barW/2, barBottom+18, label, 12, viz.Ink, "middle")
+	}
+
+	// The regret curve so far -- only the prefix up to the current step, so
+	// dragging the slider visibly grows the line, and its cost only ever
+	// increases (a flat line would mean an oracle that always pulled the
+	// best arm).
+	pts := make([][2]float64, step+1)
+	pts[0] = [2]float64{0, 0}
+	for i := 0; i < step; i++ {
+		pts[i+1] = [2]float64{float64(i + 1), all[i].CumRegret}
+	}
+	c.Path(pts, viz.Accent, 2.5)
+
+	if step == 0 {
+		c.Text(16, 24, fmt.Sprintf("Step 0: no pulls yet -- epsilon = %.2f", epsilon), 13, viz.Ink, "start")
+	} else {
+		s := all[step-1]
+		verdict := "forced first pull"
+		if step > len(TrueProbs) {
+			if s.Explored {
+				verdict = "explored: uniformly random arm"
+			} else {
+				verdict = "exploited: highest current estimate"
+			}
+		}
+		outcome := "lost"
+		if s.Reward == 1 {
+			outcome = "won"
+		}
+		c.Text(16, 24, fmt.Sprintf("Pull %d/%d: arm %s (%s) -- %s", step, MaxSteps, ArmNames[s.Arm], verdict, outcome),
+			13, viz.Ink, "start")
+		c.Text(16, 44, fmt.Sprintf("cumulative regret = %.2f (avg %.3f/pull)    epsilon = %.2f",
+			s.CumRegret, s.CumRegret/float64(step), epsilon), 13, viz.Muted, "start")
+	}
+	c.Text(16, 64, "orange bar = just explored   green bar = just exploited   thin gray line = arm's true win rate",
+		12, viz.Muted, "start")
+
+	return c.String()
 }
