@@ -24,7 +24,111 @@ func init() {
 			{
 				Heading: "Why would you need this?",
 				Body: []string{
-					"Placeholder -- filled in once the math and picture exist.",
+					"p-value established that testing a single hypothesis at significance level " +
+						"\u03b1=0.05 means a 5% chance of a false alarm -- flagging something as real when " +
+						"nothing actually is -- if the null hypothesis happens to be true. That sounds " +
+						"like an acceptably small risk taken on its own.",
+					"But real research rarely stops at one test. A genetics study checks thousands " +
+						"of genes for a disease link; a company's dashboard checks dozens of metrics " +
+						"after a product change; a medical panel checks many possible conditions at " +
+						"once. Gut instinct says: 'each individual test is only 5% risky, so I'm still " +
+						"safe.' But run enough separate 5%-risk tests, even when NOTHING real is going " +
+						"on in any of them, and by sheer chance some of them will cross the 5% line " +
+						"anyway -- purely from noise, not from any genuine effect.",
+					"How much does that risk actually pile up as you run more tests, and is there a " +
+						"way to set each test's own threshold so the risk of even ONE false alarm across " +
+						"the WHOLE batch stays controlled, instead of quietly growing with every test " +
+						"you add?",
+				},
+			},
+			{
+				Heading: "How does it actually work?",
+				Body: []string{
+					"Run m independent tests, each at significance level \u03b1, and suppose every " +
+						"single null hypothesis is actually true (nothing real is going on anywhere). " +
+						"Each test individually has probability (1-\u03b1) of correctly NOT crossing the " +
+						"threshold. Independence lets those probabilities multiply across all m tests, " +
+						"so the chance that EVERY test stays quiet is (1-\u03b1)^m -- and the chance that " +
+						"at least one test falsely fires is 1 minus that: the family-wise error rate, " +
+						"FWER = 1-(1-\u03b1)^m.",
+					"At \u03b1=0.05, plug in a few values of m:",
+					"|m (tests)|FWER = 1-(1-\u03b1)^m|",
+					"|1|5.0%|",
+					"|5|22.6%|",
+					"|10|40.1%|",
+					"|20|64.2%|",
+					"|30|78.5%|",
+					"|50|92.3%|",
+					"By 20 tests, the chance of at least one false alarm has already crossed a coin " +
+						"flip -- worse than 50/50 -- purely from running more tests at the 'safe-looking' " +
+						"5% level, with nothing real happening anywhere. That's the gap Section 1 named, " +
+						"now with an exact number attached.",
+					"Bonferroni's fix: instead of testing every one of the m tests at \u03b1, test each " +
+						"one at the stricter \u03b1/m. Take a concrete batch: simulate 20 p-values, every " +
+						"one of them from a genuinely true null (nothing real in any of the 20). At " +
+						"\u03b1=0.05, one of those 20 p-values (0.0167) happens to fall below the raw " +
+						"threshold -- a false alarm, exactly the kind of noise the 64.2% FWER above says " +
+						"to expect fairly often at m=20. At the corrected threshold \u03b1/m = 0.05/20 = " +
+						"0.0025, that same p-value (0.0167) is nowhere close to crossing it -- 0 false " +
+						"alarms in this batch, even though all 20 tests came from a situation where " +
+						"nothing at all was actually going on.",
+				},
+			},
+			{
+				Heading: "What does the picture show?",
+				Body: []string{
+					"The top curve traces FWER = 1-(1-\u03b1)^m across m=1 to 50 for the current " +
+						"\u03b1, with a marker at the m the slider is set to -- drag m up and watch the " +
+						"marker climb the curve, the same numbers tabled above. Below it, the current " +
+						"batch of m simulated p-values (all drawn from a true null, so any one flagged " +
+						"is by definition a false alarm) sits as dots along a 0-to-1 line, next to two " +
+						"threshold markers: the raw \u03b1 (orange, fixed) and the corrected \u03b1/m " +
+						"(green, sliding left as m grows). Watch a dot that used to sit between the two " +
+						"lines -- caught by the raw threshold but not the corrected one -- as exactly the " +
+						"false alarm the correction was built to catch.",
+				},
+			},
+			{
+				Heading: "What can you do now that you couldn't before?",
+				Body: []string{
+					"Run many hypothesis tests within one study or one decision and still control the " +
+						"overall risk of ANY false conclusion, instead of unconsciously accepting a risk " +
+						"that grows with every extra test -- checking 5, 20, or 50 outcomes at once " +
+						"without fooling yourself into 'finding' an effect that's really just noise. " +
+						"That comes with a real tradeoff, worth being upfront about: making every " +
+						"individual test's bar much stricter also makes it harder to catch a real effect " +
+						"when one genuinely exists (Bonferroni is known as a conservative correction) -- " +
+						"but for a chosen, fixed overall risk level, it delivers exactly the guarantee it " +
+						"promises.",
+				},
+			},
+			{
+				Heading: "Where does this show up in real life?",
+				Body: []string{
+					"Genetics studies that scan thousands of genes at once for a disease " +
+						"association (a genome-wide association study), where the raw per-gene " +
+						"threshold would produce a near-certain flood of false hits without correction. " +
+						"A/B testing platforms that track dozens of metrics on one experiment and need " +
+						"to avoid declaring victory on whichever metric happened to wiggle by chance. A " +
+						"doctor ordering a broad panel of tests for a patient's symptoms, where checking " +
+						"many possible conditions at once raises the same risk of a false positive " +
+						"result on at least one of them. This is also the rigorous fix for exactly the " +
+						"'p-hacking' danger p-value warned about: run enough different tests against the " +
+						"same data and something will eventually look significant by chance alone -- " +
+						"Bonferroni (and its relatives) is how careful analysis accounts for that instead " +
+						"of pretending it isn't happening.",
+				},
+			},
+			{
+				Heading: "What's the common mistake here?",
+				Body: []string{
+					"Say it like this: Bonferroni divides your significance threshold by the NUMBER " +
+						"OF TESTS you're running (\u03b1/m), controlling the chance of even ONE false " +
+						"positive across the whole family of tests together.",
+					"Not like this: applying the original threshold \u03b1 to each test separately " +
+						"just because 'each individual test is only 5% risky' -- that exact reasoning " +
+						"is what lets the family-wise risk balloon to 64.2% at just 20 tests and 92.3% " +
+						"at 50, as this concept's own curve shows.",
 				},
 			},
 		},
