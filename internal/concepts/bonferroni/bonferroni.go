@@ -8,6 +8,7 @@
 package bonferroni
 
 import (
+	"fmt"
 	"math"
 
 	"mathviz/internal/concept"
@@ -121,5 +122,88 @@ func BonferroniAlpha(alpha float64, m int) float64 {
 }
 
 func render(p map[string]float64) string {
-	return viz.New(700, 460, 0, 1, 0, 1).String()
+	m := int(p["m"] + 0.5)
+	if m < 1 {
+		m = 1
+	}
+	if m > MaxM {
+		m = MaxM
+	}
+	alpha := p["alpha"]
+	if alpha < 0.01 {
+		alpha = 0.01
+	}
+	if alpha > 0.20 {
+		alpha = 0.20
+	}
+	corrected := BonferroniAlpha(alpha, m)
+	fwer := FamilyWiseErrorRate(alpha, m)
+	pvalues := NullPValues(m)
+	rawHits := CountBelow(pvalues, alpha)
+	correctedHits := CountBelow(pvalues, corrected)
+
+	// Two panels share one Canvas by mutating its data-space fields
+	// in between -- draw the FWER curve first (x = number of tests,
+	// y = FWER), then repoint XMin/XMax/YMin/YMax and PadT/PadB at the
+	// p-value strip below it. Canvas's X()/Y() read those fields live, so
+	// each panel gets its own correct mapping without needing a second
+	// Canvas or any nested SVG.
+	c := viz.New(700, 560, 1, float64(MaxM), 0, 1.05)
+	c.PadT = 110
+	c.PadB = 300
+	c.Axes()
+	for x := 1; x <= MaxM; x += 7 {
+		c.Tick(float64(x), fmt.Sprintf("%d", x))
+	}
+	c.Text((c.W+c.PadL)/2-60, c.H-c.PadB+34, "number of tests (m)", 12, viz.Muted, "start")
+
+	curve := viz.Sample(1, float64(MaxM), MaxM-1, func(mm float64) float64 {
+		return FamilyWiseErrorRate(alpha, int(mm+0.5))
+	})
+	c.Path(curve, viz.Accent, 2.5)
+	// Reference: the raw alpha itself, i.e. what the family-wise error rate
+	// would be if it didn't grow with m at all.
+	c.Path([][2]float64{{1, alpha}, {float64(MaxM), alpha}}, viz.Muted, 1)
+	c.VLine(float64(m), viz.Warm, true)
+	mx, my := c.X(float64(m)), c.Y(fwer)
+	c.Rect(mx-4, my-4, 8, 8, viz.Warm, 1)
+
+	// Second panel: the m simulated p-values (every one drawn from a TRUE
+	// null) plotted along [0,1], against both thresholds.
+	c.XMin, c.XMax = 0, 1
+	c.YMin, c.YMax = 0, 1
+	c.PadT = 340
+	c.PadB = 40
+	c.Axes()
+	for x := 0.0; x <= 1.0; x += 0.2 {
+		c.Tick(x, fmt.Sprintf("%.1f", x))
+	}
+	c.Text((c.W+c.PadL)/2-40, c.H-c.PadB+34, "simulated p-value", 12, viz.Muted, "start")
+
+	const rows = 8
+	for i, pv := range pvalues {
+		row := float64(i%rows) / float64(rows-1)
+		color := viz.Accent
+		switch {
+		case pv < corrected:
+			color = viz.Bad
+		case pv < alpha:
+			color = viz.Warm
+		}
+		px, py := c.X(pv), c.Y(row)
+		c.Rect(px-3, py-3, 6, 6, color, 0.85)
+	}
+	c.VLine(alpha, viz.Warm, true)
+	c.VLine(corrected, viz.Good, true)
+
+	c.Text(16, 24, fmt.Sprintf("m = %d tests    raw α = %.2f    corrected α/m = %.4f", m, alpha, corrected),
+		13, viz.Ink, "start")
+	c.Text(16, 44, fmt.Sprintf("family-wise error rate at raw α ≈ %.1f%% (chance of ≥ 1 false positive)",
+		fwer*100), 13, viz.Warm, "start")
+	c.Text(16, 64, fmt.Sprintf("this batch (all %d from a TRUE null): %d below raw α    %d below corrected α/m",
+		m, rawHits, correctedHits), 13, viz.Ink, "start")
+	c.Text(16, 84, "orange dashed = raw α    green dashed = corrected α/m    red dot = still false after correction",
+		12, viz.Muted, "start")
+
+	return c.String()
 }
