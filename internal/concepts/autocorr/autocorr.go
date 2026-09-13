@@ -24,7 +24,103 @@ func init() {
 			{
 				Heading: "Why would you need this?",
 				Body: []string{
-					"Placeholder -- filled in once the math and picture exist.",
+					"correlation gave a single number for how tightly two DIFFERENT variables " +
+						"move together. But a lot of the data you actually watch over time -- a store's " +
+						"daily foot traffic, a website's daily signups, a factory sensor reading -- is " +
+						"one variable measured over and over, and the question shifts: does knowing " +
+						"today's value tell you anything about a FUTURE value of that SAME series?",
+					"Looking at the raw, wiggly line, you might sense there's some kind of " +
+						"repeating pattern -- traffic seems to swing up and down -- but eyeballing a " +
+						"noisy plot won't tell you how many days the cycle actually takes, or whether " +
+						"last Tuesday is a better predictor of this Tuesday than last Thursday is.",
+					"Is there a way to turn 'this series looks kind of periodic' into an exact " +
+						"number -- and a way to find the period itself, hidden inside the noise?",
+				},
+			},
+			{
+				Heading: "How does it actually work?",
+				Body: []string{
+					"Take a 40-point example series built from a repeating ~7-step wave (amplitude " +
+						"10) plus random noise (\u00b13) -- exactly the kind of wiggly line Section 1 " +
+						"described. Autocorrelation at lag k is defined as nothing more than " +
+						"correlation's own Pearson r, applied to an unusual pair of lists: the series " +
+						"itself, and that same series shifted forward by k steps -- pairing " +
+						"(series[k], series[0]), (series[k+1], series[1]), and so on. Lag 0 pairs the " +
+						"series with an UNSHIFTED copy of itself, which is always a perfect match: " +
+						"ACF(0) = 1, always, for any series.",
+					"Sweep k from 0 upward and something more interesting happens:",
+					"\u2022 ACF(1) = 0.578 -- next-step values are somewhat similar, since the " +
+						"underlying wave doesn't jump far in a single step.",
+					"\u2022 ACF(3) = -0.853 -- strongly NEGATIVE. Shifting by about half the hidden " +
+						"period lines up a peak in the original with a trough in the shifted copy -- " +
+						"mountain against valley -- so as one goes up the other goes down.",
+					"\u2022 ACF(7) = 0.952 -- strongly positive again. Shift by (about) one full " +
+						"period and peaks line back up with peaks -- mountain against mountain.",
+					"\u2022 ACF(14) = 0.932 -- shifting by two full periods lines peaks up with peaks " +
+						"again, almost as strongly as one period did.",
+					"Plotting ACF(k) for every k from 0 to 20 -- a bar per lag -- is called a " +
+						"correlogram, and its shape answers Section 1's question directly: it peaks near " +
+						"lag 7 and lag 14, dips most negative near lag 3-4, and repeats that pattern the " +
+						"whole way out. The lag where the FIRST peak (after lag 0) happens IS the " +
+						"series's hidden period -- something no amount of squinting at the raw wiggly " +
+						"line could measure exactly, now read straight off the correlogram.",
+				},
+			},
+			{
+				Heading: "What does the picture show?",
+				Body: []string{
+					"The correlogram on top plots ACF(k) as a bar for every lag 0 through 20, the " +
+						"orange bar marking the lag the slider is currently set to. Below it, the same " +
+						"example series is drawn twice over the same time axis: in blue, the original; " +
+						"in orange, the same series shifted forward by the current lag (so at time t, " +
+						"the orange line shows the value from `lag` steps earlier). Drag the lag slider " +
+						"to 3 and watch the two curves run almost exactly opposite each other -- every " +
+						"blue peak lines up with an orange trough -- while the correlogram bar plunges " +
+						"to -0.85. Drag it to 7 and the two curves nearly trace on top of each other, " +
+						"matching the correlogram's tallest bar.",
+				},
+			},
+			{
+				Heading: "What can you do now that you couldn't before?",
+				Body: []string{
+					"Turn 'this looks kind of periodic' into an exact, checkable number, and find a " +
+						"series's hidden period without guessing -- just locate where the correlogram " +
+						"peaks. That answers a genuinely practical question too: if you're building a " +
+						"forecasting model and deciding which past values (which 'lags') to feed it as " +
+						"features, the correlogram tells you exactly which lags actually carry " +
+						"predictive signal (the tall bars) versus which ones don't (the near-zero " +
+						"ones) -- instead of guessing how many days of history a model needs to see.",
+				},
+			},
+			{
+				Heading: "Where does this show up in real life?",
+				Body: []string{
+					"A grocery store's foot traffic that rises every weekend and dips midweek, on " +
+						"repeat -- its correlogram would peak at a lag of 7 days, the same shape this " +
+						"concept's example builds in on purpose. A gym's daily attendance following the " +
+						"same weekly rhythm. More specialized uses lean on exactly the same idea: " +
+						"electricity providers use it to find daily and weekly demand cycles for load " +
+						"forecasting, economists use it to check whether a stock's returns on one day " +
+						"are related to the next day's, and audio software uses autocorrelation to find " +
+						"a musical note's fundamental pitch by locating the lag where a sound wave best " +
+						"lines up with a shifted copy of itself.",
+				},
+			},
+			{
+				Heading: "What's the common mistake here?",
+				Body: []string{
+					"Say it like this: a high ACF at some lag k means the series correlates well " +
+						"with a copy of itself shifted by k steps -- full stop. It doesn't by itself say " +
+						"WHY: that could be a genuine repeating cycle, or it could be something far " +
+						"simpler.",
+					"Not like this: assuming any strong ACF value automatically reveals a real " +
+						"periodic cycle. A series that's simply trending upward with no periodicity at " +
+						"all will show strong positive ACF at every small lag, purely because nearby " +
+						"points in a smoothly drifting series happen to be close in value -- not because " +
+						"anything actually repeats. The fix is to look at the correlogram's SHAPE (does " +
+						"it rise, fall, and rise again at a consistent spacing, the way this concept's " +
+						"example does at 7 and 14) rather than treating any one large ACF value in " +
+						"isolation as proof of a cycle.",
 				},
 			},
 		},
