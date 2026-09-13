@@ -9,6 +9,7 @@ import (
 	_ "mathviz/internal/concepts/astar"
 	_ "mathviz/internal/concepts/attention"
 	_ "mathviz/internal/concepts/backprop"
+	_ "mathviz/internal/concepts/bandit"
 	_ "mathviz/internal/concepts/bayestheorem"
 	_ "mathviz/internal/concepts/benfordslaw"
 	_ "mathviz/internal/concepts/biasvariance"
